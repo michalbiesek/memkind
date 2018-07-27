@@ -353,7 +353,7 @@ MEMKIND_EXPORT int memkind_arena_create_map(struct memkind *kind,
             goto exit;
         }
         //store index of first arena
-        if(i == 0) {
+        if((i == 0) || kind->arena_zero > arena_index) {
             kind->arena_zero = arena_index;
         }
         //setup extent_hooks for newly created arena
@@ -386,7 +386,7 @@ MEMKIND_EXPORT int memkind_arena_create(struct memkind *kind,
 MEMKIND_EXPORT int memkind_arena_destroy(struct memkind *kind)
 {
     char cmd[128];
-    int i;
+    unsigned int i;
 
     if (kind->arena_map_len) {
         for (i = 0; i < kind->arena_map_len; ++i) {

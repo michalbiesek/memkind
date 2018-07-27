@@ -45,6 +45,7 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_PMEM_OPS = {
     .mmap = memkind_pmem_mmap,
     .get_mmap_flags = memkind_pmem_get_mmap_flags,
     .get_arena = memkind_thread_get_arena,
+    .finalize = memkind_pmem_destroy,
     .malloc_usable_size = memkind_default_malloc_usable_size
 };
 
@@ -95,6 +96,9 @@ bool pmem_extent_dalloc(extent_hooks_t *extent_hooks,
                         bool committed,
                         unsigned arena_ind)
 {
+    if (munmap(addr, size) == -1) {
+        log_err("munmap failed!");
+    }
     /* do nothing - report failure (opt-out) */
     return true;
 }
