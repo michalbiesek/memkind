@@ -39,9 +39,6 @@ extern "C" {
 /* EXPERIMENTAL API */
 #define _MEMKIND_BIT(N) (1ull << N)
 
-/* EXPERIMENTAL API */
-/** The minimum size which allows to limit the file-backed memory partition */
-#define MEMKIND_PMEM_MIN_SIZE (1024 * 1024 * 16)
 
 /* EXPERIMENTAL API */
 /** Memory types. */

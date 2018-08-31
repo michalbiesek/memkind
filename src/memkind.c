@@ -56,6 +56,8 @@
 #include <unistd.h>
 #include <jemalloc/jemalloc.h>
 
+#define MEMKIND_PMEM_MIN_SIZE_1 (1024 * 1024 * 16)
+
 /* Clear bits in x, but only this specified in mask. */
 #define CLEAR_BIT(x, mask) ((x) &= (~(mask)))
 
@@ -689,7 +691,7 @@ MEMKIND_EXPORT int memkind_create_pmem(const char *dir, size_t max_size,
     int err = 0;
     int oerrno;
 
-    if (max_size && max_size < MEMKIND_PMEM_MIN_SIZE) {
+    if (max_size && max_size < MEMKIND_PMEM_MIN_SIZE_1) {
         return MEMKIND_ERROR_INVALID;
     }
 

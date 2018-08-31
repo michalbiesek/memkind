@@ -1,5 +1,5 @@
 #
-#  Copyright (C) 2014 - 2017 Intel Corporation.
+#  Copyright (C) 2014 - 2018 Intel Corporation.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -169,6 +169,7 @@ rm -f %{buildroot}/%{_libdir}/libautohbw.{l,}a
 %{_includedir}
 %{_includedir}/hbwmalloc.h
 %{_includedir}/hbw_allocator.h
+%{_includedir}/pmemmalloc.h
 %{_libdir}/lib%{namespace}.so
 %{_libdir}/libautohbw.so
 %{_includedir}/%{namespace}.h

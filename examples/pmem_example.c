@@ -30,8 +30,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <memkind.h>
-
+#include <pmemmalloc.h>
 #include <sys/param.h>
 #include <sys/mman.h>
 #include <stdio.h>
@@ -53,7 +52,7 @@ main(int argc, char *argv[])
     int err = 0;
 
     /* create PMEM partition */
-    err = memkind_create_pmem(".", PMEM_MAX_SIZE, &pmem_kind);
+    err = pmem_create(".", PMEM_MAX_SIZE, &pmem_kind);
     if (err) {
         perror("memkind_create_pmem()");
         fprintf(stderr, "Unable to create pmem partition\n");
@@ -66,7 +65,7 @@ main(int argc, char *argv[])
     char *pmem_str12 = NULL;
     char *pmem_str = NULL;
 
-    pmem_str10 = (char *)memkind_malloc(pmem_kind, size);
+    pmem_str10 = (char *)pmem_malloc(pmem_kind, size);
     if (pmem_str10 == NULL) {
         perror("memkind_malloc()");
         fprintf(stderr, "Unable to allocate pmem string (pmem_str10)\n");
@@ -74,7 +73,7 @@ main(int argc, char *argv[])
     }
 
     /* next chunk mapping */
-    pmem_str11 = (char *)memkind_malloc(pmem_kind, 8 * 1024 * 1024);
+    pmem_str11 = (char *)pmem_malloc(pmem_kind, 8 * 1024 * 1024);
     if (pmem_str11 == NULL) {
         perror("memkind_malloc()");
         fprintf(stderr, "Unable to allocate pmem string (pmem_str11)\n");
@@ -82,7 +81,7 @@ main(int argc, char *argv[])
     }
 
     /* extend the heap #1 */
-    pmem_str12 = (char *)memkind_malloc(pmem_kind, 16 * 1024 * 1024);
+    pmem_str12 = (char *)pmem_malloc(pmem_kind, 16 * 1024 * 1024);
     if (pmem_str12 == NULL) {
         perror("memkind_malloc()");
         fprintf(stderr, "Unable to allocate pmem string (pmem_str12)\n");
@@ -90,7 +89,7 @@ main(int argc, char *argv[])
     }
 
     /* OOM #1 */
-    pmem_str = (char *)memkind_malloc(pmem_kind, 16 * 1024 * 1024);
+    pmem_str = (char *)pmem_malloc(pmem_kind, 16 * 1024 * 1024);
     if (pmem_str != NULL) {
         perror("memkind_malloc()");
         fprintf(stderr,
@@ -102,9 +101,9 @@ main(int argc, char *argv[])
 
     fprintf(stdout, "%s", pmem_str10);
 
-    memkind_free(pmem_kind, pmem_str10);
-    memkind_free(pmem_kind, pmem_str11);
-    memkind_free(pmem_kind, pmem_str12);
+    pmem_free(pmem_kind, pmem_str10);
+    pmem_free(pmem_kind, pmem_str11);
+    pmem_free(pmem_kind, pmem_str12);
 
     return 0;
 }

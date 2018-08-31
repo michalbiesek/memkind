@@ -32,7 +32,7 @@ extern "C" {
  *  Header file for the persistent memory interface.
  *
  *  This file defines the external API's and enumerations for the
- *  hbwmalloc library.  These interfaces define a heap manager that
+ *  pmemmalloc library.  These interfaces define a heap manager that
  *  targets the high bandwidth memory numa nodes.
  *
  *  hbwmalloc.h functionality is considered as stable API (STANDARD API).
@@ -40,7 +40,16 @@ extern "C" {
  *  Please read pmemmalloc(3) man page for or more details.
  */
 
+/* EXPERIMENTAL API */
+/** The minimum size which allows to limit the file-backed memory partition */
+#define MEMKIND_PMEM_MIN_SIZE (1024 * 1024 * 16)
+
 typedef struct memkind* pmemkind_t;
+
+int pmem_create(const char *dir, size_t max_size,
+                       struct memkind **kind);
+
+int pmem_destroy(pmemkind_t kind);
 
 void *pmem_malloc(pmemkind_t kind, size_t size);
 

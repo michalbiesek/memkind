@@ -25,6 +25,18 @@
 #include <pmemmalloc.h>
 #include <memkind.h>
 
+
+int pmem_create(const char *dir, size_t max_size,
+                       struct memkind **kind)
+{
+    return memkind_create_pmem(dir, max_size, kind);
+}
+
+int pmem_destroy(pmemkind_t kind)
+{
+    return memkind_destroy_kind(kind);
+}
+
 void *pmem_malloc(pmemkind_t kind, size_t size)
 {
     return memkind_malloc(kind, size);
