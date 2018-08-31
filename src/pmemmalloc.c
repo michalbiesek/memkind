@@ -25,43 +25,44 @@
 #include <pmemmalloc.h>
 #include <memkind.h>
 
+#include <memkind/internal/memkind_private.h>
 
-int pmem_create(const char *dir, size_t max_size,
+MEMKIND_EXPORT int pmem_create(const char *dir, size_t max_size,
                        struct memkind **kind)
 {
     return memkind_create_pmem(dir, max_size, kind);
 }
 
-int pmem_destroy(pmemkind_t kind)
+MEMKIND_EXPORT int pmem_destroy(pmemkind_t kind)
 {
     return memkind_destroy_kind(kind);
 }
 
-void *pmem_malloc(pmemkind_t kind, size_t size)
+MEMKIND_EXPORT void *pmem_malloc(pmemkind_t kind, size_t size)
 {
     return memkind_malloc(kind, size);
 }
 
-size_t pmem_malloc_usable_size(pmemkind_t kind, void *ptr)
+MEMKIND_EXPORT size_t pmem_malloc_usable_size(pmemkind_t kind, void *ptr)
 {
     return memkind_malloc_usable_size(kind, ptr);
 }
 
-void *pmem_calloc(pmemkind_t kind, size_t num, size_t size)
+MEMKIND_EXPORT void *pmem_calloc(pmemkind_t kind, size_t num, size_t size)
 {
     return memkind_calloc(kind, num, size);
 }
-int pmem_posix_memalign(pmemkind_t kind, void **memptr, size_t alignment,
+MEMKIND_EXPORT int pmem_posix_memalign(pmemkind_t kind, void **memptr, size_t alignment,
                         size_t size)
 {
     return memkind_posix_memalign(kind, memptr, alignment, size);
 }
-void *pmem_realloc(pmemkind_t kind, void *ptr, size_t size)
+MEMKIND_EXPORT void *pmem_realloc(pmemkind_t kind, void *ptr, size_t size)
 {
     return memkind_realloc(kind, ptr, size);
 }
 
-void pmem_free(pmemkind_t kind, void *ptr)
+MEMKIND_EXPORT void pmem_free(pmemkind_t kind, void *ptr)
 {
     memkind_free(kind, ptr);
 }
