@@ -62,6 +62,9 @@ extern memkind_t MEMKIND_GBTLB;
 int MEMKIND_DEPRECATED(memkind_get_kind_by_partition(int partition,
                                                      memkind_t *kind));
 
+int MEMKIND_DEPRECATED memkind_create_pmem (const char *dir, size_t max_size,
+                                            memkind_t *kind);
+
 enum memkind_base_partition {
     MEMKIND_PARTITION_DEFAULT = 0,
     MEMKIND_PARTITION_HBW = 1,

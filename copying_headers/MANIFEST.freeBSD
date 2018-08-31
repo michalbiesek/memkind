@@ -55,6 +55,7 @@ include/memkind/internal/memkind_pmem.h
 include/memkind/internal/memkind_private.h
 include/memkind/internal/memkind_log.h
 include/memkind/internal/tbb_wrapper.h
+include/pmemmalloc.h
 test/Makefile.mk
 test/Allocator.hpp
 test/TestPolicy.hpp

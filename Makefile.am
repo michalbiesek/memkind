@@ -49,6 +49,7 @@ include_HEADERS = include/hbwmalloc.h \
                   include/hbw_allocator.h \
                   include/memkind.h \
                   include/memkind_deprecated.h \
+                  include/pmemmalloc.h \
                   # end
 
 nonstandardincludedir = $(includedir)/memkind/internal
