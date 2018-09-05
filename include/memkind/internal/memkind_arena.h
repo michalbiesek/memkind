@@ -61,7 +61,7 @@ int memkind_thread_get_arena(struct memkind *kind, unsigned int *arena,
 int memkind_arena_finalize(struct memkind *kind);
 void memkind_arena_init(struct memkind *kind);
 void memkind_arena_free(struct memkind *kind, void* ptr);
-
+size_t memkind_arena_usable_size(struct memkind *kind, void* ptr);
 #ifdef __cplusplus
 }
 #endif

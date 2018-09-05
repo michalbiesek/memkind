@@ -481,6 +481,20 @@ MEMKIND_EXPORT void memkind_arena_free(struct memkind *kind, void *ptr)
     }
 }
 
+MEMKIND_EXPORT size_t memkind_arena_usable_size(struct memkind *kind,
+                                              void *ptr)
+{
+    size_t size_ptr = 0;
+    if (ptr) {
+        unsigned int arena;
+        kind->ops->get_arena(kind, &arena, 0);
+        assert(arena != 0);
+        size_ptr = jemk_sallocx(ptr, MALLOCX_ARENA(arena) | get_tcache_flag(kind->partition, 0));
+    }
+    return size_ptr;
+}
+
+
 MEMKIND_EXPORT void *memkind_arena_realloc(struct memkind *kind, void *ptr,
                                            size_t size)
 {
