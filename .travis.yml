@@ -2,6 +2,9 @@ dist: trusty
 sudo: required
 language: cpp
 cache: ccache
+# Do a full clone to be sure we get the tags and can properly retrieve version
+git:
+  depth: false
 matrix:
   fast_finish: true
   include:
