@@ -22590,10 +22590,9 @@ GTEST_API_ AssertionResult CmpHelper##op_name(\
 // This function was formerly a macro; thus, it is in the global
 // namespace and has an all-caps name.
 int RUN_ALL_TESTS() GTEST_MUST_USE_RESULT_;
-
 inline int RUN_ALL_TESTS()
 {
-    return ::testing::UnitTest::GetInstance()->Run();
+  return ::testing::UnitTest::GetInstance()->Run();
 }
 
 #endif  // GTEST_INCLUDE_GTEST_GTEST_H_
