@@ -39,65 +39,116 @@
 
 #define CHUNK_SIZE (4 * 1024 * 1024) /* assume 4MB chunks */
 
+#define ALLOCATION_NUMBER 1000000
 int
 main(int argc, char *argv[])
 {
     struct memkind *pmem_kind;
     int err = 0;
-
+    int i = 0;
+    int j = 0;
+    int first_number_of_allocations = 0;
+    int temp_number_of_alolocations = 0;
     /* create PMEM partition */
-    err = memkind_create_pmem(".", PMEM_MAX_SIZE, &pmem_kind);
+    err = memkind_create_pmem("/mnt/pmem/", PMEM_MAX_SIZE, &pmem_kind);
     if (err) {
         perror("memkind_create_pmem()");
         fprintf(stderr, "Unable to create pmem partition\n");
         return errno ? -errno : 1;
     }
 
-    const size_t size = 512;
-    char *pmem_str10 = NULL;
-    char *pmem_str11 = NULL;
-    char *pmem_str12 = NULL;
-    char *pmem_str = NULL;
-
-    pmem_str10 = (char *)memkind_malloc(pmem_kind, size);
-    if (pmem_str10 == NULL) {
-        perror("memkind_malloc()");
-        fprintf(stderr, "Unable to allocate pmem string (pmem_str10)\n");
-        return errno ? -errno : 1;
+    void *test[ALLOCATION_NUMBER] = {NULL};
+    //TEST MALLOC
+    size_t size_test = 4096;
+    //first iteration
+    for(i=0; i<ALLOCATION_NUMBER; i++) {
+        test[i] = memkind_malloc(pmem_kind, size_test);
+        if ( test[i]== NULL)
+        {
+            break;
+        }
+    }
+    if ( i == ALLOCATION_NUMBER )
+    {
+        fprintf(stderr, "Should not happened\n");
+        return 1;
     }
 
-    /* next chunk mapping */
-    pmem_str11 = (char *)memkind_malloc(pmem_kind, 8 * 1024 * 1024);
-    if (pmem_str11 == NULL) {
-        perror("memkind_malloc()");
-        fprintf(stderr, "Unable to allocate pmem string (pmem_str11)\n");
-        return errno ? -errno : 1;
+    first_number_of_allocations = i;
+
+    for(i=0; i<first_number_of_allocations; i++) {
+        memkind_free(pmem_kind, test[i]);
+        test[i] = NULL;
+    }
+    fprintf(stderr,"\nfirst alloc number %d",first_number_of_allocations );
+
+    //check other allocations
+    for(j=0; j<1000; j++) {
+
+        for(i=0; i<ALLOCATION_NUMBER; i++) {
+            test[i] = memkind_malloc(pmem_kind, size_test);
+            if ( test[i]== NULL)
+            {
+                break;
+            }
+        }
+        if ( i == ALLOCATION_NUMBER )
+        {
+            fprintf(stderr, "Should not happened\n");
+            return 1;
+        }
+        temp_number_of_alolocations = i;
+
+        for(i=0; i<temp_number_of_alolocations; i++) {
+            memkind_free(pmem_kind, test[i]);
+            test[i] = NULL;
+        }
+            fprintf(stderr,"\ntemp alloc number %d",temp_number_of_alolocations );
     }
 
-    /* extend the heap #1 */
-    pmem_str12 = (char *)memkind_malloc(pmem_kind, 16 * 1024 * 1024);
-    if (pmem_str12 == NULL) {
-        perror("memkind_malloc()");
-        fprintf(stderr, "Unable to allocate pmem string (pmem_str12)\n");
-        return errno ? -errno : 1;
-    }
+    memkind_destroy_kind(pmem_kind);
 
-    /* OOM #1 */
-    pmem_str = (char *)memkind_malloc(pmem_kind, 16 * 1024 * 1024);
-    if (pmem_str != NULL) {
-        perror("memkind_malloc()");
-        fprintf(stderr,
-                "Failure, this allocation should not be possible (expected result was NULL)\n");
-        return errno ? -errno : 1;
-    }
-
-    sprintf(pmem_str10, "Hello world from persistent memory\n");
-
-    fprintf(stdout, "%s", pmem_str10);
-
-    memkind_free(pmem_kind, pmem_str10);
-    memkind_free(pmem_kind, pmem_str11);
-    memkind_free(pmem_kind, pmem_str12);
-
+//    void *test[1000000] = {NULL};
+//    int i;
+////    size_t size_test = 10;
+//        size_t size_test = 4096;
+////   size_t alligned = 8;
+//   size_t alligned = 64;
+//    size_t alligned = 2048;
+//    size_t alligned = 4096;
+//    size_t alligned = 8192;
+//    size_t alligned = 16384;
+//    int max =0;
+//    for(int j=0; j<10; j++) {
+//        i =0;
+//        do {
+////            test[i] = memkind_malloc(pmem_kind, size_test);
+//           int err = memkind_posix_memalign(pmem_kind, &test[i], alligned,size_test);
+//           if (err)
+//           {
+//               fprintf(stderr,"memkind_posix_memalign ERROR i %d j %d err %d\n",i,j, err);
+//           }
+//        } while(test[i] != NULL && i++<1000000);
+//        if(j == 0)
+//            max = i;
+//        else
+//            if (i < 0.98*max)
+//            {
+//                fprintf(stderr,"MALLOC ERROR i %d j %d\n",i,j);
+//                memkind_destroy_kind(pmem_kind);
+//                err = memkind_create_pmem("/mnt/pmem/", PMEM_MAX_SIZE, &pmem_kind);
+//                memkind_destroy_kind(pmem_kind);
+//                return 1;
+//            }
+//        while(i > 0) {
+//            memkind_free(pmem_kind, test[i]);
+//            test[i] = NULL;
+//            --i;
+//        }
+//    }
+//    fprintf(stderr,"MALLOC OK\n");
+//    memkind_destroy_kind(pmem_kind);
+//    err = memkind_create_pmem("/mnt/pmem/", PMEM_MAX_SIZE, &pmem_kind);
+//    memkind_destroy_kind(pmem_kind);
     return 0;
 }

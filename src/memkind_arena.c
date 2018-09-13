@@ -527,7 +527,7 @@ MEMKIND_EXPORT int memkind_arena_posix_memalign(struct memkind *kind,
     int err = 0;
     unsigned int arena;
     int errno_before;
-
+    //sysconf(_SC_PAGESIZE)
     *memptr = NULL;
     err = kind->ops->get_arena(kind, &arena, size);
     if (MEMKIND_LIKELY(!err)) {
@@ -538,8 +538,8 @@ MEMKIND_EXPORT int memkind_arena_posix_memalign(struct memkind *kind,
            Set it to its previous value after calling jemalloc */
         errno_before = errno;
         *memptr = jemk_mallocx_check(size,
-                                     MALLOCX_ALIGN(alignment) | MALLOCX_ARENA(arena) | get_tcache_flag(
-                                         kind->partition, size));
+//                                     MALLOCX_ALIGN(alignment) | MALLOCX_ARENA(arena) | get_tcache_flag(
+                                       MALLOCX_ARENA(arena) | get_tcache_flag(kind->partition, size));
         errno = errno_before;
         err = *memptr ? 0 : ENOMEM;
     }
