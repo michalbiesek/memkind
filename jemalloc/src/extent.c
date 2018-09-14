@@ -1074,7 +1074,7 @@ extent_grow_retained(tsdn_t *tsdn, arena_t *arena,
 		    &arena->dss_prec, ATOMIC_RELAXED));
 	} else {
 		ptr = (*r_extent_hooks)->alloc(*r_extent_hooks, NULL,
-		    alloc_size, PAGE, &zeroed, &committed,
+            alloc_size, alignment, &zeroed, &committed,
 		    arena_ind_get(arena));
 	}
 
