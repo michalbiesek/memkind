@@ -119,7 +119,7 @@ MEMKIND_EXPORT size_t memkind_default_malloc_usable_size(struct memkind *kind,
 }
 
 MEMKIND_EXPORT void *memkind_default_mmap(struct memkind *kind, void *addr,
-                                          size_t size)
+                                          size_t size, size_t allignment)
 {
     void *result = MAP_FAILED;
     int err = 0;

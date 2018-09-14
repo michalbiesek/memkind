@@ -76,7 +76,7 @@ void *pmem_extent_alloc(extent_hooks_t *extent_hooks,
         goto exit;
     }
 
-    addr = memkind_pmem_mmap(kind, new_addr, size);
+    addr = memkind_pmem_mmap(kind, new_addr, size, alignment);
 
     if (addr != MAP_FAILED) {
         *zero = true;
@@ -234,7 +234,7 @@ MEMKIND_EXPORT int memkind_pmem_destroy(struct memkind *kind)
 }
 
 MEMKIND_EXPORT void *memkind_pmem_mmap(struct memkind *kind, void *addr,
-                                       size_t size)
+                                       size_t size, size_t allignment)
 {
     struct memkind_pmem *priv = kind->priv;
     void *result;

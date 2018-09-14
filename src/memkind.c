@@ -209,12 +209,12 @@ static struct memkind_registry memkind_registry_g = {
     PTHREAD_MUTEX_INITIALIZER
 };
 
-void *kind_mmap(struct memkind *kind, void* addr, size_t size)
+void *kind_mmap(struct memkind *kind, void* addr, size_t size, size_t allignment)
 {
     if (MEMKIND_LIKELY(kind->ops->mmap == NULL)) {
-        return memkind_default_mmap(kind, addr, size);
+        return memkind_default_mmap(kind, addr, size, allignment);
     } else {
-        return kind->ops->mmap(kind, addr, size);
+        return kind->ops->mmap(kind, addr, size, allignment);
     }
 }
 

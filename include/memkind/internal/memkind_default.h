@@ -51,7 +51,7 @@ int memkind_default_posix_memalign(struct memkind *kind, void **memptr,
                                    size_t alignment, size_t size);
 void *memkind_default_realloc(struct memkind *kind, void *ptr, size_t size);
 void memkind_default_free(struct memkind *kind, void *ptr);
-void *memkind_default_mmap(struct memkind *kind, void *addr, size_t size);
+void *memkind_default_mmap(struct memkind *kind, void *addr, size_t size, size_t allignment);
 int memkind_default_mbind(struct memkind *kind, void *ptr, size_t size);
 int memkind_default_get_mmap_flags(struct memkind *kind, int *flags);
 int memkind_default_get_mbind_mode(struct memkind *kind, int *mode);
