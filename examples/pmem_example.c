@@ -39,19 +39,19 @@
 
 #define CHUNK_SIZE (4 * 1024 * 1024) /* assume 4MB chunks */
 
-#define ALLOCATION_NUMBER INT_MAX
-int
-#define TEMP_LOOP 5
-main(int argc, char *argv[])
+#define ALLOCATION_NUMBER 100
+
+
+int main(int argc, char *argv[])
 {
     struct memkind *pmem_kind;
     int err = 0;
-    size_t i = INT_MAX;
-    size_t j = 0;
-    size_t first_number_of_allocations = 0;
-    size_t temp_number_of_allocations = 0;
-    size_t first_number_of_allocations_aligned = 0;
-    size_t temp_number_of_allocations_aligned = 0;
+    size_t i = 0;
+    size_t size_test = 4096;
+//    size_t allignment = 4096;
+    size_t allignment = 2048;
+//    size_t allignment = 8192;
+    void *test[ALLOCATION_NUMBER] = {NULL};
     /* create PMEM partition */
     err = memkind_create_pmem("/mnt/pmem/", PMEM_MAX_SIZE, &pmem_kind);
     if (err) {
@@ -59,104 +59,9 @@ main(int argc, char *argv[])
         fprintf(stderr, "Unable to create pmem partition\n");
         return errno ? -errno : 1;
     }
-    size_t size_test = 4096;
-    size_t aligned = 4096;
-    void *test[ALLOCATION_NUMBER] = {NULL};
-    //TEST MALLOC
-    //first iteration
-    for(i=0; i<ALLOCATION_NUMBER; i++) {
-        test[i] = memkind_malloc(pmem_kind, size_test);
-        if ( test[i]== NULL)
-        {
-            break;
-        }
-    }
-    if ( i == ALLOCATION_NUMBER )
-    {
-        fprintf(stderr, "Should not happened with first malloc iteration\n");
-        return 1;
-    }
 
-    first_number_of_allocations = i;
 
-    for(i=0; i<first_number_of_allocations; i++) {
-        memkind_free(pmem_kind, test[i]);
-        test[i] = NULL;
-    }
-    fprintf(stderr,"\nfirst alloc number %zu",first_number_of_allocations );
-
-    //check other allocations
-    for(j=0; j<TEMP_LOOP; j++) {
-
-        for(i=0; i<ALLOCATION_NUMBER; i++) {
-            test[i] = memkind_malloc(pmem_kind, size_test);
-            if ( test[i]== NULL)
-            {
-                break;
-            }
-        }
-        if ( i == ALLOCATION_NUMBER )
-        {
-            fprintf(stderr, "Should not happened with malloc iteration %zu\n", j);
-            return 1;
-        }
-        temp_number_of_allocations = i;
-
-        for(i=0; i<temp_number_of_allocations; i++) {
-            memkind_free(pmem_kind, test[i]);
-            test[i] = NULL;
-        }
-            fprintf(stderr,"\ntemp alloc number %zu",temp_number_of_allocations );
-    }
-
-    memkind_destroy_kind(pmem_kind);
-
- //ALLIGNED TEST
-
-    for(i=0; i<ALLOCATION_NUMBER; i++) {
-        memkind_posix_memalign(pmem_kind, &test[i],aligned,size_test);
-        if ( test[i] == NULL)
-        {
-            break;
-        }
-    }
-    if ( i == ALLOCATION_NUMBER )
-    {
-        fprintf(stderr, "Should not happened with first malloc_memalign iteration\n");
-        return 1;
-    }
-
-    first_number_of_allocations_aligned = i;
-
-    for(i=0; i<first_number_of_allocations_aligned; i++) {
-        memkind_free(pmem_kind, test[i]);
-        test[i] = NULL;
-    }
-    fprintf(stderr,"\nfirst alloc number alligned %zu",first_number_of_allocations_aligned );
-
-    //check other allocations
-    for(j=0; j<TEMP_LOOP; j++) {
-
-        for(i=0; i<ALLOCATION_NUMBER; i++) {
-            memkind_posix_memalign(pmem_kind, &test[i],aligned,size_test);
-            if ( test[i]== NULL)
-            {
-                break;
-            }
-        }
-        if ( i == ALLOCATION_NUMBER )
-        {
-            fprintf(stderr, "Should not happened with malloc_memalign iteration %zu\n", j);
-            return 1;
-        }
-        temp_number_of_allocations_aligned = i;
-
-        for(i=0; i<temp_number_of_allocations_aligned; i++) {
-            memkind_free(pmem_kind, test[i]);
-            test[i] = NULL;
-        }
-            fprintf(stderr,"\ntemp alloc number alligned %zu",temp_number_of_allocations_aligned );
-    }
+    memkind_posix_memalign(pmem_kind, &test[i],allignment,size_test);
 
     memkind_destroy_kind(pmem_kind);
 
