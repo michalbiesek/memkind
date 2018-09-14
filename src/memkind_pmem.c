@@ -79,6 +79,7 @@ void *pmem_extent_alloc(extent_hooks_t *extent_hooks,
     addr = memkind_pmem_mmap(kind, new_addr, size, alignment);
 
     if (addr != MAP_FAILED) {
+        assert((uintptr_t)addr % alignment == 0);
         *zero = true;
         *commit = true;
 
@@ -234,7 +235,7 @@ MEMKIND_EXPORT int memkind_pmem_destroy(struct memkind *kind)
 }
 
 MEMKIND_EXPORT void *memkind_pmem_mmap(struct memkind *kind, void *addr,
-                                       size_t size, size_t allignment)
+                                       size_t size, size_t alignment)
 {
     struct memkind_pmem *priv = kind->priv;
     void *result;
@@ -247,14 +248,22 @@ MEMKIND_EXPORT void *memkind_pmem_mmap(struct memkind *kind, void *addr,
         return MAP_FAILED;
     }
 
-    if ((errno = posix_fallocate(priv->fd, priv->offset, (off_t)size)) != 0) {
+    uintptr_t aligned_addr = (priv->offset + alignment - 1) & ~(alignment - 1);
+
+    size_t adjust = aligned_addr & (alignment - 1);
+    if (adjust)
+    {
+         adjust = alignment - adjust;
+    }
+
+    if ((errno = posix_fallocate(priv->fd, priv->offset, (off_t)(size+adjust))) != 0) {
         pthread_mutex_unlock(&priv->pmem_lock);
         return MAP_FAILED;
     }
 
-    if ((result = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, priv->fd,
+    if ((result = mmap(NULL, size+adjust, PROT_READ | PROT_WRITE, MAP_SHARED, priv->fd,
                        priv->offset)) != MAP_FAILED) {
-        priv->offset += size;
+        priv->offset += size+adjust;
     }
 
     pthread_mutex_unlock(&priv->pmem_lock);

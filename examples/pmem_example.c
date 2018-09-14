@@ -40,17 +40,18 @@
 #define CHUNK_SIZE (4 * 1024 * 1024) /* assume 4MB chunks */
 
 #define ALLOCATION_NUMBER 100
-
+#define TEST 5
 
 int main(int argc, char *argv[])
 {
     struct memkind *pmem_kind;
     int err = 0;
     size_t i = 0;
+    size_t j = 0;
     size_t size_test = 4096;
 //    size_t allignment = 4096;
-    size_t allignment = 2048;
-//    size_t allignment = 8192;
+//    size_t allignment = 2048;
+    size_t allignment = 8192;
     void *test[ALLOCATION_NUMBER] = {NULL};
     /* create PMEM partition */
     err = memkind_create_pmem("/mnt/pmem/", PMEM_MAX_SIZE, &pmem_kind);
@@ -59,11 +60,15 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Unable to create pmem partition\n");
         return errno ? -errno : 1;
     }
+    for ( j =0; j <TEST; j++)
+    {
+    for ( i =0; i <ALLOCATION_NUMBER; i++)
+    {
+        memkind_posix_memalign(pmem_kind, &test[i],allignment,size_test);
 
-
-    memkind_posix_memalign(pmem_kind, &test[i],allignment,size_test);
-
+        memkind_free(pmem_kind,test[i]);
+    }
     memkind_destroy_kind(pmem_kind);
-
+    }
     return 0;
 }
