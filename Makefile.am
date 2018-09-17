@@ -87,6 +87,7 @@ EXTRA_DIST = astyle.sh \
              jemalloc/INSTALL.md \
              jemalloc/Makefile.in \
              jemalloc/README \
+             jemalloc/TUNING.md \
              jemalloc/autogen.sh \
              jemalloc/bin/jemalloc-config.in \
              jemalloc/bin/jemalloc.sh.in \
@@ -119,10 +120,15 @@ EXTRA_DIST = astyle.sh \
              jemalloc/include/jemalloc/internal/base_inlines.h \
              jemalloc/include/jemalloc/internal/base_structs.h \
              jemalloc/include/jemalloc/internal/base_types.h \
+             jemalloc/include/jemalloc/internal/bin.h \
+             jemalloc/include/jemalloc/internal/bin_stats.h \
              jemalloc/include/jemalloc/internal/bit_util.h \
              jemalloc/include/jemalloc/internal/bitmap.h \
+             jemalloc/include/jemalloc/internal/cache_bin.h \
              jemalloc/include/jemalloc/internal/ckh.h \
              jemalloc/include/jemalloc/internal/ctl.h \
+             jemalloc/include/jemalloc/internal/div.h \
+             jemalloc/include/jemalloc/internal/emitter.h \
              jemalloc/include/jemalloc/internal/extent_dss.h \
              jemalloc/include/jemalloc/internal/extent_externs.h \
              jemalloc/include/jemalloc/internal/extent_inlines.h \
@@ -142,6 +148,7 @@ EXTRA_DIST = astyle.sh \
              jemalloc/include/jemalloc/internal/jemalloc_internal_types.h \
              jemalloc/include/jemalloc/internal/jemalloc_preamble.h.in \
              jemalloc/include/jemalloc/internal/large_externs.h \
+             jemalloc/include/jemalloc/internal/log.h \
              jemalloc/include/jemalloc/internal/malloc_io.h \
              jemalloc/include/jemalloc/internal/mutex.h \
              jemalloc/include/jemalloc/internal/mutex_pool.h \
@@ -169,7 +176,6 @@ EXTRA_DIST = astyle.sh \
              jemalloc/include/jemalloc/internal/smoothstep.sh \
              jemalloc/include/jemalloc/internal/spin.h \
              jemalloc/include/jemalloc/internal/stats.h \
-             jemalloc/include/jemalloc/internal/stats_tsd.h \
              jemalloc/include/jemalloc/internal/sz.h \
              jemalloc/include/jemalloc/internal/tcache_externs.h \
              jemalloc/include/jemalloc/internal/tcache_inlines.h \
@@ -201,20 +207,27 @@ EXTRA_DIST = astyle.sh \
              jemalloc/msvc/jemalloc_vc2015.sln \
              jemalloc/msvc/projects/vc2015/jemalloc/jemalloc.vcxproj \
              jemalloc/msvc/projects/vc2015/jemalloc/jemalloc.vcxproj.filters \
-             jemalloc/msvc/projects/vc2015/test_threads/test_threads.cpp \
-             jemalloc/msvc/projects/vc2015/test_threads/test_threads.h \
              jemalloc/msvc/projects/vc2015/test_threads/test_threads.vcxproj \
              jemalloc/msvc/projects/vc2015/test_threads/test_threads.vcxproj.filters \
-             jemalloc/msvc/projects/vc2015/test_threads/test_threads_main.cpp \
+             jemalloc/msvc/jemalloc_vc2017.sln \
+             jemalloc/msvc/projects/vc2017/jemalloc/jemalloc.vcxproj \
+             jemalloc/msvc/projects/vc2017/jemalloc/jemalloc.vcxproj.filters \
+             jemalloc/msvc/projects/vc2017/test_threads/test_threads.vcxproj \
+             jemalloc/msvc/projects/vc2017/test_threads/test_threads.vcxproj.filters \
+             jemalloc/msvc/test_threads/test_threads.cpp \
+             jemalloc/msvc/test_threads/test_threads.h \
+             jemalloc/msvc/test_threads/test_threads_main.cpp \
              jemalloc/run_tests.sh \
              jemalloc/scripts/gen_run_tests.py \
              jemalloc/scripts/gen_travis.py \
              jemalloc/src/arena.c \
              jemalloc/src/background_thread.c \
              jemalloc/src/base.c \
+             jemalloc/src/bin.c \
              jemalloc/src/bitmap.c \
              jemalloc/src/ckh.c \
              jemalloc/src/ctl.c \
+             jemalloc/src/div.c \
              jemalloc/src/extent.c \
              jemalloc/src/extent_dss.c \
              jemalloc/src/extent_mmap.c \
@@ -222,6 +235,7 @@ EXTRA_DIST = astyle.sh \
              jemalloc/src/hooks.c \
              jemalloc/src/jemalloc.c \
              jemalloc/src/jemalloc_cpp.cpp \
+             jemalloc/src/log.c \
              jemalloc/src/large.c \
              jemalloc/src/malloc_io.c \
              jemalloc/src/mutex.c \
@@ -231,7 +245,6 @@ EXTRA_DIST = astyle.sh \
              jemalloc/src/prng.c \
              jemalloc/src/prof.c \
              jemalloc/src/rtree.c \
-             jemalloc/src/spin.c \
              jemalloc/src/stats.c \
              jemalloc/src/sz.c \
              jemalloc/src/tcache.c \
@@ -297,12 +310,15 @@ EXTRA_DIST = astyle.sh \
              jemalloc/test/unit/arena_reset_prof.sh \
              jemalloc/test/unit/atomic.c \
              jemalloc/test/unit/background_thread.c \
+             jemalloc/test/unit/background_thread_enable.c \
              jemalloc/test/unit/base.c \
              jemalloc/test/unit/bit_util.c \
              jemalloc/test/unit/bitmap.c \
              jemalloc/test/unit/ckh.c \
              jemalloc/test/unit/decay.c \
              jemalloc/test/unit/decay.sh \
+             jemalloc/test/unit/div.c \
+             jemalloc/test/unit/emitter.c \
              jemalloc/test/unit/extent_quantize.c \
              jemalloc/test/unit/fork.c \
              jemalloc/test/unit/hash.c \
@@ -313,6 +329,7 @@ EXTRA_DIST = astyle.sh \
              jemalloc/test/unit/junk_alloc.sh \
              jemalloc/test/unit/junk_free.c \
              jemalloc/test/unit/junk_free.sh \
+             jemalloc/test/unit/log.c \
              jemalloc/test/unit/mallctl.c \
              jemalloc/test/unit/malloc_io.c \
              jemalloc/test/unit/math.c \

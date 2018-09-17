@@ -40,14 +40,15 @@ typedef struct ctl_arena_stats_s {
 	uint64_t ndalloc_small;
 	uint64_t nrequests_small;
 
-	malloc_bin_stats_t bstats[NBINS];
-	malloc_large_stats_t lstats[NSIZES - NBINS];
+	bin_stats_t bstats[NBINS];
+	arena_stats_large_t lstats[NSIZES - NBINS];
 } ctl_arena_stats_t;
 
 typedef struct ctl_stats_s {
 	size_t allocated;
 	size_t active;
 	size_t metadata;
+	size_t metadata_thp;
 	size_t resident;
 	size_t mapped;
 	size_t retained;
@@ -91,8 +92,7 @@ typedef struct ctl_arenas_s {
 
 int ctl_byname(tsd_t *tsd, const char *name, void *oldp, size_t *oldlenp,
     void *newp, size_t newlen);
-int ctl_nametomib(tsdn_t *tsdn, const char *name, size_t *mibp,
-    size_t *miblenp);
+int ctl_nametomib(tsd_t *tsd, const char *name, size_t *mibp, size_t *miblenp);
 
 int ctl_bymib(tsd_t *tsd, const size_t *mib, size_t miblen, void *oldp,
     size_t *oldlenp, void *newp, size_t newlen);
