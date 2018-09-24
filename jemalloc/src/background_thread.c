@@ -316,7 +316,7 @@ background_threads_disable_single(tsd_t *tsd, background_thread_info_t *info) {
 		    &background_thread_lock);
 	}
 
-	pre_reentrancy(tsd);
+	pre_reentrancy(tsd, NULL);
 	malloc_mutex_lock(tsd_tsdn(tsd), &info->mtx);
 	bool has_thread;
 	assert(info->state != background_thread_paused);
@@ -355,7 +355,7 @@ background_thread_create_signals_masked(pthread_t *thread,
 	 * an empty signal set.
 	 */
 	sigset_t set;
-	sigemptyset(&set);
+	sigfillset(&set);
 	sigset_t oldset;
 	int mask_err = pthread_sigmask(SIG_SETMASK, &set, &oldset);
 	if (mask_err != 0) {
@@ -408,7 +408,7 @@ label_restart:
 		 */
 		malloc_mutex_unlock(tsd_tsdn(tsd), &background_thread_lock);
 
-		pre_reentrancy(tsd);
+		pre_reentrancy(tsd, NULL);
 		int err = background_thread_create_signals_masked(&info->thread,
 		    NULL, background_thread_entry, (void *)(uintptr_t)i);
 		post_reentrancy(tsd);
@@ -499,7 +499,9 @@ static void *
 background_thread_entry(void *ind_arg) {
 	unsigned thread_ind = (unsigned)(uintptr_t)ind_arg;
 	assert(thread_ind < ncpus);
-
+#ifdef JEMALLOC_HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(pthread_self(), "jemalloc_bg_thd");
+#endif
 	if (opt_percpu_arena != percpu_arena_disabled) {
 		set_current_thread_affinity((int)thread_ind);
 	}
@@ -555,7 +557,7 @@ background_thread_create(tsd_t *tsd, unsigned arena_ind) {
 		return false;
 	}
 
-	pre_reentrancy(tsd);
+	pre_reentrancy(tsd, NULL);
 	/*
 	 * To avoid complications (besides reentrancy), create internal
 	 * background threads with the underlying pthread_create.
