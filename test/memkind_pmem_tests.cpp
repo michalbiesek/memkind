@@ -271,8 +271,7 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemMallocUsableSize)
     EXPECT_TRUE(nullptr != pmem_temp);
     size_t usable_size = memkind_malloc_usable_size(pmem_temp, nullptr);
     EXPECT_EQ(0u, usable_size);
-    for (unsigned int i = 0; i < (sizeof(check_sizes) / sizeof(check_sizes[0]));
-         ++i) {
+    for (unsigned int i = 0; i < ARRAY_SIZE(check_sizes); ++i) {
         size_t size = check_sizes[i].size;
         void *alloc = memkind_malloc(pmem_temp, size);
         EXPECT_TRUE(nullptr != alloc);
@@ -358,7 +357,7 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemReallocSizeMax)
 
 TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemReallocPtrCheck)
 {
-    size_t size = 1024 * 1024;
+    size_t size = 1 * MB;
     void *ptr_malloc = nullptr;
     void *ptr_malloc_copy = nullptr;
     void *ptr_realloc = nullptr;
@@ -601,8 +600,9 @@ INSTANTIATE_TEST_CASE_P(
 TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemMallocSmallSizeFill)
 {
     const size_t small_size[] = {8, 16, 32, 48, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384,
-                                 448, 512, 640, 768, 896, 1024, 1280, 1536, 1792, 2048, 2560,
-                                 3072, 3584, 4096, 5120, 6144, 7168, 8192, 10240, 12288, 14336
+                                 448, 512, 640, 768, 896, 1 * KB, 1280, 1536, 1792, 2 * KB, 2560,
+                                 3 * KB, 3584, 4 * KB, 5 * KB, 6 * KB, 7 * KB, 8 * KB, 10 * KB,
+                                 12 * KB, 14 * KB
                                 };
     const int malloc_limit = 10000;
     const int loop_limit = 100;
