@@ -33,6 +33,7 @@
 #include "MemkindAllocatorWithTimer.hpp"
 #include "HBWmallocAllocatorWithTimer.hpp"
 #include "Numastat.hpp"
+#include "PmemMockup.hpp"
 
 #include <vector>
 #include <assert.h>
@@ -84,7 +85,7 @@ public:
             MemkindAllocatorWithTimer(MEMKIND_HBW_PREFERRED_GBTLB,
                                       AllocatorTypes::MEMKIND_HBW_PREFERRED_GBTLB);
         memkind_allocators[AllocatorTypes::MEMKIND_PMEM] = MemkindAllocatorWithTimer(
-                                                               MEMKIND_PMEM, AllocatorTypes::MEMKIND_PMEM);
+                                                               MEMKIND_PMEM_MOCKUP, AllocatorTypes::MEMKIND_PMEM);
     }
 
     //Get existing allocator without creating new.

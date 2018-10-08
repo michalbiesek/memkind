@@ -27,8 +27,6 @@
 #include <map>
 #include <assert.h>
 
-struct memkind *MEMKIND_PMEM;
-
 //AllocatorTypes class represent allocator types and names related to this types.
 class AllocatorTypes
 {

@@ -27,7 +27,7 @@
 #include "allocator_perf_tool/Stats.hpp"
 #include "allocator_perf_tool/Thread.hpp"
 #include "allocator_perf_tool/GTestAdapter.hpp"
-#include "Configuration.hpp"
+#include "allocator_perf_tool/PmemMockup.hpp"
 
 static const size_t PMEM_PART_SIZE = 0;
 extern const char*  PMEM_DIR;
@@ -42,14 +42,14 @@ protected:
     {
         allocator_factory.initialize_allocator(AllocatorTypes::STANDARD_ALLOCATOR);
 
-        int err = memkind_create_pmem(PMEM_DIR, PMEM_PART_SIZE, &MEMKIND_PMEM);
+        int err = memkind_create_pmem(PMEM_DIR, PMEM_PART_SIZE, &MEMKIND_PMEM_MOCKUP);
         ASSERT_EQ(0, err);
-        ASSERT_TRUE(NULL != MEMKIND_PMEM);
+        ASSERT_TRUE(nullptr != MEMKIND_PMEM_MOCKUP);
     }
 
     void TearDown()
     {
-        int err = memkind_destroy_kind(MEMKIND_PMEM);
+        int err = memkind_destroy_kind(MEMKIND_PMEM_MOCKUP);
         ASSERT_EQ(0, err);
     }
 
