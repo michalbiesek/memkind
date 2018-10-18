@@ -2,6 +2,7 @@
 #define JEMALLOC_INTERNAL_ARENA_STRUCTS_B_H
 
 #include "jemalloc/internal/atomic.h"
+#include "jemalloc/internal/bin.h"
 #include "jemalloc/internal/bitmap.h"
 #include "jemalloc/internal/extent_dss.h"
 #include "jemalloc/internal/jemalloc_internal_types.h"
