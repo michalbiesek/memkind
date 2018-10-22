@@ -319,7 +319,12 @@ static void memkind_destroy_dynamic_kind_from_register(unsigned int i,
     if (i >= MEMKIND_NUM_BASE_KIND) {
         memkind_registry_g.partition_map[i] = NULL;
         --memkind_registry_g.num_kind;
-        jemk_free(kind);
+        const char* env = getenv("MEMKIND_HEAP_MANAGER");
+        if(env && strcmp(env, "TBB") == 0) {
+            tbb_scalable_free(kind);
+        } else {
+            jemk_free(kind);
+        }
     }
 }
 
@@ -434,7 +439,7 @@ MEMKIND_EXPORT void memkind_error_message(int err, char *msg, size_t size)
 void memkind_init(memkind_t kind, bool check_numa)
 {
     log_info("Initializing kind %s.", kind->name);
-    heap_manager_init(kind);
+    heap_manager_init(kind, false);
     if (check_numa) {
         int err = numa_available();
         if (err) {
@@ -445,6 +450,71 @@ void memkind_init(memkind_t kind, bool check_numa)
 }
 
 static void nop(void) {}
+
+static int memkind_tbb_create(struct memkind_ops *ops, const char *name,
+                              struct memkind **kind)
+{
+    int err;
+    unsigned int i;
+    unsigned int id_kind = 0;
+
+    *kind = NULL;
+    if (pthread_mutex_lock(&memkind_registry_g.lock) != 0)
+        assert(0 && "failed to acquire mutex");
+
+    if (memkind_registry_g.num_kind == MEMKIND_MAX_KIND) {
+        log_err("Attempted to initialize more than maximum (%i) number of kinds.",
+                MEMKIND_MAX_KIND);
+        err = MEMKIND_ERROR_TOOMANY;
+        goto exit;
+    }
+    if (ops->create == NULL ||
+        ops->destroy == NULL ||
+        ops->malloc == NULL ||
+        ops->calloc == NULL ||
+        ops->realloc == NULL ||
+        ops->posix_memalign == NULL ||
+        ops->free == NULL ||
+        ops->init_once != NULL) {
+        err = MEMKIND_ERROR_BADOPS;
+        goto exit;
+    }
+
+    for (i = 0; i < MEMKIND_MAX_KIND; ++i) {
+        if (memkind_registry_g.partition_map[i] == NULL) {
+            id_kind = i;
+            break;
+        } else if (strcmp(name, memkind_registry_g.partition_map[i]->name) == 0) {
+            log_err("Kind with the name %s already exists", name);
+            err = MEMKIND_ERROR_INVALID;
+            goto exit;
+        }
+    }
+    *kind = (struct memkind *)tbb_scalable_calloc(1, sizeof(struct memkind));
+    if (!*kind) {
+        err = MEMKIND_ERROR_MALLOC;
+        log_err("tbb_calloc() failed.");
+        goto exit;
+    }
+
+    err = ops->create(*kind, ops, name);
+    if (err) {
+        tbb_scalable_free(*kind);
+        goto exit;
+    }
+
+    memkind_registry_g.partition_map[id_kind] = *kind;
+    ++memkind_registry_g.num_kind;
+
+    (*kind)->init_once = PTHREAD_ONCE_INIT;
+    pthread_once(&(*kind)->init_once,
+                 nop); //this is done to avoid init_once for dynamic kinds
+exit:
+    if (pthread_mutex_unlock(&memkind_registry_g.lock) != 0)
+        assert(0 && "failed to release mutex");
+
+    return err;
+}
 
 static int memkind_create(struct memkind_ops *ops, const char *name,
                           struct memkind **kind)
@@ -747,17 +817,26 @@ MEMKIND_EXPORT int memkind_create_pmem(const char *dir, size_t max_size,
 
     snprintf(name, sizeof (name), "pmem%08x", fd);
 
-    err = memkind_create(&MEMKIND_PMEM_OPS, name, kind);
+    const char* env = getenv("MEMKIND_HEAP_MANAGER");
+
+    if(env && strcmp(env, "TBB") == 0) {
+        err = memkind_tbb_create(&MEMKIND_TBB_OPS, name, kind);
+    } else {
+        err = memkind_create(&MEMKIND_PMEM_OPS, name, kind);
+    }
+
     if (err) {
         goto exit;
     }
-
     struct memkind_pmem *priv = (*kind)->priv;
 
     priv->fd = fd;
     priv->offset = 0;
     priv->max_size = max_size;
+    if(env && strcmp(env, "TBB") == 0) {
 
+        heap_manager_init(*kind, true);
+    }
     return err;
 
 exit:

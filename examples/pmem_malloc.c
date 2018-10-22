@@ -118,9 +118,9 @@ int main(int argc, char *argv[])
     fprintf(stdout, "%s", pmem_str2);
     fprintf(stdout, "%s", pmem_str3);
 
-    memkind_free(pmem_kind, pmem_str1);
-    memkind_free(pmem_kind, pmem_str2);
-    memkind_free(pmem_kind, pmem_str3);
+    memkind_free(NULL, pmem_str1);
+    memkind_free(NULL, pmem_str2);
+    memkind_free(NULL, pmem_str3);
 
     err = memkind_destroy_kind(pmem_kind);
     if (err) {

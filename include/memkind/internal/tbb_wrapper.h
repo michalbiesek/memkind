@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Intel Corporation.
+ * Copyright (C) 2017 - 2018 Intel Corporation.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,10 +31,25 @@ extern "C" {
 #endif
 
 /* ops callbacks are replaced by TBB callbacks. */
-void tbb_initialize(struct memkind *kind);
+void tbb_initialize(struct memkind *kind, int dynamic_kind);
 
 /* ptr pointer must come from the valid TBB pool allocation */
 void tbb_pool_free(struct memkind *kind, void *ptr);
+
+void tbb_scalable_free(void *ptr);
+
+void* tbb_scalable_malloc(size_t size);
+
+void* tbb_scalable_calloc(size_t num,size_t size);
+
+extern struct memkind_ops MEMKIND_TBB_OPS;
+
+struct memkind_pmem_tbb {
+    int fd;
+    off_t offset;
+    size_t max_size;
+    pthread_mutex_t pmem_lock;
+};
 
 #ifdef __cplusplus
 }
