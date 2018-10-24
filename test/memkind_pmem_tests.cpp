@@ -131,6 +131,8 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemMallocSizeMax)
 
 TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemCalloc)
 {
+    fprintf(stderr,"test_TC_MEMKIND_PmemCalloc is started\n");
+
     const size_t size = 1 * KB;
     const size_t num = 1;
     char *default_str = nullptr;
@@ -142,7 +144,11 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemCalloc)
     sprintf(default_str, "memkind_calloc MEMKIND_PMEM\n");
     printf("%s", default_str);
 
+    fprintf(stderr,"Before free\n");
+
     memkind_free(pmem_kind, default_str);
+
+    fprintf(stderr,"After free\n");
 
     // allocate the buffer of the same size (likely at the same address)
     default_str = (char *)memkind_calloc(pmem_kind, num, size);
