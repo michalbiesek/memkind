@@ -242,6 +242,7 @@ struct arena_s {
 	 * Synchronization: extent_grow_mtx
 	 */
 	pszind_t		extent_grow_next;
+	pszind_t		retain_grow_limit;
 	malloc_mutex_t		extent_grow_mtx;
 
 	/*
