@@ -1257,7 +1257,7 @@ arena_destroy(tsd_t *tsd, arena_t *arena) {
 	 * Destroy the base allocator, which manages all metadata ever mapped by
 	 * this arena.
 	 */
-	base_delete(arena->base);
+	base_delete(tsd_tsdn(tsd), arena->base);
 }
 
 static extent_t *
@@ -2051,7 +2051,7 @@ arena_new(tsdn_t *tsdn, unsigned ind, extent_hooks_t *extent_hooks) {
 		 * is done enough that we should have tsd.
 		 */
 		assert(!tsdn_null(tsdn));
-		pre_reentrancy(tsdn_tsd(tsdn));
+		pre_reentrancy(tsdn_tsd(tsdn), arena);
 		if (hooks_arena_new_hook) {
 			hooks_arena_new_hook();
 		}
@@ -2061,7 +2061,7 @@ arena_new(tsdn_t *tsdn, unsigned ind, extent_hooks_t *extent_hooks) {
 	return arena;
 label_error:
 	if (ind != 0) {
-		base_delete(base);
+		base_delete(tsdn, base);
 	}
 	return NULL;
 }
@@ -2087,28 +2087,33 @@ arena_prefork1(tsdn_t *tsdn, arena_t *arena) {
 
 void
 arena_prefork2(tsdn_t *tsdn, arena_t *arena) {
+	malloc_mutex_prefork(tsdn, &arena->extent_grow_mtx);
+}
+
+void
+arena_prefork3(tsdn_t *tsdn, arena_t *arena) {
 	extents_prefork(tsdn, &arena->extents_dirty);
 	extents_prefork(tsdn, &arena->extents_muzzy);
 	extents_prefork(tsdn, &arena->extents_retained);
 }
 
 void
-arena_prefork3(tsdn_t *tsdn, arena_t *arena) {
+arena_prefork4(tsdn_t *tsdn, arena_t *arena) {
 	malloc_mutex_prefork(tsdn, &arena->extent_avail_mtx);
 }
 
 void
-arena_prefork4(tsdn_t *tsdn, arena_t *arena) {
+arena_prefork5(tsdn_t *tsdn, arena_t *arena) {
 	base_prefork(tsdn, arena->base);
 }
 
 void
-arena_prefork5(tsdn_t *tsdn, arena_t *arena) {
+arena_prefork6(tsdn_t *tsdn, arena_t *arena) {
 	malloc_mutex_prefork(tsdn, &arena->large_mtx);
 }
 
 void
-arena_prefork6(tsdn_t *tsdn, arena_t *arena) {
+arena_prefork7(tsdn_t *tsdn, arena_t *arena) {
 	for (unsigned i = 0; i < NBINS; i++) {
 		malloc_mutex_prefork(tsdn, &arena->bins[i].lock);
 	}
@@ -2127,6 +2132,7 @@ arena_postfork_parent(tsdn_t *tsdn, arena_t *arena) {
 	extents_postfork_parent(tsdn, &arena->extents_dirty);
 	extents_postfork_parent(tsdn, &arena->extents_muzzy);
 	extents_postfork_parent(tsdn, &arena->extents_retained);
+	malloc_mutex_postfork_parent(tsdn, &arena->extent_grow_mtx);
 	malloc_mutex_postfork_parent(tsdn, &arena->decay_dirty.mtx);
 	malloc_mutex_postfork_parent(tsdn, &arena->decay_muzzy.mtx);
 	if (config_stats) {
@@ -2164,6 +2170,7 @@ arena_postfork_child(tsdn_t *tsdn, arena_t *arena) {
 	extents_postfork_child(tsdn, &arena->extents_dirty);
 	extents_postfork_child(tsdn, &arena->extents_muzzy);
 	extents_postfork_child(tsdn, &arena->extents_retained);
+	malloc_mutex_postfork_child(tsdn, &arena->extent_grow_mtx);
 	malloc_mutex_postfork_child(tsdn, &arena->decay_dirty.mtx);
 	malloc_mutex_postfork_child(tsdn, &arena->decay_muzzy.mtx);
 	if (config_stats) {
