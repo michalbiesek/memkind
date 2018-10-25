@@ -246,6 +246,41 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemRealloc)
     memkind_free(pmem_kind, default_str);
 }
 
+TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemMallocFragmentation)
+{
+    const size_t size_array[] = {
+        10,
+        100,
+        200,
+        500,
+        1000,
+        2000,
+        3000,
+        1 * MB,
+        2 * MB,
+        3 * MB,
+        4 * MB
+    };
+    const size_t iteration = 1000;
+    struct memkind *pmem_temp = nullptr;
+    int err = memkind_create_pmem(PMEM_DIR, MEMKIND_PMEM_MIN_SIZE, &pmem_temp);
+    ASSERT_EQ(0, err);
+    ASSERT_TRUE(nullptr != pmem_temp);
+
+    for ( unsigned int j = 0; j < iteration; ++j) {
+        for (unsigned int i = 0 ; i < ARRAY_SIZE(size_array); ++i) {
+
+            void *alloc = memkind_malloc(pmem_temp, size_array[i]);
+            ASSERT_TRUE(nullptr != alloc);
+            memkind_free(pmem_temp, alloc);
+            alloc = nullptr;
+        }
+    }
+    err = memkind_destroy_kind(pmem_temp);
+    ASSERT_EQ(0, err);
+}
+
+
 TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemMallocUsableSize)
 {
     const struct {
