@@ -96,14 +96,15 @@ bool pmem_extent_dalloc(extent_hooks_t *extent_hooks,
                         bool committed,
                         unsigned arena_ind)
 {
-    // if madvise fail, it means that addr isn't mapped shared (doesn't come from pmem)
-    // and it should be unmapped to avoid space exhaustion when calling large number of
-    // operations like memkind_create_pmem and memkind_destroy_kind
-    if (madvise(addr, size, MADV_REMOVE) == -1) {
-        if (munmap(addr, size) == -1) {
-            log_err("munmap failed!");
-        }
-    }
+// !REVERT CHANGES in extent dalloc
+// if madvise fail, it means that addr isn't mapped shared (doesn't come from pmem)
+// and it should be unmapped to avoid space exhaustion when calling large number of
+// operations like memkind_create_pmem and memkind_destroy_kind
+//    if (madvise(addr, size, MADV_REMOVE) == -1) {
+//        if (munmap(addr, size) == -1) {
+//            log_err("munmap failed!");
+//        }
+//    }
     return true;
 }
 
