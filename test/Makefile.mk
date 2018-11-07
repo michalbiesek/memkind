@@ -231,7 +231,8 @@ check_PROGRAMS += test/hello_memkind \
                   # end
 if HAVE_CXX11
 check_PROGRAMS += test/memkind_allocated \
-                  test/pmem_cpp_allocator
+                  test/pmem_cpp_allocator \
+                  test/pmem_fragmentation
 endif
 
 
@@ -253,6 +254,7 @@ test_autohbw_candidates_LDADD = libmemkind.la \
 if HAVE_CXX11
 test_memkind_allocated_LDADD = libmemkind.la
 test_pmem_cpp_allocator_LDADD = libmemkind.la
+test_pmem_fragmentation_LDADD = libmemkind.la
 endif
 
 test_hello_memkind_SOURCES = examples/hello_memkind_example.c
@@ -274,6 +276,7 @@ noinst_LTLIBRARIES += test/libautohbw.la
 if HAVE_CXX11
 test_memkind_allocated_SOURCES = examples/memkind_allocated_example.cpp examples/memkind_allocated.hpp
 test_pmem_cpp_allocator_SOURCES = examples/pmem_cpp_allocator.cpp
+test_pmem_fragmentation_SOURCES = examples/pmem_fragmentation.cpp
 endif
 
 clean-local: test-clean
