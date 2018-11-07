@@ -5,6 +5,24 @@
 #include "jemalloc/internal/sz.h"
 #include "jemalloc/internal/witness.h"
 
+/*
+ * Translating the names of the 'i' functions:
+ *   Abbreviations used in the first part of the function name (before
+ *   alloc/dalloc) describe what that function accomplishes:
+ *     a: arena (query)
+ *     s: size (query, or sized deallocation)
+ *     e: extent (query)
+ *     p: aligned (allocates)
+ *     vs: size (query, without knowing that the pointer is into the heap)
+ *     r: rallocx implementation
+ *     x: xallocx implementation
+ *   Abbreviations used in the second part of the function name (after
+ *   alloc/dalloc) describe the arguments it takes
+ *     z: whether to return zeroed memory
+ *     t: accepts a tcache_t * parameter
+ *     m: accepts an arena_t * parameter
+ */
+
 JEMALLOC_ALWAYS_INLINE arena_t *
 iaalloc(tsdn_t *tsdn, const void *ptr) {
 	assert(ptr != NULL);
@@ -27,8 +45,10 @@ iallocztm(tsdn_t *tsdn, size_t size, szind_t ind, bool zero, tcache_t *tcache,
 	assert(size != 0);
 	assert(!is_internal || tcache == NULL);
 	assert(!is_internal || arena == NULL || arena_is_auto(arena));
-	witness_assert_depth_to_rank(tsdn_witness_tsdp_get(tsdn),
-	    WITNESS_RANK_CORE, 0);
+	if (!tsdn_null(tsdn) && tsd_reentrancy_level_get(tsdn_tsd(tsdn)) == 0) {
+		witness_assert_depth_to_rank(tsdn_witness_tsdp_get(tsdn),
+		    WITNESS_RANK_CORE, 0);
+	}
 
 	ret = arena_malloc(tsdn, arena, size, ind, zero, tcache, slow_path);
 	if (config_stats && is_internal && likely(ret != NULL)) {
@@ -91,7 +111,8 @@ idalloctm(tsdn_t *tsdn, void *ptr, tcache_t *tcache, alloc_ctx_t *alloc_ctx,
 	if (config_stats && is_internal) {
 		arena_internal_sub(iaalloc(tsdn, ptr), isalloc(tsdn, ptr));
 	}
-	if (!is_internal && tsd_reentrancy_level_get(tsdn_tsd(tsdn)) != 0) {
+	if (!is_internal && !tsdn_null(tsdn) &&
+	    tsd_reentrancy_level_get(tsdn_tsd(tsdn)) != 0) {
 		assert(tcache == NULL);
 	}
 	arena_dalloc(tsdn, ptr, tcache, alloc_ctx, slow_path);
@@ -192,34 +213,6 @@ ixalloc(tsdn_t *tsdn, void *ptr, size_t oldsize, size_t size, size_t extra,
 	}
 
 	return arena_ralloc_no_move(tsdn, ptr, oldsize, size, extra, zero);
-}
-
-JEMALLOC_ALWAYS_INLINE int
-iget_defrag_hint(tsdn_t *tsdn, void* ptr, int *bin_util, int *run_util) {
-	int defrag = 0;
-	rtree_ctx_t rtree_ctx_fallback;
-	rtree_ctx_t *rtree_ctx = tsdn_rtree_ctx(tsdn, &rtree_ctx_fallback);
-	szind_t szind;
-	bool is_slab;
-	rtree_szind_slab_read(tsdn, &extents_rtree, rtree_ctx, (uintptr_t)ptr, true, &szind, &is_slab);
-	if (likely(is_slab)) {
-		/* Small allocation. */
-		extent_t *slab = iealloc(tsdn, ptr);
-		arena_t *arena = extent_arena_get(slab);
-		szind_t binind = extent_szind_get(slab);
-		arena_bin_t *bin = &arena->bins[binind];
-		malloc_mutex_lock(tsdn, &bin->lock);
-		/* don't bother moving allocations from the slab currently used for new allocations */
-		if (slab != bin->slabcur) {
-			const arena_bin_info_t *bin_info = &arena_bin_info[binind];
-			size_t availregs = bin_info->nregs * bin->stats.curslabs;
-			*bin_util = ((long long)bin->stats.curregs<<16) / availregs;
-			*run_util = ((long long)(bin_info->nregs - extent_nfree_get(slab))<<16) / bin_info->nregs;
-			defrag = 1;
-		}
-		malloc_mutex_unlock(tsdn, &bin->lock);
-	}
-	return defrag;
 }
 
 #endif /* JEMALLOC_INTERNAL_INLINES_C_H */
