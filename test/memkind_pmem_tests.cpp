@@ -76,6 +76,17 @@ static void pmem_get_size(struct memkind *kind, size_t& total, size_t& free)
     free = priv->max_size - priv->offset; /* rough estimation */
 }
 
+/*
+ * Test will check if je_get_defrag_hint is available in jemalloc
+ * which is used by memkind
+ */
+TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemDefragFunction)
+{
+#ifndef JEMALLOC_FRAG_HINT
+#error Jemalloc is missing defrag_hint function
+#endif
+}
+
 TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemPriv)
 {
     size_t total_mem = 0;
