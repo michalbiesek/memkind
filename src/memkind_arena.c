@@ -366,6 +366,16 @@ MEMKIND_EXPORT int memkind_arena_create_map(struct memkind *kind,
         if(err) {
             goto exit;
         }
+
+        //setup retain limit
+        char cmd_2[64];
+        size_t grow_limit =  (1ull << 21ull);
+        snprintf(cmd_2, sizeof(cmd_2), "arena.%u.retain_grow_limit", arena_index);
+        err = jemk_mallctl(cmd_2, NULL, NULL,  (void *)&grow_limit, sizeof(ssize_t));
+        if(err) {
+            goto exit;
+        }
+
         arena_registry_g[arena_index] = kind;
     }
 
