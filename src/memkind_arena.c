@@ -555,6 +555,24 @@ MEMKIND_EXPORT void *memkind_arena_pmem_calloc(struct memkind *kind, size_t num,
     return result;
 }
 
+MEMKIND_EXPORT void memkind_arena_purge(struct memkind *kind)
+{
+    char cmd[128];
+    unsigned int i;
+    int err = 0;
+    if (kind->arena_map_len) {
+
+        for (i = 0; i < kind->arena_map_len; ++i) {
+            snprintf(cmd, 128, "arena.%u.purge", kind->arena_zero + i);
+            err = jemk_mallctl(cmd, NULL, NULL, NULL, 0);
+            if(err) {
+                log_fatal("\nmemkind_arena_purge failed");
+            }
+        }
+
+    }
+}
+
 MEMKIND_EXPORT void *memkind_arena_calloc(struct memkind *kind, size_t num,
                                           size_t size)
 {

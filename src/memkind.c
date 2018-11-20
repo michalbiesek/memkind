@@ -551,6 +551,13 @@ MEMKIND_EXPORT int memkind_check_available(struct memkind *kind)
     return err;
 }
 
+MEMKIND_EXPORT void memkind_purge(struct memkind *kind)
+{
+    if (MEMKIND_LIKELY(kind->ops->purge)) {
+        kind->ops->purge(kind);
+    }
+}
+
 MEMKIND_EXPORT size_t memkind_malloc_usable_size(struct memkind *kind,
                                                  void *ptr)
 {

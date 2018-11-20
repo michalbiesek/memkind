@@ -46,7 +46,8 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_PMEM_OPS = {
     .get_mmap_flags = memkind_pmem_get_mmap_flags,
     .get_arena = memkind_thread_get_arena,
     .finalize = memkind_pmem_destroy,
-    .malloc_usable_size = memkind_default_malloc_usable_size
+    .malloc_usable_size = memkind_default_malloc_usable_size,
+    .purge = memkind_arena_purge
 };
 
 void *pmem_extent_alloc(extent_hooks_t *extent_hooks,
@@ -96,16 +97,6 @@ bool pmem_extent_dalloc(extent_hooks_t *extent_hooks,
                         bool committed,
                         unsigned arena_ind)
 {
-    // if madvise fail, it means that addr isn't mapped shared (doesn't come from pmem)
-    // and it should be unmapped to avoid space exhaustion when calling large number of
-    // operations like memkind_create_pmem and memkind_destroy_kind
-    // EOPNOTSUPP is returned in case of filesystem doesn't support FALLOC_FL_PUNCH_HOLE
-    errno = 0;
-    if (madvise(addr, size, MADV_REMOVE) != 0 && errno != EOPNOTSUPP) {
-        if (munmap(addr, size) == -1) {
-            log_err("munmap failed!");
-        }
-    }
     return true;
 }
 
@@ -138,7 +129,17 @@ bool pmem_extent_purge(extent_hooks_t *extent_hooks,
                        size_t length,
                        unsigned arena_ind)
 {
-    /* do nothing - report failure (opt-out) */
+    // if madvise fail, it means that addr isn't mapped shared (doesn't come from pmem)
+    // and it should be unmapped to avoid space exhaustion when calling large number of
+    // operations like memkind_create_pmem and memkind_destroy_kind
+    // EOPNOTSUPP is returned in case of filesystem doesn't support FALLOC_FL_PUNCH_HOLE
+    errno = 0;
+    if (madvise(addr, size, MADV_REMOVE) != 0 && errno != EOPNOTSUPP) {
+        if (munmap(addr, size) == -1) {
+            log_err("munmap failed!");
+            return false;
+        }
+    }
     return true;
 }
 

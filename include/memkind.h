@@ -275,6 +275,13 @@ void *memkind_malloc(memkind_t kind, size_t size);
 size_t memkind_malloc_usable_size(memkind_t kind, void *ptr);
 
 ///
+/// \brief Purge specifed kind
+/// \note EXPERIMETNAL API
+/// \param kind specified memory kind
+///
+void memkind_purge(memkind_t kind);
+
+///
 /// \brief Allocates memory of the specified kind for an array of num elements
 ///        of size bytes each and initializes all bytes in the allocated storage to zero
 /// \note STANDARD API
