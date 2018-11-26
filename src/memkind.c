@@ -551,6 +551,17 @@ MEMKIND_EXPORT int memkind_check_available(struct memkind *kind)
     return err;
 }
 
+MEMKIND_EXPORT int memkind_update_memory_usage_policy(memkind_t kind, memkind_mem_usage_policy policy)
+{
+    int err = 0;
+
+    if (MEMKIND_LIKELY(kind->ops->update_memory_policy)) {
+
+        err = kind->ops->update_memory_policy(kind, policy);
+    }
+    return err;
+}
+
 MEMKIND_EXPORT size_t memkind_malloc_usable_size(struct memkind *kind,
                                                  void *ptr)
 {
