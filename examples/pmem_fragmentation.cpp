@@ -32,6 +32,12 @@ int main(int argc, char * argv[])
                 printf("%s\n", "Unable to create pmem partition\n");
                 return -1;
         }
+        err =  memkind_update_memory_usage_policy(pmem_kind, MEMKIND_MEM_USAGE_POLICY_DIRTY_DEFAULT_MUZZY_TURN_OFF);
+        if (err)
+        {
+                printf("%s\n", "Unable to set pmem memory usage policy\n");
+                return -1;
+        }
 
         char *pmem_str = NULL;
 

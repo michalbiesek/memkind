@@ -125,6 +125,30 @@ static void arena_config_init()
 }
 
 #define MALLOCX_ARENA_MAX 0xffe // copy-pasted from jemalloc/internal/jemalloc_internal.h
+
+struct frag_opt
+{
+    int dirty_decay;
+    int muzzy_decay;
+};
+
+static const struct frag_opt mem_usage[] =
+{
+  {10000,   10000 },    //MEMKIND_MEM_USAGE_POLICY_DEFAULT
+  {0,       0     },    //MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE
+  {-1,      -1    },    //MEMKIND_MEM_USAGE_POLICY_DISABLE_REUSE_MEMORY
+  {5000,    5000  },    //MEMKIND_MEM_USAGE_POLICY_DEFAULT_LESS_VARIANT
+  {20000,   20000 },    //MEMKIND_MEM_USAGE_POLICY_DEFAULT_MORE_VARIANT
+  {10000,   0     },    //MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE_ONLY_MUZZY
+  {0,       10000 },    //MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE_ONLY_DIRTY
+  {100,     10000 },    //MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE_ONLY_DIRTY_100xLESS_TIME
+  {1000000, 10000 },    //MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE_ONLY_DIRTY_100xMORE_TIME
+  {10000,   -1    },    //MEMKIND_MEM_USAGE_POLICY_DIRTY_DEFAULT_MUZZY_TURN_OFF
+  {0,       -1    }     //MEMKIND_MEM_USAGE_POLICY_DIRYT_CONSERVATIVE_MUZZY_TURN_OFF
+
+};
+
+
 static struct memkind *arena_registry_g[MALLOCX_ARENA_MAX];
 static pthread_mutex_t arena_registry_write_lock;
 
@@ -536,6 +560,42 @@ MEMKIND_EXPORT void *memkind_arena_realloc(struct memkind *kind, void *ptr,
         }
     }
     return ptr;
+}
+
+MEMKIND_EXPORT int memkind_arena_update_memory_usage_policy(struct memkind *kind, memkind_mem_usage_policy policy)
+{
+    int err = MEMKIND_SUCCESS;
+    unsigned int i;
+    ssize_t dirty_decay_val = 0;
+    ssize_t muzzy_decay_val = 0;
+
+    if ( policy < MEMKIND_MEM_USAGE_POLICY_DEFAULT || policy >= MEMKIND_MEM_USAGE_POLICY_MAX_VALUE )
+    {
+      log_err("Unrecognized memory policy %d", policy);
+      return MEMKIND_ERROR_INVALID;
+    }
+    dirty_decay_val = mem_usage[policy].dirty_decay;
+    muzzy_decay_val = mem_usage[policy].muzzy_decay;
+
+    for (i = 0; i < kind->arena_map_len; ++i) {
+        char cmd[64];
+
+        snprintf(cmd, sizeof(cmd), "arena.%u.dirty_decay_ms", kind->arena_zero + i);
+        err = jemk_mallctl(cmd, NULL, NULL, (void *)&dirty_decay_val, sizeof(ssize_t));
+        if ( err ) {
+            log_err("Incorrect dirty_decay_ms value %zu", dirty_decay_val);
+            return MEMKIND_ERROR_INVALID;
+        }
+
+        snprintf(cmd, sizeof(cmd), "arena.%u.muzzy_decay_ms", kind->arena_zero + i);
+        err = jemk_mallctl(cmd, NULL, NULL, (void *)&muzzy_decay_val, sizeof(ssize_t));
+        if ( err ) {
+            log_err("Incorrect muzzy_decay_ms value %zu", muzzy_decay_val);
+            return MEMKIND_ERROR_INVALID;
+        }
+    }
+
+    return err;
 }
 
 // TODO: function is workaround for PR#1302 in jemalloc upstream
