@@ -551,6 +551,17 @@ MEMKIND_EXPORT int memkind_check_available(struct memkind *kind)
     return err;
 }
 
+MEMKIND_EXPORT int memkind_update_arena_param(memkind_t kind, memkind_arena_param param_type,
+                               int param_val)
+{
+    int err = 0;
+
+    if (MEMKIND_LIKELY(kind->ops->update_arena_param)) {
+        err = kind->ops->update_arena_param(kind, param_type, param_val);
+    }
+    return err;
+}
+
 MEMKIND_EXPORT size_t memkind_malloc_usable_size(struct memkind *kind,
                                                  void *ptr)
 {

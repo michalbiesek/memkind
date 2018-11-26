@@ -101,6 +101,8 @@ struct memkind_ops {
     void (* init_once)(void);
     int (* finalize)(struct memkind *kind);
     size_t (* malloc_usable_size)(struct memkind *kind, void *addr);
+    int (* update_arena_param)(struct memkind *kind, memkind_arena_param param_type,
+                               int param_val);
 };
 
 struct memkind {

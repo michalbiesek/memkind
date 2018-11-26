@@ -1488,6 +1488,39 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemFreeUsingNullptrInsteadOfKind)
     }
 }
 
+TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemCheckUpdateParam)
+{
+    struct memkind* test_kind = nullptr;
+
+    int err = memkind_create_pmem(PMEM_DIR, PMEM_PART_SIZE, &test_kind);
+    ASSERT_EQ(err, 0);
+
+    err =  memkind_update_arena_param(test_kind,MEMKIND_ARENA_PARAM_DECAY_MUZZY, 0);
+    ASSERT_EQ(err, 0);
+
+    err =  memkind_update_arena_param(test_kind,MEMKIND_ARENA_PARAM_DECAY_DIRTY, 0);
+    ASSERT_EQ(err, 0);
+
+    const size_t size = MEMKIND_PMEM_CHUNK_SIZE;
+    const size_t num = 1;
+    const size_t iteration = 100;
+    char *default_str = nullptr;
+
+    for (size_t i = 0; i < iteration; ++i) {
+        default_str = (char *)memkind_calloc(test_kind, num, size);
+        ASSERT_TRUE(nullptr != default_str);
+        ASSERT_EQ(*default_str, 0);
+        ASSERT_EQ(memcmp(default_str, default_str + 1, size - 1), 0);
+
+        sprintf(default_str, "memkind_calloc MEMKIND_PMEM\n");
+
+        memkind_free(test_kind, default_str);
+    }
+
+    err = memkind_destroy_kind(test_kind);
+    ASSERT_EQ(0, err);
+}
+
 /*
  * This is a test which confirms that extent deallocation function ( pmem_extent_dalloc )
  * was called correctly for pmem allocation.

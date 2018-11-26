@@ -316,6 +316,25 @@ void *memkind_realloc(memkind_t kind, void *ptr, size_t size);
 ///
 void memkind_free(memkind_t kind, void *ptr);
 
+/// \brief Memkind Arena Param
+/// \warning EXPERIMENTAL API
+typedef enum memkind_arena_param {
+    MEMKIND_ARENA_PARAM_DECAY_MUZZY = 0,        /**<  Arena Parameter muzzy decay */
+    MEMKIND_ARENA_PARAM_DECAY_DIRTY = 1,        /**<  Arena Parameter dirty decay */
+    MEMKIND_ARENA_PARAM_MAX
+} memkind_arena_param;
+
+///
+/// \brief Update specified arena parameter of kind
+/// \note EXPERIMENTAL API
+/// \param kind specified memory kind
+/// \param param_type type of arena parameter
+/// \param param_val specified value of arena parameter
+/// \return Memkind operation status, MEMKIND_SUCCESS on success, other values on failure
+///
+int memkind_update_arena_param(memkind_t kind, memkind_arena_param param_type,
+                               int param_val);
+
 #ifdef __cplusplus
 }
 #endif

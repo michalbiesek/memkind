@@ -49,6 +49,7 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_DEFAULT_OPS = {
     .free = memkind_default_free,
     .init_once = memkind_default_init_once,
     .malloc_usable_size = memkind_default_malloc_usable_size,
+    .update_arena_param = memkind_default_update_arena_param,
     .finalize = memkind_default_destroy
 };
 
@@ -65,6 +66,13 @@ MEMKIND_EXPORT int memkind_default_create(struct memkind *kind,
         strcpy(kind->name, name);
     }
     return err;
+}
+
+MEMKIND_EXPORT int memkind_default_update_arena_param(struct memkind *kind,
+                                                      memkind_arena_param param_type,
+                                                      int param_val)
+{
+    return 0;
 }
 
 MEMKIND_EXPORT int memkind_default_destroy(struct memkind *kind)

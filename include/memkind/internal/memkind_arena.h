@@ -62,6 +62,9 @@ int memkind_thread_get_arena(struct memkind *kind, unsigned int *arena,
 int memkind_arena_finalize(struct memkind *kind);
 void memkind_arena_init(struct memkind *kind);
 void memkind_arena_free(struct memkind *kind, void* ptr);
+int memkind_arena_update_param(struct memkind *kind,
+                               memkind_arena_param param_type,
+                               int param_val);
 
 #ifdef __cplusplus
 }

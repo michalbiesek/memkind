@@ -538,6 +538,41 @@ MEMKIND_EXPORT void *memkind_arena_realloc(struct memkind *kind, void *ptr,
     return ptr;
 }
 
+MEMKIND_EXPORT int memkind_arena_update_param(struct memkind *kind,
+                                              memkind_arena_param param_type,
+                                              int param_val)
+{
+    int err = MEMKIND_SUCCESS;
+    unsigned int i;
+    const char * command = NULL;
+
+    switch ( param_type ) {
+        case MEMKIND_ARENA_PARAM_DECAY_MUZZY:
+            command ="arena.%u.muzzy_decay_ms";
+            break;
+        case MEMKIND_ARENA_PARAM_DECAY_DIRTY:
+            command ="arena.%u.dirty_decay_ms";
+            break;
+        default:
+            log_err("Unrecognized arena parameter type =%d", param_type);
+            return MEMKIND_ERROR_INVALID;
+    }
+
+    ssize_t arena_param = (ssize_t) param_val;
+
+    for (i = 0; i < kind->arena_map_len; ++i) {
+        char cmd[64];
+        snprintf(cmd, sizeof(cmd), command, kind->arena_zero + i);
+        err = jemk_mallctl(cmd, NULL, NULL,  (void *)&arena_param, sizeof(ssize_t));
+        if ( err ) {
+            log_err("Incorrect arena parameter value =%d", param_val);
+            return MEMKIND_ERROR_RUNTIME;
+        }
+    }
+
+    return err;
+}
+
 // TODO: function is workaround for PR#1302 in jemalloc upstream
 // and it should be removed/replaced with memkind_arena_calloc()
 // after PR will be merged
