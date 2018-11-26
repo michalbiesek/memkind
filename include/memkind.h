@@ -316,6 +316,30 @@ void *memkind_realloc(memkind_t kind, void *ptr, size_t size);
 ///
 void memkind_free(memkind_t kind, void *ptr);
 
+/// \brief Memkind memory usage policy
+/// \warning EXPERIMENTAL API
+typedef enum memkind_mem_usage_policy {
+    MEMKIND_MEM_USAGE_POLICY_DEFAULT                                 = 0,        /**<  Default memory usage */
+    MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE                            = 1,        /**<  Minimize memory usage at all costs */
+    MEMKIND_MEM_USAGE_POLICY_DISABLE_REUSE_MEMORY                    = 2,        /**<  Prioritize CPU utilization at all costs(don't return memory at all)  */
+    MEMKIND_MEM_USAGE_POLICY_DEFAULT_LESS_VARIANT                    = 3,        /**<  Less memory usage than default variant - worse performance */
+    MEMKIND_MEM_USAGE_POLICY_DEFAULT_MORE_VARIANT                    = 4,        /**<  More memory usage than default variant - beter performance */
+    MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE_ONLY_MUZZY                 = 5,        /**<  Minimize memory usage at all costs only muzzy param */
+    MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE_ONLY_DIRTY                 = 6,        /**<  Minimize memory usage at all costs only dirty param */
+    MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE_ONLY_DIRTY_100xLESS_TIME   = 7,        /**<  Less time call oftent extent- better fragmentation ? */
+    MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE_ONLY_DIRTY_100xMORE_TIME   = 8,        /**<  More time call oftent extent- worse fragmentation ? */
+    MEMKIND_MEM_USAGE_POLICY_MAX_VALUE
+} memkind_mem_usage_policy;
+
+///
+/// \brief Update kind memory usage policy
+/// \note EXPERIMENTALI API
+/// \param kind specified memory kind
+/// \param memkind_mem_usage_policy memory usage policy
+/// \return Memkind operation status, MEMKIND_SUCCESS on success, other values on failure
+///
+int memkind_update_memory_usage_policy(memkind_t kind, memkind_mem_usage_policy policy);
+
 #ifdef __cplusplus
 }
 #endif
