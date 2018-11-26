@@ -100,6 +100,10 @@ MEMKIND_EXPORT int memkind_set_arena_map_len(struct memkind *kind)
         }
 
         kind->arena_map_len = round_pow2_up(kind->arena_map_len);
+
+        if ( kind->arena_map_len == 1) {
+            kind->ops->get_arena = memkind_bijective_get_arena;
+        }
     }
 
     kind->arena_map_mask = kind->arena_map_len - 1;
