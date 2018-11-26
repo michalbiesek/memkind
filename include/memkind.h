@@ -315,6 +315,34 @@ void *memkind_realloc(memkind_t kind, void *ptr, size_t size);
 ///
 void memkind_free(memkind_t kind, void *ptr);
 
+/// \brief Memkind memory usage policy
+/// \warning EXPERIMENTAL API
+typedef enum memkind_mem_usage_policy {
+    MEMKIND_MEM_USAGE_POLICY_DEFAULT                                 = 0,        /**<  Default memory usage dirty 10000 muzzy 10000 */
+    MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE                            = 1,        /**<  Conservattive dirty 0 muzzy 0 */
+    MEMKIND_MEM_USAGE_POLICY_DISABLE_REUSE_MEMORY                    = 2,        /**<  dirty -1 muzzy -1 */
+    MEMKIND_MEM_USAGE_POLICY_DEFAULT_LESS_VARIANT                    = 3,        /**<  Less memory usage than default variant - worse performance */
+    MEMKIND_MEM_USAGE_POLICY_DEFAULT_MORE_VARIANT                    = 4,        /**<  More memory usage than default variant - beter performance */
+    MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE_ONLY_MUZZY                 = 5,        /**<  Conservattive dirty 10000 muzzy 0 */
+    MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE_ONLY_DIRTY                 = 6,        /**<  Conservattive dirty 0 muzzy 10000 */
+    MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE_ONLY_DIRTY_100xLESS_TIME   = 7,        /**<  dirty 100 muzzy 10000 */
+    MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE_ONLY_DIRTY_100xMORE_TIME   = 8,        /**<  dirty 1000000 muzzy 10000 */
+    MEMKIND_MEM_USAGE_POLICY_DIRTY_DEFAULT_MUZZY_TURN_OFF            = 9,        /**<  dirty 10000 muzzy -1 */
+    MEMKIND_MEM_USAGE_POLICY_DIRYT_CONSERVATIVE_MUZZY_TURN_OFF       = 10,       /**<  dirty 0 muzzy -1 */
+    MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE_ONLY_DIRTY_10xLESS_TIME    = 11,       /**<  dirty 1000 muzzy 10000 */
+    MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE_ONLY_DIRTY_10xMORE_TIME    = 12,       /**<  dirty 100000 muzzy 10000 */
+    MEMKIND_MEM_USAGE_POLICY_MAX_VALUE
+} memkind_mem_usage_policy;
+
+///
+/// \brief Update kind memory usage policy
+/// \note EXPERIMENTALI API
+/// \param kind specified memory kind
+/// \param memkind_mem_usage_policy memory usage policy
+/// \return Memkind operation status, MEMKIND_SUCCESS on success, other values on failure
+///
+int memkind_update_memory_usage_policy(memkind_t kind, memkind_mem_usage_policy policy);
+
 #ifdef __cplusplus
 }
 #endif

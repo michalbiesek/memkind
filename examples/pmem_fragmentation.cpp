@@ -26,10 +26,16 @@ int main(int argc, char * argv[])
         struct memkind *pmem_kind;
         int err = 0;
 
-        err = memkind_create_pmem("/mnt/pmem1", PMEM_MAX_SIZE, &pmem_kind);
+        err = memkind_create_pmem("/mnt/pmem0", PMEM_MAX_SIZE, &pmem_kind);
         if (err)
         {
                 printf("%s\n", "Unable to create pmem partition\n");
+                return -1;
+        }
+        err =  memkind_update_memory_usage_policy(pmem_kind, MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE_ONLY_DIRTY_10xMORE_TIME);
+        if (err)
+        {
+                printf("%s\n", "Unable to set pmem memory usage policy\n");
                 return -1;
         }
 
