@@ -47,6 +47,7 @@ This is EXPERIMENTAL API. The functionality and the header file itself can be ch
 .BI "int memkind_arena_finalize(struct memkind " "*kind" );
 .BI "void memkind_arena_init(struct memkind " "*kind" );
 .BI "void memkind_arena_free(struct memkind " "*kind" ", void " "*ptr" );
+.BI "int memkind_arena_pmem_update_memory_usage_policy(struct memkind " "*kind" ", memkind_mem_usage_policy " "policy" );
 .br
 .SH DESCRIPTION
 This header file is a collection of functions can be used to populate
@@ -186,6 +187,10 @@ function.
 .PP
 .BR memkind_arena_init ()
 creates arena map with proper hooks per specified kind.
+.PP
+.BR memkind_arena_pmem_update_memory_usage_policy ()
+is an implementation of the memkind "update_memory_usage_policy" operation for file-backed kinds that
+use jemalloc. This function change time, which determine how fast jemalloc deallocates file space.
 .SH "COPYRIGHT"
 Copyright (C) 2014 - 2019 Intel Corporation. All rights reserved.
 .SH "SEE ALSO"

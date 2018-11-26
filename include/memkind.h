@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 - 2018 Intel Corporation.
+ * Copyright (C) 2014 - 2019 Intel Corporation.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -314,6 +314,23 @@ void *memkind_realloc(memkind_t kind, void *ptr, size_t size);
 /// \param ptr pointer to the allocated memory
 ///
 void memkind_free(memkind_t kind, void *ptr);
+
+/// \brief Memkind memory usage policy
+/// \warning EXPERIMENTAL API
+typedef enum memkind_mem_usage_policy {
+    MEMKIND_MEM_USAGE_POLICY_DEFAULT      = 0,        /**<  Default  memory usage  */
+    MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE = 1,        /**<  Minimize memory usage at all costs, */
+    MEMKIND_MEM_USAGE_POLICY_MAX_VALUE
+} memkind_mem_usage_policy;
+
+/// \brief Update kind memory usage policy
+/// \note STANDARD API
+/// \param kind specified memory kind
+/// \param memkind_mem_usage_policy memory usage policy
+/// \return Memkind operation status, MEMKIND_SUCCESS on success, other values on failure
+///
+int memkind_update_memory_usage_policy(memkind_t kind,
+                                       memkind_mem_usage_policy policy);
 
 #ifdef __cplusplus
 }

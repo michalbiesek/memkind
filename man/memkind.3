@@ -71,6 +71,8 @@ This header expose STANDARD and EXPERIMENTAL API. API Standards are described be
 .BI "int memkind_destroy_kind(memkind_t " "kind" );
 .br
 .BI "int memkind_check_available(memkind_t " "kind" );
+.br
+.BI "int memkind_update_memory_usage_policy(memkind_t " "kind" ", memkind_mem_usage_policy " "policy" );
 .sp
 .B "DECORATORS:"
 .br
@@ -323,6 +325,20 @@ passed in is the raw size of the memory pool and
 .B jemalloc
 will use some of that space for its own metadata.
 Returns zero if the pmem memkind is created successfully or an error code from the
+.B ERRORS
+section if not.
+.PP
+.BR memkind_update_memory_usage_policy ()
+function tune up memory utilization.
+The user should set the value based on the characteristics
+of application that is using the library (e.g. prioritize memory usage, CPU utilization).
+The
+.IR policy
+(see
+.B MEMORY USAGE POLICY
+section) determine memory usage policy on specified
+.IR "kind" .
+Returns zero if the memory usage policy was updated successfully or an error code from the
 .B ERRORS
 section if not.
 .PP
@@ -602,6 +618,14 @@ The available types of memory flags:
 .TP
 .B MEMKIND_MASK_PAGE_SIZE_2MB
 Allocation backed by 2MB page size.
+.SH "MEMORY USAGE POLICY"
+The available types of memory usage policy:
+.TP
+.B MEMKIND_MEM_USAGE_POLICY_DEFAULT
+Default memory usage policy
+.TP
+.B MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE
+Conservative memory usage policy - prioritize memory usage at cost of performance
 .SH "ERRORS"
 .TP
 .BR memkind_posix_memalign ()
