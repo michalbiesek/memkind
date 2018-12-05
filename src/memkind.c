@@ -323,6 +323,28 @@ static void memkind_destroy_dynamic_kind_from_register(unsigned int i,
     }
 }
 
+MEMKIND_EXPORT size_t memkind_tbb_scalable_usable_size( void *ptr)
+{
+    return tbb_scalable_usable_size(ptr);
+
+}
+
+MEMKIND_EXPORT void* memkind_tbb_calloc(size_t num,size_t size)
+{
+    return tbb_scalable_calloc( num, size);
+}
+
+
+MEMKIND_EXPORT void* memkind_tbb_malloc(size_t size)
+{
+    return tbb_scalable_malloc(size);
+}
+
+MEMKIND_EXPORT void memkind_tbb_free(void *ptr)
+{
+    tbb_scalable_free(ptr);
+}
+
 /* Kind destruction. */
 MEMKIND_EXPORT int memkind_destroy_kind(memkind_t kind)
 {

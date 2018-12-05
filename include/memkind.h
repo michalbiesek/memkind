@@ -316,6 +316,14 @@ void *memkind_realloc(memkind_t kind, void *ptr, size_t size);
 ///
 void memkind_free(memkind_t kind, void *ptr);
 
+size_t memkind_tbb_scalable_usable_size( void *ptr);
+
+void* memkind_tbb_calloc(size_t num,size_t size);
+
+void* memkind_tbb_malloc(size_t size);
+
+void memkind_tbb_free(void *ptr);
+
 #ifdef __cplusplus
 }
 #endif

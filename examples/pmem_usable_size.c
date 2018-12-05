@@ -40,10 +40,10 @@ static char* PMEM_DIR = "/tmp/";
 
 int main(int argc, char *argv[])
 {
-    struct memkind *pmem_kind_unlimited = NULL;
-    int err = 0;
+//    struct memkind *pmem_kind_unlimited = NULL;
+//    int err = 0;
     struct stat st;
-
+    size_t temp_size = 0;
     if (argc > 2) {
         fprintf(stderr, "Usage: %s [pmem_kind_dir_path]", argv[0]);
         return 1;
@@ -62,108 +62,133 @@ int main(int argc, char *argv[])
             PMEM_DIR);
 
     /* Create PMEM partition with unlimited size */
-    err = memkind_create_pmem(PMEM_DIR, 0, &pmem_kind_unlimited);
-    if (err) {
-        perror("memkind_create_pmem()");
-        fprintf(stderr, "Unable to create pmem partition err=%d errno=%d\n", err,
-                errno);
-        return errno ? -errno : 1;
-    }
+//    err = memkind_create_pmem(PMEM_DIR, 0, &pmem_kind_unlimited);
+//    if (err) {
+//        perror("memkind_create_pmem()");
+//        fprintf(stderr, "Unable to create pmem partition err=%d errno=%d\n", err,
+//                errno);
+//        return errno ? -errno : 1;
+//    }
 
     char *pmem_str10 = NULL;
     char *pmem_str11 = NULL;
     char *pmem_str12 = NULL;
 
     /* 32 bytes allocation */
-    pmem_str10 = (char *)memkind_malloc(pmem_kind_unlimited, 32);
+    pmem_str10 = (char *)memkind_malloc(MEMKIND_DEFAULT, 32);
     if (pmem_str10 == NULL) {
         perror("memkind_malloc()");
         fprintf(stderr, "Unable to allocate pmem string (pmem_str10)\n");
         return errno ? -errno : 1;
     }
 
+    char *scalable_test = NULL;
+    scalable_test = memkind_tbb_malloc(1000);
+    (void)scalable_test;
+    temp_size =  memkind_tbb_scalable_usable_size(scalable_test);
+
+    fprintf(stdout, "\n Usable size of scalable_test is %zu and should be 100\n", temp_size);
+
+
     /* Check real usable size for this allocation */
-    if (memkind_malloc_usable_size(pmem_kind_unlimited, pmem_str10) != 32) {
-        perror("memkind_default_malloc_usable_size()");
-        fprintf(stderr, "Wrong usable size\n");
-        return 1;
-    }
+    temp_size =  memkind_malloc_usable_size(MEMKIND_DEFAULT, pmem_str10);
+
+    fprintf(stdout, "\n Usable size of pmem_str10 is %zu and should be 32\n", temp_size);
+//    if (temp_size != 32) {
+//        perror("memkind_default_malloc_usable_size()");
+//        fprintf(stderr, "Wrong usable size\n");
+//        return 1;
+//    }
 
     /* 31 bytes allocation */
-    pmem_str11 = (char *)memkind_malloc(pmem_kind_unlimited, 31);
+    pmem_str11 = (char *)memkind_malloc(MEMKIND_DEFAULT, 31);
     if (pmem_str11 == NULL) {
         perror("memkind_malloc()");
         fprintf(stderr, "Unable to allocate pmem string (pmem_str11)\n");
         return errno ? -errno : 1;
     }
 
+    temp_size =  memkind_malloc_usable_size(MEMKIND_DEFAULT, pmem_str11);
+
     /* Check real usable size for this allocation, its 32 again */
-    if (memkind_malloc_usable_size(pmem_kind_unlimited, pmem_str11) != 32) {
-        perror("memkind_default_malloc_usable_size()");
-        fprintf(stderr, "Wrong usable size\n");
-        return 1;
-    }
+    fprintf(stdout, "\n Usable size of pmem_str11 is %zu and should be 32\n", temp_size);
+
+//    if (temp_size != 32) {
+//        perror("memkind_default_malloc_usable_size()");
+//        fprintf(stderr, "Wrong usable size\n");
+//        return 1;
+//    }
 
     /* 33 bytes allocation */
-    pmem_str12 = (char *)memkind_malloc(pmem_kind_unlimited, 33);
+    pmem_str12 = (char *)memkind_malloc(MEMKIND_DEFAULT, 33);
     if (pmem_str11 == NULL) {
         perror("memkind_malloc()");
         fprintf(stderr, "Unable to allocate pmem string (pmem_str12)\n");
         return errno ? -errno : 1;
     }
 
-    /* Check real usable size for this allocation, its 48 now */
-    if (memkind_malloc_usable_size(pmem_kind_unlimited, pmem_str12) != 48) {
-        perror("memkind_default_malloc_usable_size()");
-        fprintf(stderr, "Wrong usable size\n");
-        return 1;
-    }
+    temp_size =  memkind_malloc_usable_size(MEMKIND_DEFAULT, pmem_str12);
 
-    memkind_free(pmem_kind_unlimited, pmem_str10);
-    memkind_free(pmem_kind_unlimited, pmem_str11);
-    memkind_free(pmem_kind_unlimited, pmem_str12);
+    fprintf(stdout, "\n Usable size of pmem_str12 is %zu and should be 48\n", temp_size);
+
+//    /* Check real usable size for this allocation, its 48 now */
+//    if (temp_size != 48) {
+//        perror("memkind_default_malloc_usable_size()");
+//        fprintf(stderr, "Wrong usable size\n");
+//        return 1;
+//    }
+
+    memkind_free(MEMKIND_DEFAULT, pmem_str10);
+    memkind_free(MEMKIND_DEFAULT, pmem_str11);
+    memkind_free(MEMKIND_DEFAULT, pmem_str12);
 
     /* 5MB allocation */
-    pmem_str10 = (char *)memkind_malloc(pmem_kind_unlimited, 5 * 1024 * 1024);
+    pmem_str10 = (char *)memkind_malloc(MEMKIND_DEFAULT, 5 * 1024 * 1024);
     if (pmem_str10 == NULL) {
         perror("memkind_malloc()");
         fprintf(stderr, "Unable to allocate pmem string (pmem_str10)\n");
         return errno ? -errno : 1;
     }
 
+    temp_size =  memkind_malloc_usable_size(MEMKIND_DEFAULT, pmem_str10);
+
+    fprintf(stdout, "\n BIG SIZE Usable size of pmem_str10 is %zu and should be 5242880\n", temp_size);
+
     /* Check real usable size for this allocation */
-    if (memkind_malloc_usable_size(pmem_kind_unlimited,
-                                   pmem_str10) !=  5 * 1024 * 1024) {
-        perror("memkind_default_malloc_usable_size()");
-        fprintf(stderr, "Wrong usable size\n");
-        return 1;
-    }
+//    if (temp_size !=  5 * 1024 * 1024) {
+//        perror("memkind_default_malloc_usable_size()");
+//        fprintf(stderr, "Wrong usable size\n");
+//        return 1;
+//    }
 
     /* 5MB + 1B allocation */
-    pmem_str11 = (char *)memkind_malloc(pmem_kind_unlimited,  5 * 1024 * 1024 + 1);
+    pmem_str11 = (char *)memkind_malloc(MEMKIND_DEFAULT,  5 * 1024 * 1024 + 1);
     if (pmem_str11 == NULL) {
         perror("memkind_malloc()");
         fprintf(stderr, "Unable to allocate pmem string (pmem_str11)\n");
         return errno ? -errno : 1;
     }
 
-    /* Check real usable size for this allocation, its 6MB now */
-    if (memkind_malloc_usable_size(pmem_kind_unlimited,
-                                   pmem_str11) !=  6 * 1024 * 1024) {
-        perror("memkind_default_malloc_usable_size()");
-        fprintf(stderr, "Wrong usable size\n");
-        return 1;
-    }
+    temp_size =  memkind_malloc_usable_size(MEMKIND_DEFAULT, pmem_str11);
 
-    memkind_free(pmem_kind_unlimited, pmem_str10);
-    memkind_free(pmem_kind_unlimited, pmem_str11);
+    fprintf(stdout, "\n BIG SIZE Usable size of pmem_str11 is %zu and should be 6291456\n", temp_size);
 
-    err = memkind_destroy_kind(pmem_kind_unlimited);
-    if (err) {
-        perror("memkind_destroy_kind()");
-        fprintf(stderr, "Unable to destroy pmem partition\n");
-        return errno ? -errno : 1;
-    }
+//    /* Check real usable size for this allocation, its 6MB now */
+//    if (temp_size !=  6 * 1024 * 1024) {
+//        perror("memkind_default_malloc_usable_size()");
+//        fprintf(stderr, "Wrong usable size\n");
+//        return 1;
+//    }
+
+    memkind_free(MEMKIND_DEFAULT, pmem_str10);
+    memkind_free(MEMKIND_DEFAULT, pmem_str11);
+
+//    err = memkind_destroy_kind(MEMKIND_DEFAULT);
+//    if (err) {
+//        perror("memkind_destroy_kind()");
+//        fprintf(stderr, "Unable to destroy pmem partition\n");
+//        return errno ? -errno : 1;
+//    }
 
     fprintf(stdout,
             "The real size of the allocation has been successfully read.");

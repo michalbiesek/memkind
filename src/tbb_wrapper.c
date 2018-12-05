@@ -44,15 +44,21 @@ bool (*pool_free)(void*, void *);
 int (*pool_create_v1)(intptr_t, const struct MemPoolPolicy*, void**);
 bool (*pool_destroy)(void*);
 void* (*pool_identify)(void *object);
+size_t (*scalable_msize)(void*);
+void *(*scalable_malloc)(size_t);
+void *(*scalable_calloc)(size_t, size_t );
+void (*scalable_free)(void*);
 
 static void* tbb_handle = NULL;
 
 static int load_tbb_symbols()
 {
-    const char so_name[]="libtbbmalloc.so.2";
+    //libtbbmalloc_debug.so.2
+    const char so_name[]="/home/michalbiesek/Git/tbb/build/linux_intel64_gcc_cc8_libc2.27_kernel4.19.6_debug/libtbbmalloc_debug.so.2";
+//    const char so_name[]="libtbbmalloc.so.2";
     tbb_handle = dlopen(so_name, RTLD_LAZY);
     if(!tbb_handle) {
-        log_err("%s not found.", so_name);
+        log_fatal("%s not found.", so_name);
         return -1;
     }
 
@@ -65,6 +71,10 @@ static int load_tbb_symbols()
                            "_ZN3rml14pool_create_v1ElPKNS_13MemPoolPolicyEPPNS_10MemoryPoolE");
     pool_destroy = dlsym(tbb_handle, "_ZN3rml12pool_destroyEPNS_10MemoryPoolE");
     pool_identify = dlsym(tbb_handle, "_ZN3rml13pool_identifyEPv");
+    scalable_msize = dlsym(tbb_handle, "scalable_msize");
+    scalable_malloc = dlsym(tbb_handle, "scalable_malloc");
+    scalable_calloc = dlsym(tbb_handle, "scalable_calloc");
+    scalable_free = dlsym(tbb_handle, "scalable_free");
 
     if(!pool_malloc ||
        !pool_realloc ||
@@ -72,10 +82,13 @@ static int load_tbb_symbols()
        !pool_free ||
        !pool_create_v1 ||
        !pool_destroy ||
-       !pool_identify)
-
+       !pool_identify ||
+       !scalable_msize ||
+       !scalable_malloc ||
+       !scalable_calloc ||
+       !scalable_free)
     {
-        log_err("Could not find symbols in %s.", so_name);
+        log_fatal("Could not find symbols in %s.", so_name);
         dlclose(tbb_handle);
         return -1;
     }
@@ -103,6 +116,26 @@ static void *tbb_pool_malloc(struct memkind* kind, size_t size)
     if (!result)
         errno = ENOMEM;
     return result;
+}
+
+void tbb_scalable_free( void *ptr)
+{
+    scalable_free(ptr);
+}
+
+size_t tbb_scalable_usable_size( void *ptr)
+{
+    size_t temp = scalable_msize(ptr);
+
+    return temp;
+}
+void* tbb_scalable_malloc(size_t size)
+{
+    return scalable_malloc(size);
+}
+void* tbb_scalable_calloc(size_t num,size_t size)
+{
+    return scalable_calloc(num,size);
 }
 
 static void *tbb_pool_calloc(struct memkind *kind, size_t num, size_t size)
@@ -159,8 +192,9 @@ void tbb_pool_free(struct memkind *kind, void *ptr)
 
 static size_t tbb_pool_usable_size(struct memkind *kind, void *ptr)
 {
-    log_err("memkind_malloc_usable_size() is not supported by TBB.");
-    return 0;
+    size_t temp = 0;
+
+    return temp;
 }
 
 static int tbb_destroy(struct memkind* kind)
@@ -177,8 +211,12 @@ static int tbb_destroy(struct memkind* kind)
 
 void tbb_initialize(struct memkind *kind)
 {
-    if(!kind || load_tbb_symbols()) {
-        log_fatal("Failed to initialize TBB.");
+    if(!kind){
+        log_fatal("Failed to initialize TBB. variant 1");
+        abort();
+    }
+    if (load_tbb_symbols()) {
+        log_fatal("Failed to initialize TBB.varian 2");
         abort();
     }
 

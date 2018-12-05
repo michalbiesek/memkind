@@ -35,7 +35,10 @@ void tbb_initialize(struct memkind *kind);
 
 /* ptr pointer must come from the valid TBB pool allocation */
 void tbb_pool_free(struct memkind *kind, void *ptr);
-
+void tbb_scalable_free(void *ptr);
+void* tbb_scalable_malloc(size_t size);
+void* tbb_scalable_calloc(size_t num,size_t size);
+size_t tbb_scalable_usable_size( void *ptr);
 #ifdef __cplusplus
 }
 #endif
