@@ -36,7 +36,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-#define PMEM_MAX_SIZE (1024 * 1024 * 32)
+#define PMEM_MAX_SIZE (size_t)(1024 * 1024 * 32)
 
 static char* PMEM_DIR = "/tmp/";
 
@@ -72,55 +72,25 @@ int main(int argc, char *argv[])
         return errno ? -errno : 1;
     }
 
-    char *pmem_str1 = NULL;
-    char *pmem_str2 = NULL;
-    char *pmem_str3 = NULL;
-    char *pmem_str4 = NULL;
+    char *pmem_str = NULL;
 
-    // allocate 512 Bytes of 32 MB available
-    pmem_str1 = (char *)memkind_malloc(pmem_kind, 512);
-    if (pmem_str1 == NULL) {
+    pmem_str = (char *)memkind_malloc(pmem_kind, 15);
+    if (pmem_str == NULL) {
         perror("memkind_malloc()");
         fprintf(stderr, "Unable to allocate pmem string (pmem_str1)\n");
         return errno ? -errno : 1;
     }
 
-    // allocate 8 MB of 31.9 MB available
-    pmem_str2 = (char *)memkind_malloc(pmem_kind, 8 * 1024 * 1024);
-    if (pmem_str2 == NULL) {
-        perror("memkind_malloc()");
-        fprintf(stderr, "Unable to allocate pmem string (pmem_str11)\n");
-        return errno ? -errno : 1;
-    }
+    pmem_str = memkind_realloc(pmem_kind, pmem_str, 24);
+    pmem_str = memkind_realloc(pmem_kind, pmem_str, 28);
+    pmem_str = memkind_realloc(pmem_kind, pmem_str, 37);
+    pmem_str = memkind_realloc(pmem_kind, pmem_str, 41);
+    pmem_str = memkind_realloc(pmem_kind, pmem_str, 50);
+    pmem_str = memkind_realloc(pmem_kind, pmem_str, 54);
+    pmem_str = memkind_realloc(pmem_kind, pmem_str, 71);
 
-    // allocate 16 MB of 23.9 MB available
-    pmem_str3 = (char *)memkind_malloc(pmem_kind, 16 * 1024 * 1024);
-    if (pmem_str3 == NULL) {
-        perror("memkind_malloc()");
-        fprintf(stderr, "Unable to allocate pmem string (pmem_str12)\n");
-        return errno ? -errno : 1;
-    }
+    printf ("pmem_st=%p\n",pmem_str);
 
-    // allocate 16 MB of 7.9 MB available -- Out Of Memory expected
-    pmem_str4 = (char *)memkind_malloc(pmem_kind, 16 * 1024 * 1024);
-    if (pmem_str4 != NULL) {
-        perror("memkind_malloc()");
-        fprintf(stderr,
-                "Failure, this allocation should not be possible (expected result was NULL)\n");
-        return errno ? -errno : 1;
-    }
-
-    sprintf(pmem_str1, "Hello world from pmem - pmem_str1\n");
-    sprintf(pmem_str2, "Hello world from pmem - pmem_str2\n");
-    sprintf(pmem_str3, "Hello world from persistent memory - pmem_str3\n");
-
-    fprintf(stdout, "%s", pmem_str1);
-    fprintf(stdout, "%s", pmem_str2);
-    fprintf(stdout, "%s", pmem_str3);
-
-    memkind_free(pmem_kind, pmem_str1);
-    memkind_free(pmem_kind, pmem_str2);
-    memkind_free(pmem_kind, pmem_str3);
 
     err = memkind_destroy_kind(pmem_kind);
     if (err) {
