@@ -414,6 +414,13 @@ rpm: dist
 
 all: static_lib
 
+unit_tests: checkprogs
+	test/all_tests --gtest_filter=*free_with_NULL_kind_4096_bytes:NegativeTest.*:ErrorMessage.*:GetArenaTest.*:MemkindVersioningTests.*
+	test/decorator_test
+
+unit_tests_pmem: checkprogs
+	test/all_tests --gtest_filter=*MemkindPmemTests.*:PmemAllocatorTests.*
+
 # the script merge memkind and jemalloc libraries into one static library.
 define ar_prog
 create libmemkind.a\n\
