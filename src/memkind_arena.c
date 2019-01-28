@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 - 2018 Intel Corporation.
+ * Copyright (C) 2014 - 2019 Intel Corporation.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -336,11 +336,6 @@ MEMKIND_EXPORT int memkind_arena_create_map(struct memkind *kind,
     if(err) {
         return err;
     }
-#ifdef MEMKIND_TLS
-    if (kind->ops->get_arena == memkind_thread_get_arena) {
-        pthread_key_create(&(kind->arena_key), jemk_free);
-    }
-#endif
 
     pthread_mutex_lock(&arena_registry_write_lock);
     unsigned i = 0;
@@ -402,12 +397,6 @@ MEMKIND_EXPORT int memkind_arena_destroy(struct memkind *kind)
         }
 
         pthread_mutex_unlock(&arena_registry_write_lock);
-
-#ifdef MEMKIND_TLS
-        if (kind->ops->get_arena == memkind_thread_get_arena) {
-            pthread_key_delete(kind->arena_key);
-        }
-#endif
     }
 
     memkind_default_destroy(kind);
@@ -603,33 +592,6 @@ MEMKIND_EXPORT int memkind_bijective_get_arena(struct memkind *kind,
     return 0;
 }
 
-#ifdef MEMKIND_TLS
-MEMKIND_EXPORT int memkind_thread_get_arena(struct memkind *kind,
-                                            unsigned int *arena, size_t size)
-{
-    int err = 0;
-    unsigned int *arena_tsd;
-    arena_tsd = pthread_getspecific(kind->arena_key);
-
-    if (MEMKIND_UNLIKELY(arena_tsd == NULL)) {
-        arena_tsd = jemk_malloc(sizeof(unsigned int));
-        if (arena_tsd == NULL) {
-            err = MEMKIND_ERROR_MALLOC;
-            log_err("jemk_malloc() failed.");
-        }
-        if (!err) {
-            *arena_tsd = _mm_crc32_u64(0, (uint64_t)pthread_self()) %
-                         kind->arena_map_len;
-            err = pthread_setspecific(kind->arena_key, arena_tsd) ?
-                  MEMKIND_ERROR_RUNTIME : 0;
-        }
-    }
-    *arena = kind->arena_zero + *arena_tsd;
-    return err;
-}
-
-#else
-
 /*
  *
  * We use thread control block as unique thread identifier
@@ -654,7 +616,6 @@ MEMKIND_EXPORT int memkind_thread_get_arena(struct memkind *kind,
     *arena = kind->arena_zero + arena_idx;
     return 0;
 }
-#endif //MEMKIND_TLS
 
 static void *jemk_mallocx_check(size_t size, int flags)
 {

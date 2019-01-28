@@ -1,5 +1,5 @@
 #
-#  Copyright (C) 2014 - 2018 Intel Corporation.
+#  Copyright (C) 2014 - 2019 Intel Corporation.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -44,58 +44,6 @@ AX_PTHREAD([LIBS="$PTHREAD_LIBS $LIBS" CFLAGS="$CFLAGS $PTHREAD_CFLAGS" CC="$PTH
            [AC_MSG_ERROR([pthreads are required dependency])])
 
 AM_PROG_CC_C_O
-
-#============================tls===============================================
-# Check for tls_model attribute support
-SAVED_CFLAGS="${CFLAGS}"
-CFLAGS="$CFLAGS -Werror"
-AC_MSG_CHECKING([for tls_model attribute support])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-[[
-    static __thread int __attribute__((tls_model("local-dynamic"))) x;
-]],
-[[
-    x = 1234;
-]])],
-    [AC_MSG_RESULT([yes])
-     tls_model="1"],
-    [AC_MSG_RESULT([no])
-     tls_model="0"])
-
-CFLAGS="${SAVED_CFLAGS}"
-if test "x${tls_model}" = "x1" ; then
-  AC_DEFINE([MEMKIND_TLS_MODEL],
-            [__attribute__((tls_model("initial-exec")))], [TLS model attribute])
-else
-  AC_DEFINE([MEMKIND_TLS_MODEL], [ ], [TLS model attribute])
-fi
-
-AC_ARG_ENABLE([tls],
-  [AS_HELP_STRING([--enable-tls], [Enable thread-local storage (__thread keyword)])],
-[if test "x$enable_tls" = "xyes" ; then
-  enable_tls="1"
-else
-  enable_tls="0"
-fi
-],
-[enable_tls="0"]
-)
-if test "x${enable_tls}" = "x1" ; then
-AC_MSG_CHECKING([for TLS support])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-[[
-    __thread int x;
-]], [[
-    x = 1234;
-]])],
-    AC_MSG_RESULT([yes]),
-    AC_MSG_RESULT([no])
-    enable_tls="0")
-fi
-if test "x${enable_tls}" = "x1" ; then
-  AC_DEFINE([MEMKIND_TLS], [ ], [Enables TLS usage for mapping arenas to threads])
-fi
-AC_SUBST([enable_tls])
 
 #============================decorators========================================
 AC_ARG_ENABLE([decorators],
