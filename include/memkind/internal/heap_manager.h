@@ -28,3 +28,4 @@
 
 void heap_manager_init(struct memkind *kind);
 void heap_manager_free(struct memkind *kind, void *ptr);
+void* heap_manager_realloc(struct memkind *kind, void *ptr, size_t size);

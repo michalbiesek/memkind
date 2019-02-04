@@ -123,9 +123,17 @@ static void *tbb_pool_calloc(struct memkind *kind, size_t num, size_t size)
     return result;
 }
 
-static void *tbb_pool_realloc(struct memkind *kind, void *ptr, size_t size)
+void *tbb_pool_realloc(struct memkind *kind, void *ptr, size_t size)
 {
-    if(size_out_of_bounds(size)) return NULL;
+    if((kind) && (!ptr)) {
+        kind = pool_identify(ptr);
+    }
+
+    if(size_out_of_bounds(size))
+    {
+        tbb_pool_free(kind,ptr);
+        return NULL;
+    }
     void *result = pool_realloc(kind->priv, ptr, size);
     if (!result && size)
         errno = ENOMEM;

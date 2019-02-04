@@ -639,7 +639,10 @@ MEMKIND_EXPORT void *memkind_realloc(struct memkind *kind, void *ptr,
 {
     void *result;
 
-    pthread_once(&kind->init_once, kind->ops->init_once);
+    if (!kind) {
+        result = heap_manager_realloc(kind, ptr, size);
+    } else {
+        pthread_once(&kind->init_once, kind->ops->init_once);
 
 #ifdef MEMKIND_DECORATION_ENABLED
     if (memkind_realloc_pre) {
@@ -647,14 +650,14 @@ MEMKIND_EXPORT void *memkind_realloc(struct memkind *kind, void *ptr,
     }
 #endif
 
-    result = kind->ops->realloc(kind, ptr, size);
+        result = kind->ops->realloc(kind, ptr, size);
 
 #ifdef MEMKIND_DECORATION_ENABLED
     if (memkind_realloc_post) {
         memkind_realloc_post(kind, ptr, size, &result);
     }
 #endif
-
+    }
     return result;
 }
 
