@@ -171,7 +171,13 @@ memory referenced by
 .I ptr
 is freed and a pointer to the newly allocated high bandwidth memory is
 returned.
-
+If
+.I size
+is equal to zero,
+the
+.BR memkind_realloc ()
+function behaves identically to
+.BR memkind_free ().
 .BR Note:
 .BR memkind_realloc ()
 may move the memory allocation, resulting in a different return value
