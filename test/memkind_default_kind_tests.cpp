@@ -24,6 +24,7 @@
 
 #include "memkind.h"
 #include "common.h"
+#include "errno.h"
 
 class MemkindDefaultKindTests: public :: testing::Test
 {
@@ -35,6 +36,24 @@ protected:
     void TearDown()
     {}
 };
+
+TEST_F(MemkindDefaultKindTests, test_TC_MEMKIND_PmemMallocZero)
+{
+    void *test1 = nullptr;
+
+    test1 = memkind_malloc(MEMKIND_DEFAULT, 0);
+    ASSERT_TRUE(test1 == nullptr);
+}
+
+TEST_F(MemkindDefaultKindTests, test_TC_MEMKIND_PmemMallocSizeMax)
+{
+    void *test1 = nullptr;
+
+    errno = 0;
+    test1 = memkind_malloc(MEMKIND_DEFAULT, SIZE_MAX);
+    ASSERT_TRUE(test1 == nullptr);
+    ASSERT_TRUE(errno == ENOMEM);
+}
 
 TEST_F(MemkindDefaultKindTests, test_TC_MEMKIND_DefaultReallocZero)
 {
@@ -72,10 +91,12 @@ TEST_F(MemkindDefaultKindTests,
     size_t size = 32;
     size_t wrong_alignment = 3;
     int ret;
+    errno = 0;
 
     ret = memkind_posix_memalign(MEMKIND_DEFAULT, &test, wrong_alignment, size);
     ASSERT_TRUE(ret == EINVAL);
     ASSERT_TRUE(test == nullptr);
+    ASSERT_TRUE(errno == 0);
 }
 
 TEST_F(MemkindDefaultKindTests,
@@ -85,10 +106,12 @@ TEST_F(MemkindDefaultKindTests,
     size_t size = 32;
     size_t wrong_alignment = sizeof(void *)/2;
     int ret;
+    errno = 0;
 
     ret = memkind_posix_memalign(MEMKIND_DEFAULT, &test, wrong_alignment, size);
     ASSERT_TRUE(ret == EINVAL);
     ASSERT_TRUE(test == nullptr);
+    ASSERT_TRUE(errno == 0);
 }
 
 TEST_F(MemkindDefaultKindTests,
@@ -98,10 +121,12 @@ TEST_F(MemkindDefaultKindTests,
     size_t size = 32;
     size_t wrong_alignment = sizeof(void *)+1;
     int ret;
+    errno = 0;
 
     ret = memkind_posix_memalign(MEMKIND_DEFAULT, &test, wrong_alignment, size);
     ASSERT_TRUE(ret == EINVAL);
     ASSERT_TRUE(test == nullptr);
+    ASSERT_TRUE(errno == 0);
 }
 
 TEST_F(MemkindDefaultKindTests,
@@ -124,10 +149,12 @@ TEST_F(MemkindDefaultKindTests, test_TC_MEMKIND_DefaultPosixMemalignSizeZero)
     void *test = nullptr;
     size_t alignment = sizeof(void *);
     int ret;
+    errno = 0;
 
     ret = memkind_posix_memalign(MEMKIND_DEFAULT, &test, alignment, 0);
-    ASSERT_TRUE(ret != 0);
+    ASSERT_TRUE(ret == ENOMEM);
     ASSERT_TRUE(test == nullptr);
+    ASSERT_TRUE(errno == 0);
 }
 
 TEST_F(MemkindDefaultKindTests, test_TC_MEMKIND_DefaultPosixMemalignSizeMax)
@@ -135,8 +162,10 @@ TEST_F(MemkindDefaultKindTests, test_TC_MEMKIND_DefaultPosixMemalignSizeMax)
     void *test = nullptr;
     size_t alignment = 64;
     int ret;
+    errno = 0;
 
     ret = memkind_posix_memalign(MEMKIND_DEFAULT, &test, alignment, SIZE_MAX);
     ASSERT_TRUE(ret == ENOMEM);
     ASSERT_TRUE(test == nullptr);
+    ASSERT_TRUE(errno == 0);
 }
