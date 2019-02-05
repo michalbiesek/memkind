@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 - 2018 Intel Corporation.
+ * Copyright (C) 2014 - 2019 Intel Corporation.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -92,10 +92,20 @@ MEMKIND_EXPORT void *memkind_default_calloc(struct memkind *kind, size_t num,
 MEMKIND_EXPORT int memkind_default_posix_memalign(struct memkind *kind,
                                                   void **memptr, size_t alignment, size_t size)
 {
+    int err;
+    int errno_before;
+
     if(MEMKIND_UNLIKELY(size_out_of_bounds(size))) {
         return EINVAL;
     }
-    return jemk_posix_memalign(memptr, alignment, size);
+    /* posix_memalign should not change errno.
+       Set it to its previous value after calling jemalloc */
+    errno_before = errno;
+
+    err = jemk_posix_memalign(memptr, alignment, size);
+    errno = errno_before;
+
+    return err;
 }
 
 MEMKIND_EXPORT void *memkind_default_realloc(struct memkind *kind, void *ptr,
