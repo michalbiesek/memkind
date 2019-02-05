@@ -1,5 +1,5 @@
 #
-#  Copyright (C) 2014 - 2018 Intel Corporation.
+#  Copyright (C) 2014 - 2019 Intel Corporation.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -84,6 +84,7 @@ test_all_tests_SOURCES = $(fused_gtest) \
                          test/negative_tests.cpp \
                          test/error_message_tests.cpp \
                          test/get_arena_test.cpp \
+                         test/memkind_default_kind_tests.cpp \
                          test/memkind_pmem_tests.cpp \
                          test/memkind_pmem_long_time_tests.cpp \
                          test/performance/operations.hpp \

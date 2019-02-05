@@ -78,6 +78,7 @@ test/trial_generator.h
 test/error_message_tests.cpp
 test/get_arena_test.cpp
 test/locality_test.cpp
+test/memkind_default_kind_tests.cpp
 test/memkind_pmem_tests.cpp
 test/memkind_pmem_long_time_tests.cpp
 test/memory_footprint_test.cpp

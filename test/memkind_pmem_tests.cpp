@@ -762,10 +762,12 @@ TEST_F(MemkindPmemTests,
     size_t size = 32;
     size_t wrong_alignment = 3;
     int ret;
+    errno = 0;
 
     ret = memkind_posix_memalign(pmem_kind, &test, wrong_alignment, size);
     ASSERT_TRUE(ret == EINVAL);
     ASSERT_TRUE(test == nullptr);
+    ASSERT_TRUE(errno == 0);
 }
 
 TEST_F(MemkindPmemTests,
@@ -814,10 +816,12 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemPosixMemalignSizeZero)
     void *test = nullptr;
     size_t alignment = sizeof(void *);
     int ret;
+    errno = 0;
 
     ret = memkind_posix_memalign(pmem_kind, &test, alignment, 0);
-    ASSERT_TRUE(ret != 0);
+    ASSERT_TRUE(ret == ENOMEM);
     ASSERT_TRUE(test == nullptr);
+    ASSERT_TRUE(errno == 0);
 }
 
 TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemPosixMemalignSizeMax)
