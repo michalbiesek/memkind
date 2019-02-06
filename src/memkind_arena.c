@@ -578,10 +578,13 @@ MEMKIND_EXPORT int memkind_arena_posix_memalign(struct memkind *kind,
     unsigned int arena;
     int errno_before;
 
-    *memptr = NULL;
     err = kind->ops->get_arena(kind, &arena, size);
     if (MEMKIND_LIKELY(!err)) {
         err = memkind_posix_check_alignment(kind, alignment);
+    }
+    if (MEMKIND_UNLIKELY(size_out_of_bounds(size))) {
+        *memptr = NULL;
+        return 0;
     }
     if (MEMKIND_LIKELY(!err)) {
         /* posix_memalign should not change errno.

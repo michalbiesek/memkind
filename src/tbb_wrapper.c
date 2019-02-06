@@ -135,8 +135,11 @@ static void *tbb_pool_realloc(struct memkind *kind, void *ptr, size_t size)
 static int tbb_pool_posix_memalign(struct memkind *kind, void **memptr,
                                    size_t alignment, size_t size)
 {
-    if(memkind_posix_check_alignment(kind, alignment)) return EINVAL;
-    if(size_out_of_bounds(size)) return ENOMEM;
+    if (memkind_posix_check_alignment(kind, alignment)) return EINVAL;
+    if (size_out_of_bounds(size)) {
+        *memptr = NULL;
+        return 0;
+    }
     void *result = pool_aligned_malloc(kind->priv, size, alignment);
     if (!result) {
         return ENOMEM;

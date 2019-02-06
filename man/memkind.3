@@ -222,9 +222,14 @@ must be a power of 2 at least as large as
 If
 .I size
 is 0, then
+the value pointed by
+.IR "*memptr"
+is
+.IR "NULL"
+and
 .BR memkind_posix_memalign ()
 returns
-.IR "NULL" .
+.BR 0.
 .PP
 .BR memkind_malloc_usable_size ()
 function provides the same semantics as

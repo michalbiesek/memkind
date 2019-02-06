@@ -819,7 +819,7 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemPosixMemalignSizeZero)
     errno = 0;
 
     ret = memkind_posix_memalign(pmem_kind, &test, alignment, 0);
-    ASSERT_TRUE(ret == ENOMEM);
+    ASSERT_TRUE(ret == 0);
     ASSERT_TRUE(test == nullptr);
     ASSERT_TRUE(errno == 0);
 }

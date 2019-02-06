@@ -96,7 +96,8 @@ MEMKIND_EXPORT int memkind_default_posix_memalign(struct memkind *kind,
     int errno_before;
 
     if(MEMKIND_UNLIKELY(size_out_of_bounds(size))) {
-        return EINVAL;
+        *memptr = NULL;
+        return 0;
     }
     /* posix_memalign should not change errno.
        Set it to its previous value after calling jemalloc */

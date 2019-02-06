@@ -279,7 +279,7 @@ TEST_F(MemkindDefaultKindTests, test_TC_MEMKIND_DefaultPosixMemalignSizeZero)
     errno = 0;
 
     ret = memkind_posix_memalign(MEMKIND_DEFAULT, &test, alignment, 0);
-    ASSERT_EQ(ret, ENOMEM);
+    ASSERT_EQ(ret, 0);
     ASSERT_EQ(test, nullptr);
     ASSERT_EQ(errno, 0);
 }
