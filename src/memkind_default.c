@@ -112,7 +112,8 @@ MEMKIND_EXPORT int memkind_default_posix_memalign(struct memkind *kind,
 MEMKIND_EXPORT void *memkind_default_realloc(struct memkind *kind, void *ptr,
                                              size_t size)
 {
-    if(MEMKIND_UNLIKELY(size_out_of_bounds(size))) {
+    if (MEMKIND_UNLIKELY(size_out_of_bounds(size))) {
+        jemk_free(ptr);
         return NULL;
     }
     return jemk_realloc(ptr, size);

@@ -187,6 +187,10 @@ the
 function behaves identically to
 .BR memkind_malloc ()
 for the specified size.
+If
+.I size
+is equal to zero, then the call is equivalent to
+.IR "memkind_free (kind, ptr)" .
 The address
 .IR "ptr" ,
 if not
