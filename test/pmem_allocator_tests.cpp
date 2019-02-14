@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Intel Corporation.
+ * Copyright (C) 2018 -2019 Intel Corporation.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -285,7 +285,7 @@ TEST_F(PmemAllocatorTests,
 {
     typedef std::basic_string<char, std::char_traits<char>, pmem::allocator<char>>
                                                                                 pmem_string;
-    typedef int key_t;
+    typedef const int key_t;
     typedef pmem_string value_t;
     typedef std::pair<key_t, value_t> target_pair;
     typedef pmem::allocator<target_pair> pmem_alloc;
