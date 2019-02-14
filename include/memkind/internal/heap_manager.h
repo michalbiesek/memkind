@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 - 2018 Intel Corporation.
+ * Copyright (C) 2017 - 2019 Intel Corporation.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,3 +28,4 @@
 
 void heap_manager_init(struct memkind *kind);
 void heap_manager_free(struct memkind *kind, void *ptr);
+void* heap_manager_realloc(struct memkind *kind, void *ptr, size_t size);

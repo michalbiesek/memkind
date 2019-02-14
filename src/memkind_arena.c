@@ -493,21 +493,35 @@ MEMKIND_EXPORT void *memkind_arena_malloc(struct memkind *kind, size_t size)
     return result;
 }
 
-MEMKIND_EXPORT void memkind_arena_free(struct memkind *kind, void *ptr)
+static struct memkind *get_kind_by_ptr(void *ptr)
 {
-    if (!kind && ptr != NULL) {
+    struct memkind *kind = NULL;
+    if (ptr) {
         unsigned int arena;
         int err = memkind_lookup_arena(ptr, &arena);
         if (MEMKIND_LIKELY(!err)) {
             kind = get_kind_by_arena(arena);
         }
     }
+    return kind;
+}
 
+MEMKIND_EXPORT void memkind_arena_free(struct memkind *kind, void *ptr)
+{
     if (!kind) {
         jemk_free(ptr);
     } else if (ptr != NULL) {
         jemk_dallocx(ptr, get_tcache_flag(kind->partition, 0));
     }
+}
+
+MEMKIND_EXPORT void memkind_arena_free_with_no_kind(struct memkind *kind, void *ptr)
+{
+    if (!kind)
+        kind = get_kind_by_ptr(ptr);
+    }
+
+    memkind_arena_free(kind, ptr);
 }
 
 MEMKIND_EXPORT void *memkind_arena_realloc(struct memkind *kind, void *ptr,
