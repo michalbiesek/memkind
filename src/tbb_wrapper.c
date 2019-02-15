@@ -131,6 +131,11 @@ static void *tbb_pool_realloc(struct memkind *kind, void *ptr, size_t size)
     return result;
 }
 
+void *tbb_pool_realloc_with_kind_detect(void *ptr, size_t size)
+{
+    return tbb_pool_realloc(pool_identify(ptr), ptr, size);
+}
+
 static int tbb_pool_posix_memalign(struct memkind *kind, void **memptr,
                                    size_t alignment, size_t size)
 {

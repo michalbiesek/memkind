@@ -1591,3 +1591,123 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemCheckExtentDalloc)
     err = memkind_destroy_kind(kind);
     ASSERT_EQ(0, err);
 }
+
+///DEFAULT TEST FOR TBB MOVE TO OTHER FILE
+TEST_F(MemkindPmemTests, test_TC_MEMKIND_DefaultReallocZero)
+{
+    size_t size = 1 * KB;
+    void *test = nullptr;
+    void *new_test = nullptr;
+
+    test = memkind_malloc(MEMKIND_DEFAULT, size);
+    ASSERT_TRUE(test != nullptr);
+
+    new_test = memkind_realloc(nullptr, test, 0);
+    ASSERT_TRUE(new_test == nullptr);
+}
+
+TEST_F(MemkindPmemTests, test_TC_MEMKIND_DefaultReallocSizeMax)
+{
+    size_t size = 1 * KB;
+    void *test = nullptr;
+    void *new_test = nullptr;
+
+    test = memkind_malloc(MEMKIND_DEFAULT, size);
+    ASSERT_TRUE(test != nullptr);
+    errno = 0;
+    new_test = memkind_realloc(nullptr, test, SIZE_MAX);
+    ASSERT_TRUE(new_test == nullptr);
+    ASSERT_TRUE(errno == ENOMEM);
+
+    memkind_free(nullptr, test);
+}
+
+//TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemReallocPtrCheck)
+//{
+//    size_t size = 1 * KB;
+//    void *ptr_malloc = nullptr;
+//    void *ptr_malloc_copy = nullptr;
+//    void *ptr_realloc = nullptr;
+
+//    ptr_malloc = memkind_malloc(pmem_kind, size);
+//    ASSERT_TRUE(ptr_malloc != nullptr);
+
+//    ptr_malloc_copy = ptr_malloc;
+
+//    ptr_realloc = memkind_realloc(pmem_kind, ptr_malloc, PMEM_PART_SIZE);
+//    ASSERT_TRUE(ptr_realloc == nullptr);
+//    ASSERT_TRUE(ptr_malloc == ptr_malloc_copy);
+
+//    memkind_free(pmem_kind, ptr_malloc);
+//}
+
+//TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemReallocNullptr)
+//{
+//    size_t size = 1 * KB;
+//    void *test = nullptr;
+
+//    test = memkind_realloc(pmem_kind, test, size);
+//    ASSERT_TRUE(test != nullptr);
+
+//    memkind_free(pmem_kind, test);
+//}
+
+//TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemReallocNullptrSizeMax)
+//{
+//    void *test = nullptr;
+
+//    test = memkind_realloc(pmem_kind, test, SIZE_MAX);
+//    ASSERT_TRUE(test == nullptr);
+//}
+
+//TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemReallocNullptrZero)
+//{
+//    void *test = nullptr;
+
+//    test = memkind_realloc(pmem_kind, test, 0);
+//    ASSERT_TRUE(test == nullptr);
+//}
+
+//TEST_F(MemkindPmemTests, test_TC_MEMKIND_DefaultReallocIncreaseSize)
+//{
+//    size_t size = 1 * KB;
+//    char *test1 = nullptr;
+//    char *test2 = nullptr;
+//    const char val[] = "test_TC_MEMKIND_PmemReallocIncreaseSize";
+//    int status;
+
+//    test1 = (char *)memkind_malloc(pmem_kind, size);
+//    ASSERT_TRUE(test1 != nullptr);
+
+//    sprintf(test1, "%s", val);
+
+//    size *= 2;
+//    test2 = (char *)memkind_realloc(pmem_kind, test1, size);
+//    ASSERT_TRUE(test2 != nullptr);
+//    status = memcmp(val, test2, sizeof(val));
+//    ASSERT_TRUE(status == 0);
+
+//    memkind_free(pmem_kind, test2);
+//}
+
+//TEST_F(MemkindPmemTests, test_TC_MEMKIND_DefaultReallocDecreaseSize)
+//{
+//    size_t size = 1 * KB;
+//    char *test1 = nullptr;
+//    char *test2 = nullptr;
+//    const char val[] = "test_TC_MEMKIND_PmemReallocDecreaseSize";
+//    int status;
+
+//    test1 = (char *)memkind_malloc(pmem_kind, size);
+//    ASSERT_TRUE(test1 != nullptr);
+
+//    sprintf(test1, "%s", val);
+
+//    size = 4;
+//    test2 = (char *)memkind_realloc(pmem_kind, test1, size);
+//    ASSERT_TRUE(test2 != nullptr);
+//    status = memcmp(val, test2, size);
+//    ASSERT_TRUE(status == 0);
+
+//    memkind_free(pmem_kind, test2);
+//}

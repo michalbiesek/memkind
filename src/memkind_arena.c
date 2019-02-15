@@ -450,6 +450,19 @@ static inline int memkind_lookup_arena(void *ptr, unsigned int *arena)
     return 0;
 }
 
+static struct memkind *get_kind_by_ptr(void *ptr)
+{
+    struct memkind *kind = NULL;
+    if (ptr != NULL) {
+        unsigned int arena;
+        int err = memkind_lookup_arena(ptr, &arena);
+        if (MEMKIND_LIKELY(!err)) {
+            kind = get_kind_by_arena(arena);
+        }
+    }
+    return kind;
+}
+
 static inline int get_tcache_flag(unsigned partition, size_t size)
 {
 
@@ -504,14 +517,8 @@ MEMKIND_EXPORT void memkind_arena_free(struct memkind *kind, void *ptr)
 
 MEMKIND_EXPORT void memkind_arena_free_with_kind_detect(void *ptr)
 {
-    struct memkind *kind = NULL;
-    if (ptr != NULL) {
-        unsigned int arena;
-        int err = memkind_lookup_arena(ptr, &arena);
-        if (MEMKIND_LIKELY(!err)) {
-            kind = get_kind_by_arena(arena);
-        }
-    }
+    struct memkind *kind = get_kind_by_ptr(ptr);
+
     memkind_arena_free(kind, ptr);
 }
 
@@ -537,6 +544,24 @@ MEMKIND_EXPORT void *memkind_arena_realloc(struct memkind *kind, void *ptr,
         }
     }
     return ptr;
+}
+
+MEMKIND_EXPORT void *memkind_arena_realloc_with_kind_detect(void *ptr,
+                                                            size_t size)
+{
+    struct memkind *kind;
+    if (ptr != NULL) {
+        kind = get_kind_by_ptr(ptr);
+    } else {
+        errno = EINVAL;
+        return NULL;
+    }
+    if (!kind) {
+        return memkind_default_realloc(kind, ptr, size);
+    } else {
+        return memkind_arena_realloc(kind, ptr, size);
+    }
+
 }
 
 // TODO: function is workaround for PR#1302 in jemalloc upstream
