@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 - 2018 Intel Corporation.
+ * Copyright (C) 2014 - 2019 Intel Corporation.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -495,19 +495,24 @@ MEMKIND_EXPORT void *memkind_arena_malloc(struct memkind *kind, size_t size)
 
 MEMKIND_EXPORT void memkind_arena_free(struct memkind *kind, void *ptr)
 {
-    if (!kind && ptr != NULL) {
+    if (!kind) {
+        jemk_free(ptr);
+    } else if (ptr != NULL) {
+        jemk_dallocx(ptr, get_tcache_flag(kind->partition, 0));
+    }
+}
+
+MEMKIND_EXPORT void memkind_arena_free_with_kind_detect(void *ptr)
+{
+    struct memkind *kind = NULL;
+    if (ptr != NULL) {
         unsigned int arena;
         int err = memkind_lookup_arena(ptr, &arena);
         if (MEMKIND_LIKELY(!err)) {
             kind = get_kind_by_arena(arena);
         }
     }
-
-    if (!kind) {
-        jemk_free(ptr);
-    } else if (ptr != NULL) {
-        jemk_dallocx(ptr, get_tcache_flag(kind->partition, 0));
-    }
+    memkind_arena_free(kind, ptr);
 }
 
 MEMKIND_EXPORT void *memkind_arena_realloc(struct memkind *kind, void *ptr,
