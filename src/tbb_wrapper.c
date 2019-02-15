@@ -49,7 +49,7 @@ static void *tbb_handle = NULL;
 
 static int load_tbb_symbols()
 {
-    const char so_name[]="libtbbmalloc.so.2";
+    const char so_name[]="/home/michalbiesek/Git/tbb/build/linux_intel64_gcc_cc8_libc2.27_kernel4.20.6_debug/libtbbmalloc_debug.so.2";
     tbb_handle = dlopen(so_name, RTLD_LAZY);
     if(!tbb_handle) {
         log_err("%s not found.", so_name);
@@ -153,9 +153,24 @@ static int tbb_pool_posix_memalign(struct memkind *kind, void **memptr,
     return 0;
 }
 
+//void * safer_pool_identify ( void *ptr)
+//{
+//    if(ptr)
+//    {
+//        return pool_identify(ptr);
+//    }
+//    else
+//    {
+//        return ptr;
+//    }
+//}
+
 void tbb_pool_free_with_kind_detect(void *ptr)
 {
-    pool_free(pool_identify(ptr), ptr);
+    if(ptr)
+    {
+        pool_free(pool_identify(ptr), ptr);
+    }
 }
 
 void tbb_pool_free(struct memkind *kind, void *ptr)
