@@ -76,12 +76,12 @@ void load_tbb_symbols(void)
        !pool_identify)
 
     {
-        log_err("Could not find symbols in %s.", so_name);
+        log_fatal("Could not find symbols in %s.", so_name);
         dlclose(tbb_handle);
-        return -1;
+        abort();
     }
 
-    return 0;
+    TBBInitDone = true;
 }
 
 //Granularity of raw_alloc allocations
@@ -124,13 +124,26 @@ static void *tbb_pool_calloc(struct memkind *kind, size_t num, size_t size)
     return result;
 }
 
-static void *tbb_pool_realloc(struct memkind *kind, void *ptr, size_t size)
+static void  *tbb_pool_common(void *pool, void *ptr, size_t size)
 {
-    if(size_out_of_bounds(size)) return NULL;
-    void *result = pool_realloc(kind->priv, ptr, size);
+    void *result = pool_realloc(pool, ptr, size);
     if (!result && size)
         errno = ENOMEM;
     return result;
+}
+
+static void *tbb_pool_realloc(struct memkind *kind, void *ptr, size_t size)
+{
+    return tbb_pool_common(kind->priv,ptr,size);
+}
+
+void *tbb_pool_realloc_with_kind_detect(void *ptr, size_t size)
+{
+    if (!ptr) {
+        errno = EINVAL;
+        return NULL;
+    }
+    return tbb_pool_common(pool_identify(ptr), ptr, size);
 }
 
 static int tbb_pool_posix_memalign(struct memkind *kind, void **memptr,
@@ -151,7 +164,9 @@ static int tbb_pool_posix_memalign(struct memkind *kind, void **memptr,
 
 void tbb_pool_free_with_kind_detect(void *ptr)
 {
-    pool_free(pool_identify(ptr), ptr);
+    if (ptr) {
+        pool_free(pool_identify(ptr), ptr);
+    }
 }
 
 void tbb_pool_free(struct memkind *kind, void *ptr)
