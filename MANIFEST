@@ -189,6 +189,7 @@ test/dlopen_test.cpp
 test/gtest_fused/gtest/gtest-all.cc
 test/gtest_fused/gtest/gtest.h
 test/pmem_allocator_tests.cpp
+test/memkind_null_kind_test.cpp
 jemalloc/.appveyor.yml
 jemalloc/.autom4te.cfg
 jemalloc/.gitattributes

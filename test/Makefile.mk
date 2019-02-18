@@ -1,5 +1,5 @@
 #
-#  Copyright (C) 2014 - 2018 Intel Corporation.
+#  Copyright (C) 2014 - 2019 Intel Corporation.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -97,6 +97,7 @@ test_all_tests_SOURCES = $(fused_gtest) \
                          test/hbw_verify_function_test.cpp \
                          test/dlopen_test.cpp \
                          test/pmem_allocator_tests.cpp \
+                         test/memkind_null_kind_test.cpp \
                          #end
 
 test_locality_test_SOURCES = $(fused_gtest) test/allocator_perf_tool/Allocation_info.cpp test/locality_test.cpp
