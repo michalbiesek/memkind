@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 - 2018 Intel Corporation.
+ * Copyright (C) 2014 - 2019 Intel Corporation.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -508,6 +508,17 @@ exit:
         assert(0 && "failed to release mutex");
 
     return err;
+}
+
+#ifdef __GNUC__
+__attribute__((constructor))
+#endif
+static void memkind_construct(void)
+{
+    const char *env = getenv("MEMKIND_HEAP_MANAGER");
+    if (env && strcmp(env, "TBB") == 0) {
+        load_tbb_symbols();
+    }
 }
 
 #ifdef __GNUC__
