@@ -375,12 +375,13 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemResize)
     memkind_t pmem_kind_no_limit = nullptr;
     memkind_t pmem_kind_not_possible = nullptr;
     int err = 0;
-
-    pmem_str10 = (char *)memkind_malloc(pmem_kind, MEMKIND_PMEM_MIN_SIZE);
+    size_t MEMKIND_TEMP = MEMKIND_PMEM_MIN_SIZE/2;
+//differentfragmentation
+    pmem_str10 = (char *)memkind_malloc(pmem_kind, MEMKIND_TEMP);
     ASSERT_TRUE(nullptr != pmem_str10);
 
     // Out of memory
-    pmem_strX = (char *)memkind_malloc(pmem_kind, size);
+    pmem_strX = (char *)memkind_malloc(pmem_kind, MEMKIND_TEMP);
     ASSERT_TRUE(nullptr == pmem_strX);
 
     memkind_free(pmem_kind, pmem_str10);
@@ -390,7 +391,7 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemResize)
     ASSERT_EQ(0, err);
     ASSERT_TRUE(nullptr != pmem_kind_no_limit);
 
-    pmem_str10 = (char *)memkind_malloc(pmem_kind_no_limit, MEMKIND_PMEM_MIN_SIZE);
+    pmem_str10 = (char *)memkind_malloc(pmem_kind_no_limit, MEMKIND_TEMP);
     ASSERT_TRUE(nullptr != pmem_str10);
 
     pmem_strX = (char *)memkind_malloc(pmem_kind_no_limit, size);
@@ -984,7 +985,7 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemCreateDestroyKindEmptyLoop)
 {
     struct memkind *pmem_temp = nullptr;
 
-    for (unsigned int i = 0; i < MEMKIND_MAX_KIND; ++i) {
+    for (unsigned int i = 0; i < MEMKIND_MAX_KIND*5; ++i) {
         int err = memkind_create_pmem(PMEM_DIR, MEMKIND_PMEM_MIN_SIZE, &pmem_temp);
         ASSERT_EQ(err, 0);
         err = memkind_destroy_kind(pmem_temp);

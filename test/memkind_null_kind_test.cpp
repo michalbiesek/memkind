@@ -66,20 +66,20 @@ TEST_F(MemkindNullKindTests, test_TC_MEMKIND_DefaultRegularKindFreeNullPtr)
     const size_t size_1 = 1 * KB;
     const size_t size_2 = 1 * MB;
     void *ptr_default = nullptr;
-    void *ptr_regular = nullptr;
-    for (unsigned int i = 0; i < MEMKIND_MAX_KIND; ++i) {
-        ptr_default = memkind_malloc(MEMKIND_DEFAULT, size_2);
+//    void *ptr_regular = nullptr;
+    for (unsigned int i = 0; i < 10240; ++i) {
+        ptr_default = memkind_malloc(MEMKIND_REGULAR, size_2);
         ASSERT_TRUE(nullptr != ptr_default);
         memkind_free(nullptr, ptr_default);
-        ptr_default = memkind_malloc(MEMKIND_DEFAULT, size_1);
+        ptr_default = memkind_malloc(MEMKIND_REGULAR, size_1);
         ASSERT_TRUE(nullptr != ptr_default);
         memkind_free(nullptr, ptr_default);
-        ptr_regular = memkind_malloc(MEMKIND_REGULAR, size_2);
-        ASSERT_TRUE(nullptr != ptr_regular);
-        memkind_free(nullptr, ptr_regular);
-        ptr_regular = memkind_malloc(MEMKIND_REGULAR, size_1);
-        ASSERT_TRUE(nullptr != ptr_regular);
-        memkind_free(nullptr, ptr_regular);
+//        ptr_regular = memkind_malloc(MEMKIND_REGULAR, size_2);
+//        ASSERT_TRUE(nullptr != ptr_regular);
+//        memkind_free(nullptr, ptr_regular);
+//        ptr_regular = memkind_malloc(MEMKIND_REGULAR, size_1);
+//        ASSERT_TRUE(nullptr != ptr_regular);
+//        memkind_free(nullptr, ptr_regular);
     }
 }
 
@@ -112,7 +112,8 @@ TEST_F(MemkindNullKindTests, test_TC_MEMKIND_DefaultReallocSizeMax)
     memkind_free(nullptr, test);
 }
 
-TEST_F(MemkindNullKindTests, test_TC_MEMKIND_DefaultReallocPtrCheckNullPtrVariant)
+TEST_F(MemkindNullKindTests,
+       test_TC_MEMKIND_DefaultReallocPtrCheckNullPtrVariant)
 {
     size_t size = 1 * KB;
     void *ptr_malloc = nullptr;
@@ -142,7 +143,8 @@ TEST_F(MemkindNullKindTests, test_TC_MEMKIND_DefaultReallocNullptrNullKind)
     ASSERT_TRUE(errno == EINVAL);
 }
 
-TEST_F(MemkindNullKindTests, test_TC_MEMKIND_DefaultReallocNullptrSizeMaxNullKind)
+TEST_F(MemkindNullKindTests,
+       test_TC_MEMKIND_DefaultReallocNullptrSizeMaxNullKind)
 {
     void *test = nullptr;
 

@@ -26,6 +26,6 @@
 
 #include <memkind.h>
 
-void heap_manager_init(struct memkind *kind);
+void heap_manager_init(struct memkind *kind, int is_dynamic);
 void heap_manager_free(void *ptr);
 void *heap_manager_realloc(void *ptr, size_t size);

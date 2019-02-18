@@ -34,7 +34,7 @@ extern "C" {
 void load_tbb_symbols(void);
 
 /* ops callbacks are replaced by TBB callbacks. */
-void tbb_initialize(struct memkind *kind);
+void tbb_initialize(struct memkind *kind, int is_dynamic);
 
 /* ptr pointer must come from the valid TBB pool allocation */
 void tbb_pool_free(struct memkind *kind, void *ptr);
@@ -42,6 +42,11 @@ void tbb_pool_free(struct memkind *kind, void *ptr);
 /* ptr pointer must come from the valid TBB pool allocation */
 void tbb_pool_free_with_kind_detect(void *ptr);
 void *tbb_pool_realloc_with_kind_detect(void *ptr, size_t size);
+void* tbb_pool_manager_calloc(size_t num, size_t size);
+void* tbb_pool_manager_malloc(size_t size);
+void tbb_pool_manager_free(void *ptr);
+
+extern struct memkind_ops MEMKIND_TBB_OPS;
 #ifdef __cplusplus
 }
 #endif

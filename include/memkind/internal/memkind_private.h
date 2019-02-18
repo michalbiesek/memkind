@@ -112,9 +112,9 @@ struct memkind {
     unsigned int *arena_map; // To be deleted beyond 1.2.0+
     pthread_key_t arena_key;
     void *priv;
-    unsigned int
-    arena_map_mask; // arena_map_len - 1 to optimize modulo operation on arena_map_len
-    unsigned int arena_zero; // index first jemalloc arena of this kind
+    void *pool_area;
+    unsigned arena_map_mask; // arena_map_len - 1 to optimize modulo operation on arena_map_len
+    unsigned arena_zero; // index first jemalloc arena of this kind
 };
 
 void memkind_init(memkind_t kind, bool check_numa);

@@ -25,6 +25,7 @@
 #include <memkind/internal/memkind_default.h>
 #include <memkind/internal/memkind_log.h>
 #include <memkind/internal/memkind_private.h>
+#include <memkind/internal/memkind_pmem.h>
 #include <memkind/internal/tbb_wrapper.h>
 #include <memkind/internal/tbb_mem_pool_policy.h>
 #include <limits.h>
@@ -36,7 +37,7 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <string.h>
-
+#include <unistd.h>
 void *(*pool_malloc)(void *, size_t);
 void *(*pool_realloc)(void *, void *, size_t);
 void *(*pool_aligned_malloc)(void *, size_t, size_t);
@@ -44,6 +45,10 @@ bool (*pool_free)(void *, void *);
 int (*pool_create_v1)(intptr_t, const struct MemPoolPolicy *, void **);
 bool (*pool_destroy)(void *);
 void *(*pool_identify)(void *object);
+
+void *(*pool_manager_malloc)(size_t);
+void *(*pool_manager_calloc)(size_t, size_t);
+void  (*pool_manager_free)(void *);
 
 static void *tbb_handle = NULL;
 static bool TBBInitDone = false;
@@ -66,6 +71,9 @@ void load_tbb_symbols(void)
                            "_ZN3rml14pool_create_v1ElPKNS_13MemPoolPolicyEPPNS_10MemoryPoolE");
     pool_destroy = dlsym(tbb_handle, "_ZN3rml12pool_destroyEPNS_10MemoryPoolE");
     pool_identify = dlsym(tbb_handle, "_ZN3rml13pool_identifyEPv");
+    pool_manager_malloc = dlsym(tbb_handle, "scalable_malloc");
+    pool_manager_calloc  = dlsym(tbb_handle, "scalable_calloc");
+    pool_manager_free = dlsym(tbb_handle, "scalable_free");
 
     if(!pool_malloc ||
        !pool_realloc ||
@@ -73,7 +81,10 @@ void load_tbb_symbols(void)
        !pool_free ||
        !pool_create_v1 ||
        !pool_destroy ||
-       !pool_identify)
+       !pool_identify ||
+       !pool_manager_malloc ||
+       !pool_manager_calloc ||
+       !pool_manager_free )
 
     {
         log_fatal("Could not find symbols in %s.", so_name);
@@ -97,10 +108,21 @@ static int raw_free(intptr_t pool_id, void *raw_ptr, size_t raw_bytes)
     return munmap(raw_ptr, raw_bytes);
 }
 
+static void *raw_pmem_alloc(intptr_t pool_id, size_t *bytes/*=n*GRANULARITY*/)
+{
+    void *ptr = memkind_pmem_mmap((struct memkind *)pool_id, NULL, *bytes);
+    return (ptr==MAP_FAILED) ? NULL : ptr;
+}
+
+static int raw_pmem_free(intptr_t pool_id, void *raw_ptr, size_t raw_bytes)
+{
+return madvise(raw_ptr, raw_bytes, MADV_REMOVE);
+}
+
 static void *tbb_pool_malloc(struct memkind *kind, size_t size)
 {
     if(size_out_of_bounds(size)) return NULL;
-    void *result = pool_malloc(kind->priv, size);
+    void *result = pool_malloc(kind->pool_area, size);
     if (!result)
         errno = ENOMEM;
     return result;
@@ -115,7 +137,7 @@ static void *tbb_pool_calloc(struct memkind *kind, size_t num, size_t size)
         errno = ENOMEM;
         return NULL;
     }
-    void *result = pool_malloc(kind->priv, array_size);
+    void *result = pool_malloc(kind->pool_area, array_size);
     if (result) {
         memset(result, 0, array_size);
     } else {
@@ -126,6 +148,11 @@ static void *tbb_pool_calloc(struct memkind *kind, size_t num, size_t size)
 
 static void  *tbb_pool_common(void *pool, void *ptr, size_t size)
 {
+    if(size_out_of_bounds(size))
+    {
+        pool_free(pool, ptr);
+        return NULL;
+    }
     void *result = pool_realloc(pool, ptr, size);
     if (!result && size)
         errno = ENOMEM;
@@ -134,7 +161,7 @@ static void  *tbb_pool_common(void *pool, void *ptr, size_t size)
 
 static void *tbb_pool_realloc(struct memkind *kind, void *ptr, size_t size)
 {
-    return tbb_pool_common(kind->priv,ptr,size);
+    return tbb_pool_common(kind->pool_area, ptr, size);
 }
 
 void *tbb_pool_realloc_with_kind_detect(void *ptr, size_t size)
@@ -154,7 +181,7 @@ static int tbb_pool_posix_memalign(struct memkind *kind, void **memptr,
     //Check if alignment is "a power of 2".
     if(alignment & (alignment-1)) return EINVAL;
     if(size_out_of_bounds(size)) return ENOMEM;
-    void *result = pool_aligned_malloc(kind->priv, size, alignment);
+    void *result = pool_aligned_malloc(kind->pool_area, size, alignment);
     if (!result) {
         return ENOMEM;
     }
@@ -171,7 +198,7 @@ void tbb_pool_free_with_kind_detect(void *ptr)
 
 void tbb_pool_free(struct memkind *kind, void *ptr)
 {
-    pool_free(kind->priv, ptr);
+    pool_free(kind->pool_area, ptr);
 }
 
 static size_t tbb_pool_usable_size(struct memkind *kind, void *ptr)
@@ -182,8 +209,7 @@ static size_t tbb_pool_usable_size(struct memkind *kind, void *ptr)
 
 static int tbb_destroy(struct memkind *kind)
 {
-    bool pool_destroy_ret = pool_destroy(kind->priv);
-    dlclose(tbb_handle);
+    bool pool_destroy_ret = pool_destroy(kind->pool_area);
 
     if(!pool_destroy_ret) {
         log_err("TBB pool destroy failure.");
@@ -192,10 +218,76 @@ static int tbb_destroy(struct memkind *kind)
     return MEMKIND_SUCCESS;
 }
 
-void tbb_initialize(struct memkind *kind)
+static int tbb_pmem_destroy(struct memkind *kind)
 {
-    if(!kind || !TBBInitDone) {
+    struct memkind_pmem *priv = kind->priv;
+
+    pthread_mutex_destroy(&priv->pmem_lock);
+
+    (void) close(priv->fd);
+
+    return tbb_destroy(kind);
+}
+
+static int tbb_finalize(struct memkind *kind)
+{
+    kind->ops->destroy(kind);
+    if(TBBInitDone) {
+        dlclose(tbb_handle);
+        TBBInitDone = false;
+    }
+    return MEMKIND_SUCCESS;
+}
+
+MEMKIND_EXPORT int tbb_pmem_create(struct memkind *kind,
+                              struct memkind_ops *ops, const char *name)
+{
+    struct memkind_pmem *priv = NULL;
+    int err;
+    priv = (struct memkind_pmem *)pool_manager_malloc(sizeof (struct memkind_pmem));
+    if (!priv) {
+        log_err("pool_scalable_malloc() failed.");
+        return MEMKIND_ERROR_MALLOC;
+    }
+
+    if (pthread_mutex_init(&priv->pmem_lock, NULL) != 0) {
+        err = MEMKIND_ERROR_RUNTIME;
+        goto exit;
+    }
+
+    err = memkind_default_create(kind, ops, name);
+
+    kind->priv = priv;
+    return 0;
+
+exit:
+    /* err is set, please don't overwrite it with result of pthread_mutex_destroy */
+    pthread_mutex_destroy(&priv->pmem_lock);
+    pool_manager_free(priv);
+    return err;
+}
+
+MEMKIND_EXPORT struct memkind_ops MEMKIND_TBB_OPS = {
+    .create = tbb_pmem_create,
+    .destroy = tbb_destroy,
+    .malloc = tbb_pool_malloc,
+    .calloc = tbb_pool_calloc,
+    .posix_memalign = tbb_pool_posix_memalign,
+    .realloc = tbb_pool_realloc,
+    .free = tbb_pool_free,
+    .finalize = tbb_finalize,
+    .malloc_usable_size = tbb_pool_usable_size,
+};
+
+void tbb_initialize(struct memkind *kind, int is_dynamic)
+{
+    if(!TBBInitDone)
+    {
         log_fatal("Failed to initialize TBB.");
+        abort();
+    }
+    if(!kind && !is_dynamic) {
+        log_fatal("Dynamic failed");
         abort();
     }
 
@@ -209,17 +301,39 @@ void tbb_initialize(struct memkind *kind)
         .reserved = 0
     };
 
-    pool_create_v1((intptr_t)kind, &policy, &kind->priv);
-    if (!kind->priv) {
+    kind->ops = &MEMKIND_TBB_OPS;
+
+
+    if(is_dynamic)
+    {
+        policy.pAlloc = raw_pmem_alloc,
+        policy.pFree= raw_pmem_free;
+        kind->ops->destroy = tbb_pmem_destroy;
+    }
+
+    int test = pool_create_v1((intptr_t)kind, &policy, &kind->pool_area);
+    if (test!=0)
+    {
+        log_fatal("Unable to create TBB memory pool. error %d",test);
+        abort();
+    }
+    if (!kind->pool_area) {
         log_fatal("Unable to create TBB memory pool.");
         abort();
     }
+}
 
-    kind->ops->malloc = tbb_pool_malloc;
-    kind->ops->calloc = tbb_pool_calloc;
-    kind->ops->posix_memalign = tbb_pool_posix_memalign;
-    kind->ops->realloc = tbb_pool_realloc;
-    kind->ops->free = tbb_pool_free;
-    kind->ops->finalize = tbb_destroy;
-    kind->ops->malloc_usable_size = tbb_pool_usable_size;
+void tbb_pool_manager_free(void *ptr)
+{
+    pool_manager_free(ptr);
+}
+
+void* tbb_pool_manager_calloc(size_t num, size_t size)
+{
+    return pool_manager_calloc(num,size);
+}
+
+void* tbb_pool_manager_malloc(size_t size)
+{
+    return pool_manager_malloc(size);
 }

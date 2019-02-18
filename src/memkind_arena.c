@@ -723,10 +723,10 @@ static void *jemk_rallocx_check(void *ptr, size_t size, int flags)
 
 }
 
-void memkind_arena_init(struct memkind *kind)
+void memkind_arena_init(struct memkind *kind, int is_dynamic)
 {
     int err = 0;
-    if (kind != MEMKIND_DEFAULT) {
+    if ((kind != MEMKIND_DEFAULT) &&(is_dynamic==0)) {
         err = memkind_arena_create_map(kind, get_extent_hooks_by_kind(kind));
         if (err) {
             log_fatal("[%s] Failed to create arena map (error code:%d).", kind->name, err);
