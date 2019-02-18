@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 - 2018 Intel Corporation.
+ * Copyright (C) 2015 - 2019 Intel Corporation.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -620,17 +620,6 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemFreeNullptr)
     timer.start();
     do {
         memkind_free(pmem_kind, nullptr);
-    } while(timer.getElapsedTime() < test_time);
-}
-
-TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemFreeNullptrNullKind)
-{
-    const double test_time = 5;
-
-    TimerSysTime timer;
-    timer.start();
-    do {
-        memkind_free(nullptr, nullptr);
     } while(timer.getElapsedTime() < test_time);
 }
 
