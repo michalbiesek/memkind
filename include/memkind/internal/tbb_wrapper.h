@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Intel Corporation.
+ * Copyright (C) 2017 - 2019 Intel Corporation.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* dynamically load TBB symbols */
+void load_tbb_symbols(void);
 
 /* ops callbacks are replaced by TBB callbacks. */
 void tbb_initialize(struct memkind *kind);

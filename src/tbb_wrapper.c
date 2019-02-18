@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 - 2018 Intel Corporation.
+ * Copyright (C) 2017 - 2019 Intel Corporation.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,14 +46,15 @@ bool (*pool_destroy)(void *);
 void *(*pool_identify)(void *object);
 
 static void *tbb_handle = NULL;
+static bool TBBInitDone = false;
 
-static int load_tbb_symbols()
+void load_tbb_symbols(void)
 {
     const char so_name[]="libtbbmalloc.so.2";
     tbb_handle = dlopen(so_name, RTLD_LAZY);
     if(!tbb_handle) {
-        log_err("%s not found.", so_name);
-        return -1;
+        log_fatal("%s not found.", so_name);
+        abort();
     }
 
     pool_malloc = dlsym(tbb_handle, "_ZN3rml11pool_mallocEPNS_10MemoryPoolEm");
@@ -178,7 +179,7 @@ static int tbb_destroy(struct memkind *kind)
 
 void tbb_initialize(struct memkind *kind)
 {
-    if(!kind || load_tbb_symbols()) {
+    if(!kind || !TBBInitDone) {
         log_fatal("Failed to initialize TBB.");
         abort();
     }
