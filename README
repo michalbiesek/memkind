@@ -1,40 +1,45 @@
-MEMKIND
-=======
+# **MEMKIND**
 
 [![Build Status](https://travis-ci.org/memkind/memkind.svg)](https://travis-ci.org/memkind/memkind)
 [![MEMKIND version](https://img.shields.io/github/tag/memkind/memkind.svg)](https://github.com/memkind/memkind/releases/latest)
 [![Coverage Status](http://codecov.io/github/memkind/memkind/coverage.svg?branch=master)](http://codecov.io/gh/memkind/memkind?branch=master)
 
-DISCLAIMER
-----------
-SEE COPYING FILE FOR LICENSE INFORMATION.
-
-THIS SOFTWARE IS PROVIDED AS A DEVELOPMENT SNAPSHOT TO AID
-COLLABORATION AND WAS NOT ISSUED AS A RELEASED PRODUCT BY INTEL.
-
-
-LAST UPDATE
------------
-Michal Biesek <michal.biesek@intel.com>
-Monday Dec 17 2018
-
-SUMMARY
--------
 The memkind library is a user extensible heap manager built on top of
 jemalloc which enables control of memory characteristics and a
-partitioning of the heap between kinds of memory.  The kinds of memory
+partitioning of the heap between kinds of memory. The kinds of memory
 are defined by operating system memory policies that have been applied
 to virtual address ranges.  Memory characteristics supported by
 memkind without user extension include control of NUMA and page size
 features.  The jemalloc non-standard interface has been extended to
 enable specialized arenas to make requests for virtual memory from the
-operating system through the memkind partition interface.  Through the
+operating system through the memkind partition interface. Through the
 other memkind interfaces the user can control and extend memory
 partition features and allocate memory while selecting enabled
 features.
 
-API
----
+## Contents
+1. [DISCLAIMER](#disclaimer)
+3. [API](#api)
+3. [BUILD REQUIREMENTS](#build-requirements)
+4. [BUILDING](#building)
+	* [jemalloc](#jemalloc)
+	* [memkind](#memkind)
+5. [RUN REQUIREMENTS](#run_requirements)
+6. [SETTING LOGGING MECHANISM](#setting-logging-mechanism)
+7. [SETTING HEAP MANAGER](#setting-heap-manager)
+8. [TESTING](#testing)
+9. [SIMULATE HIGH BANDWIDTH MEMORY](#simulate-high-bandwidth-memory)
+10. [NOTES](#notes)
+11. [STATUS](#status)
+12. [LAST UPDATE](#last-update)
+
+## DISCLAIMER
+SEE COPYING FILE FOR LICENSE INFORMATION.
+
+THIS SOFTWARE IS PROVIDED AS A DEVELOPMENT SNAPSHOT TO AID
+COLLABORATION AND WAS NOT ISSUED AS A RELEASED PRODUCT BY INTEL.
+
+## API
 The memkind library delivers two interfaces:
  * hbwmalloc.h - recommended for high-bandwidth memory use cases (stable)
  * memkind.h - generic interface for more complex use cases (partially unstable)
@@ -48,8 +53,8 @@ or
 
     man hbwmalloc
 
-BUILD REQUIREMENTS
-------------------
+## BUILD REQUIREMENTS
+
 To build the memkind libraries on a RHEL Linux system first install
 the required packages with the following command:
 
@@ -75,11 +80,9 @@ required for building the test content.  This is downloaded
 automatically prior to building the test content from the googlecode
 website based on a target describe in memkind/test/Makefile.mk.
 
-BUILDING
---------
+## BUILDING
 
-a) Building jemalloc
-
+## jemalloc
 The memkind library has a dependency on a related fork of jemalloc.
 
 The jemalloc source was forked from jemalloc version 5.0.  This source tree
@@ -106,8 +109,7 @@ Alternatively you can follow this step-by-step instruction:
 
 Note: JE_PREFIX can be set to arbitrary value, including empty one.
 
-b) Building memkind
-
+## memkind
 Building and installing memkind can be as simple as typing the following while
 in the root directory of the source tree:
 
@@ -143,8 +145,7 @@ otherwise you will get an error like:
 
     undefined reference to mallocx
 
-RUN REQUIREMENTS
-----------------
+## RUN REQUIREMENTS
 Requires kernel patch introduced in Linux v3.11 that impacts
 functionality of the NUMA system calls.  This is patch is commit
 3964acd0dbec123aa0a621973a2a0580034b4788 in the linux-stable git
@@ -180,14 +181,12 @@ To use the file-backed kind of memory (PMEM), please be sure that
 filesystem which is used for PMEM kind supports FALLOC_FL_PUNCH_HOLE flag:
     http://man7.org/linux/man-pages/man2/fallocate.2.html
 
-SETTING LOGGING MECHANISM
--------------------------
+## SETTING LOGGING MECHANISM
 In memkind library logging mechanism could be enabled by setting MEMKIND_DEBUG
 environment variable. Setting MEMKIND_DEBUG to "1" enables printing messages
 like errors and general information about environment to stderr.
 
-SETTING HEAP MANAGER
---------------------
+## SETTING HEAP MANAGER
 In memkind library heap management can be adjusted with MEMKIND_HEAP_MANAGER
 environment variable, which allows for switching to one of the available
 heap managers.
@@ -197,8 +196,7 @@ Values:
     Intel Threading Building Blocks library.
 If the MEMKIND_HEAP_MANAGER is not set then the jemalloc heap manager will be used by default.
 
-TESTING
--------
+## TESTING
 All existing tests pass. For more information on how to execute tests
 see the CONTRIBUTING file.
 
@@ -209,8 +207,7 @@ high bandwidth allocations through a different NUMA node.  See next
 section for more details.
 
 
-SIMULATE HIGH BANDWIDTH MEMORY
-------------------------------
+## SIMULATE HIGH BANDWIDTH MEMORY
 A method for testing for the benefit of high bandwidth memory on a
 dual socket Intel(R) Xeon(TM) system is to use the QPI bus to simulate
 slow memory.  This is not an accurate model of the bandwidth and
@@ -238,14 +235,16 @@ threads to CPUs associated with NUMA node 0.  With this configuration
 standard allocations will be fetched across the QPI bus, and high
 bandwidth allocations will be local to the process CPU.
 
-NOTES
------
+## NOTES
 * Using memkind with Transparent Huge Pages enabled may result in
  undesirably high memory footprint. To avoid that disable THP using following
  instruction: https://www.kernel.org/doc/Documentation/vm/transhuge.txt
 
-STATUS
-------
+## STATUS
 Different interfaces can represent different maturity level
 (as described in corresponding man pages).
 Feedback on design and implementation is greatly appreciated.
+
+## LAST UPDATE
+Michal Biesek <michal.biesek@intel.com>
+Monday Dec 17 2018
