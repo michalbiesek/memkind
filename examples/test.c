@@ -31,7 +31,7 @@
  */
 
 #include <memkind.h>
-#include <memkind/internal/memkind_private.h>
+#include <memkind/internal/memkind_default.h>
 
 #include <stdio.h>
 #include <errno.h>
@@ -52,7 +52,7 @@ int main()
 	int run = 0;
 	int hint = -1;
 	void *ptr = memkind_malloc(kind, 32);
-	hint = je_get_defrag_hint(ptr, &bin, &run);
+	hint = memkind_default_get_defrag_hint(ptr, &bin, &run);
 	
 	printf("\n%d, %d, %d\n", hint, bin, run);
 

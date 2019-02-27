@@ -71,8 +71,10 @@ extern "C" {
 #define jemk_free                   JE_SYMBOL(free)
 #define jemk_dallocx                JE_SYMBOL(dallocx)
 #define jemk_malloc_usable_size     JE_SYMBOL(malloc_usable_size)
-#define jemk_get_defrag_hint        JE_SYMBOL(get_defrag_hint)
-
+//#define jemk_get_defrag_hint        JE_SYMBOL(get_defrag_hint)
+//je_get_defrag_hint
+/// \note EXPERIMENTAL API
+int je_get_defrag_hint(void *ptr, int *bin_util, int *run_util);
 enum memkind_const_private {
     MEMKIND_NAME_LENGTH_PRIV = 64
 };
