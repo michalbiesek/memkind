@@ -120,6 +120,13 @@ MEMKIND_EXPORT size_t memkind_default_malloc_usable_size(struct memkind *kind,
     return jemk_malloc_usable_size(ptr);
 }
 
+MEMKIND_EXPORT int memkind_default_get_defrag_hint(void *ptr, int *bin_util,
+                                                   int *run_util)
+{
+    return jemk_get_defrag_hint(ptr,bin_util,run_util);
+}
+
+
 MEMKIND_EXPORT void *memkind_default_mmap(struct memkind *kind, void *addr,
                                           size_t size)
 {
