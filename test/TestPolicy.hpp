@@ -36,14 +36,13 @@ namespace TestPolicy
 
     unique_bitmask_ptr make_nodemask_ptr()
     {
-        return std::move(unique_bitmask_ptr(numa_allocate_nodemask(),
-                                            numa_free_nodemask));
+        return unique_bitmask_ptr(numa_allocate_nodemask(), numa_free_nodemask);
     }
 
     unique_bitmask_ptr make_cpumask_ptr()
     {
-        return std::move(unique_bitmask_ptr(numa_allocate_cpumask(),
-                                            numa_free_nodemask));
+        return unique_bitmask_ptr(numa_allocate_cpumask(), numa_free_nodemask);
+
     }
 
     int get_num_of_pages(const size_t size, const size_t page_size)
