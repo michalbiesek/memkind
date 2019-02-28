@@ -283,7 +283,7 @@ void TGTest :: SetUp()
 {
     size_t node;
     char *hbw_nodes_env, *endptr;
-    tgen = std::move(std::unique_ptr<TrialGenerator>(new TrialGenerator()));
+    tgen = std::unique_ptr<TrialGenerator>(new TrialGenerator());
 
     hbw_nodes_env = getenv("MEMKIND_HBW_NODES");
     if (hbw_nodes_env) {
