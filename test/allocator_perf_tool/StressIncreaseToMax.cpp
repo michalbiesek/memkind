@@ -74,7 +74,7 @@ void StressIncreaseToMax::run()
         }
     }
 
-    if(!scenario_workload.get_allocations_info().size() < task_conf.n &&
+    if((!(scenario_workload.get_allocations_info().size() < task_conf.n)) &&
        !has_reach_memory_request_limit)
         printf("\nWARNING: Too few memory operations to reach the limit.\n");
     if(test_status.is_allocation_error) printf("\nWARNING: Allocation error. \n");
