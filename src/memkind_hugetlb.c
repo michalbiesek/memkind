@@ -300,7 +300,7 @@ static void hugepages_config_init_once()
     return;
 }
 
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__clang__)
 __attribute__((destructor))
 #endif
 static void destroy_hugepages_per_node()

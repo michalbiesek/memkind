@@ -59,6 +59,15 @@
 /* Clear bits in x, but only this specified in mask. */
 #define CLEAR_BIT(x, mask) ((x) &= (~(mask)))
 
+
+#if defined(__GNUC__) || defined(__clang__)
+#define MEMKIND_CONSTRUCTOR __attribute__((constructor))
+#define MEMKIND_DESTRUCTOR __attribute__((destructor))
+#else
+#define MEMKIND_CONSTRUCTOR
+#define MEMKIND_DESTRUCTOR
+#endif
+
 extern struct memkind_ops MEMKIND_HBW_GBTLB_OPS;
 extern struct memkind_ops MEMKIND_HBW_PREFERRED_GBTLB_OPS;
 extern struct memkind_ops MEMKIND_GBTLB_OPS;
@@ -510,9 +519,7 @@ exit:
     return err;
 }
 
-#ifdef __GNUC__
-__attribute__((constructor))
-#endif
+MEMKIND_CONSTRUCTOR
 static void memkind_construct(void)
 {
     const char *env = getenv("MEMKIND_HEAP_MANAGER");
@@ -521,9 +528,7 @@ static void memkind_construct(void)
     }
 }
 
-#ifdef __GNUC__
-__attribute__((destructor))
-#endif
+MEMKIND_DESTRUCTOR
 static int memkind_finalize(void)
 {
     struct memkind *kind;
