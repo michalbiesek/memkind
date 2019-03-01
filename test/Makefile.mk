@@ -35,8 +35,6 @@ check_PROGRAMS += test/all_tests \
                   test/trace_mechanism_test_helper \
                   # end
 
-TESTS += test/test.sh
-
 EXTRA_DIST += test/autohbw_test.py \
               test/draw_plots.py \
               test/gtest_fused/gtest/gtest-all.cc \

@@ -385,7 +385,7 @@ check_PROGRAMS =
 noinst_PROGRAMS =
 noinst_LTLIBRARIES =
 noinst_HEADERS =
-TESTS =
+TESTS = test/test.sh
 
 req_flags = -fvisibility=hidden -Wall -Werror -msse4.2 -D_GNU_SOURCE -DMEMKIND_INTERNAL_API -DJE_PREFIX=$(JE_PREFIX)
 

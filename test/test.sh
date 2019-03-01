@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#  Copyright (C) 2014 - 2018 Intel Corporation.
+#  Copyright (C) 2014 - 2019 Intel Corporation.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -213,11 +213,16 @@ function execute_pytest()
     return $ret
 }
 
-numactl --hardware | grep "^node 1" > /dev/null
-if [ $? -ne 0 ]; then
-    echo "ERROR: $0 requires a NUMA enabled system with more than one node."
-    exit 1
-fi
+function test_numa_presence()
+{
+    numactl --hardware | grep "^node 1" > /dev/null
+    if [ $? -ne 0 ]; then
+        echo "ERROR: $0 requires a NUMA enabled system with more than one node."
+        exit 1
+    fi
+}
+
+test_numa_presence()
 
 if [ ! -f /usr/bin/memkind-hbw-nodes ]; then
         if [ -x ./memkind-hbw-nodes ]; then
@@ -292,6 +297,7 @@ while getopts "T:c:f:l:hdmsx:p:" opt; do
             ;;
         h)
             usage;
+            exit 1
             ;;
     esac
 done
