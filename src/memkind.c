@@ -801,6 +801,10 @@ MEMKIND_EXPORT int memkind_create_pmem(const char *dir, size_t max_size,
         goto exit;
     }
 
+    if (MEMKIND_LIKELY(!err)) {
+        err = memkind_arena_update_memory_usage_policy(*kind, MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE);
+    }
+
     struct memkind_pmem *priv = (*kind)->priv;
 
     priv->fd = fd;
