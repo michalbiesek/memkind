@@ -44,7 +44,7 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_PMEM_OPS = {
     .free = memkind_arena_free,
     .mmap = memkind_pmem_mmap,
     .get_mmap_flags = memkind_pmem_get_mmap_flags,
-    .get_arena = memkind_thread_get_arena,
+    .get_arena = memkind_bijective_get_arena,
     .finalize = memkind_pmem_destroy,
     .malloc_usable_size = memkind_default_malloc_usable_size
 };
