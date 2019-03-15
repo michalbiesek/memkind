@@ -157,11 +157,6 @@ any of the following arguments (not a definitive list) to 'configure':
     Statically link against the specified libunwind.a rather than dynamically
     linking with -lunwind.
 
-* `--disable-thp`
-
-    Disable transparent huge page (THP) integration.  This option can be useful
-    when cross compiling.
-
 * `--disable-fill`
 
     Disable support for junk/zero filling of memory.  See the "opt.junk" and
@@ -265,6 +260,13 @@ any of the following arguments (not a definitive list) to 'configure':
     configuration, jemalloc will provide additional size classes that are not
     16-byte-aligned (24, 40, and 56).
 
+* `--with-lg-vaddr=<lg-vaddr>`
+
+    Specify the number of significant virtual address bits.  By default, the
+    configure script attempts to detect virtual address size on those platforms
+    where it knows how, and picks a default otherwise.  This option may be
+    useful when cross-compiling.
+
 * `--disable-initial-exec-tls`
 
     Disable the initial-exec TLS model for jemalloc's internal thread-local
@@ -338,6 +340,7 @@ To install only parts of jemalloc, use the following targets:
     install_include
     install_lib_shared
     install_lib_static
+    install_lib_pc
     install_lib
     install_doc_html
     install_doc_man
