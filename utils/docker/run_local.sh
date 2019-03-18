@@ -61,12 +61,15 @@ while getopts ":p:c:t:" opt; do
     esac
 done
 
+HOST_WORKDIR=$(readlink -f ../..)
+WORKDIR=/memkind
 docker build --tag memkind_cont \
              --file Dockerfile.ubuntu-18.04 \
              --build-arg http_proxy=$http_proxy \
              --build-arg https_proxy=$https_proxy \
              .
-docker run --rm \
+docker run -ti \
+            -v $HOST_WORKDIR:$WORKDIR:ro \
            --privileged=true \
            --env http_proxy=$http_proxy \
            --env https_proxy=$https_proxy \
@@ -74,4 +77,4 @@ docker run --rm \
            --env PULL_REQUEST_NO="$PULL_REQUEST_NO" \
            --env CODECOV_TOKEN="$CODECOV_TOKEN" \
            --env TBB_LIBRARY_VERSION="$TBB_LIBRARY_VERSION" \
-           memkind_cont /docker_run_build_and_test.sh
+           memkind_cont

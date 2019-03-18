@@ -45,14 +45,15 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 # Add user
 ENV USER memkinduser
 ENV USERPASS memkindpass
-RUN useradd -m $USER -g sudo -p `mkpasswd $USERPASS`
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN groupadd -r $USER && useradd -r -g $USER $USER -p `mkpasswd $USERPASS`
+
+RUN echo '$USER ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 # Create directory for memkind repository
 WORKDIR /home/$USER/memkind
 
 # Allow user to create files in the home directory
-RUN chown -R $USER:sudo /home/$USER
+RUN chown -R $USER:$USER /home/$USER
 
 # Change user to $USER
 USER $USER
