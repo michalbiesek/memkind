@@ -1,5 +1,5 @@
 #
-#  Copyright (C) 2014 - 2018 Intel Corporation.
+#  Copyright (C) 2014 - 2019 Intel Corporation.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -55,9 +55,9 @@ BuildRequires: numactl-devel
 
 Prefix: %{_prefix}
 Prefix: %{_unitdir}
-Obsoletes: memkind
-Provides: memkind libmemkind0
-
+Obsoletes: memkind < %{version}
+Provides: memkind = %{version}
+Provides: libmemkind0 = %{version}
 %define namespace memkind
 
 %if %{defined suse_version}
@@ -68,7 +68,7 @@ Provides: memkind libmemkind0
 
 # Upstream testing of memkind is done exclusively on x86_64; other archs
 # are unsupported but may work. aarch64 is known to be broken.
-ExclusiveArch: x86_64 ppc64 ppc64el s390x
+ExclusiveArch: x86_64 ppc64 ppc64le s390x
 
 # default values if version is a tagged release on github
 %{!?commit: %define commit %{version}}
@@ -94,8 +94,8 @@ Feedback on design or implementation is greatly appreciated.
 Summary: Memkind User Extensible Heap Manager development lib and tools
 Group: Development/Libraries
 Requires: %{name} = %{version}-%{release}
-Obsoletes: memkind-devel
-Provides: memkind-devel
+Obsoletes: memkind-devel < %{version}
+Provides: memkind-devel = %{version}
 
 %description devel
 Install header files and development aids to link memkind library into
