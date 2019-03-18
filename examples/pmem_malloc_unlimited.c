@@ -36,7 +36,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-static char *PMEM_DIR = "/tmp/";
+static char *PMEM_DIR = "/mnt/memkind/pmem3p1";
 
 int main(int argc, char *argv[])
 {
@@ -69,34 +69,10 @@ int main(int argc, char *argv[])
                 errno);
         return errno ? -errno : 1;
     }
-
-    char *pmem_str10 = NULL;
-    char *pmem_str11 = NULL;
-
-    /* Huge allocation */
-    pmem_str10 = (char *)memkind_malloc(pmem_kind_unlimited, 32 * 1024 * 1024);
-    if (pmem_str10 == NULL) {
-        perror("memkind_malloc()");
-        fprintf(stderr, "Unable to allocate pmem string (pmem_str10)\n");
-        return errno ? -errno : 1;
-    }
-
-    /* Another huge allocation, kind size is only limited by OS resources */
-    pmem_str11 = (char *)memkind_malloc(pmem_kind_unlimited, 32 * 1024 * 1024);
-    if (pmem_str11 == NULL) {
-        perror("memkind_malloc()");
-        fprintf(stderr, "Unable to allocate pmem string (pmem_str11)\n");
-        return errno ? -errno : 1;
-    }
-
-    memkind_free(pmem_kind_unlimited, pmem_str10);
-    memkind_free(pmem_kind_unlimited, pmem_str11);
-
-    err = memkind_destroy_kind(pmem_kind_unlimited);
-    if (err) {
-        perror("memkind_destroy_kind()");
-        fprintf(stderr, "Unable to destroy pmem partition\n");
-        return errno ? -errno : 1;
+    while(1)
+    {
+        memkind_malloc(pmem_kind_unlimited,1);
+        memkind_malloc(pmem_kind_unlimited,1024);
     }
 
     fprintf(stdout, "Memory was successfully allocated and released.\n");
