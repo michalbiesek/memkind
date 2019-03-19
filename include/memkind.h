@@ -385,6 +385,15 @@ void *memkind_realloc(memkind_t kind, void *ptr, size_t size);
 ///
 void memkind_free(memkind_t kind, void *ptr);
 
+///
+/// \brief Try reallocate ptr to defrag memory space
+/// \note STANDARD API
+/// \param kind specified memory kind
+/// \param ptr pointer to the allocated memory
+/// \return Pointer to the reallocated memory, NULL on failure
+///
+void *memkind_try_defrag(memkind_t kind, void *ptr);
+
 #ifdef __cplusplus
 }
 #endif

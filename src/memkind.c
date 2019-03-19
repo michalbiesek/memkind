@@ -676,6 +676,11 @@ MEMKIND_EXPORT void *memkind_realloc(struct memkind *kind, void *ptr,
     return result;
 }
 
+MEMKIND_EXPORT void *memkind_try_defrag(struct memkind *kind, void *ptr)
+{
+    return kind->ops->try_defrag(kind, ptr);
+}
+
 MEMKIND_EXPORT void memkind_free(struct memkind *kind, void *ptr)
 {
 #ifdef MEMKIND_DECORATION_ENABLED

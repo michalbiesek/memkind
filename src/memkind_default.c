@@ -49,7 +49,8 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_DEFAULT_OPS = {
     .free = memkind_default_free,
     .init_once = memkind_default_init_once,
     .malloc_usable_size = memkind_default_malloc_usable_size,
-    .finalize = memkind_default_destroy
+    .finalize = memkind_default_destroy,
+    .try_defrag = memkind_default_try_defrag
 };
 
 MEMKIND_EXPORT int memkind_default_create(struct memkind *kind,
@@ -131,6 +132,38 @@ MEMKIND_EXPORT int memkind_default_get_defrag_hint(void *ptr, int *bin_util,
 #endif
 }
 
+static void *memkind_default_malloc_no_tcache(size_t size)
+{
+    return jemk_mallocx(size, MALLOCX_TCACHE_NONE);
+}
+
+static void memkind_default_free_no_tcache(void *ptr)
+{
+    jemk_dallocx(ptr, MALLOCX_TCACHE_NONE);
+}
+
+MEMKIND_EXPORT void * memkind_default_try_defrag(struct memkind *kind, void *ptr)
+{
+    int bin_util;
+    int run_util;
+    size_t size;
+    void *ptr_new;
+    if (ptr) {
+        return NULL;
+    }
+    if(!memkind_default_get_defrag_hint(ptr, &bin_util, &run_util)) {
+        return NULL;
+    }
+    if (run_util > bin_util || run_util == 1<<16) {
+        return NULL;
+    }
+
+    size = memkind_default_malloc_usable_size(NULL,ptr);
+    ptr_new = memkind_default_malloc_no_tcache(size);
+    memcpy(ptr_new, ptr, size);
+    memkind_default_free_no_tcache(ptr);
+    return ptr_new;
+}
 
 MEMKIND_EXPORT void *memkind_default_mmap(struct memkind *kind, void *addr,
                                           size_t size)

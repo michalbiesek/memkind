@@ -222,6 +222,12 @@ size_t tbb_pool_malloc_usable_size_with_kind_detect(void *ptr)
     return size;
 }
 
+static void *tbb_pool_try_defrag (struct memkind *kind, void *ptr)
+{
+    log_err("memkind_try_defrag() is not supported by TBB.");
+    return NULL;
+}
+
 static int tbb_destroy(struct memkind *kind)
 {
     bool pool_destroy_ret = pool_destroy(kind->priv);
@@ -264,4 +270,5 @@ void tbb_initialize(struct memkind *kind)
     kind->ops->free = tbb_pool_free;
     kind->ops->finalize = tbb_destroy;
     kind->ops->malloc_usable_size = tbb_pool_malloc_usable_size;
+    kind->ops->try_defrag = tbb_pool_try_defrag;
 }

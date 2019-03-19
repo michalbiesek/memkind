@@ -64,6 +64,8 @@ This header expose STANDARD and EXPERIMENTAL API. API Standards are described be
 .br
 .BI "size_t memkind_malloc_usable_size(memkind_t " "kind" ", void " "*ptr" );
 .br
+.BI "void *memkind_try_defrag(memkind_t " "kind" ",void " "*ptr" );
+.br
 .BI "memkind_t memkind_detect_kind(void " "*ptr" );
 .sp
 .B "KIND CONFIGURATION MANAGEMENT:"
@@ -221,7 +223,8 @@ if not
 must have been returned by a previous call to
 .BR memkind_malloc (),
 .BR memkind_calloc (),
-.BR memkind_realloc ()
+.BR memkind_realloc (),
+.BR memkind_try_defrag ()
 or
 .BR memkind_posix_memalign ()
 with the same
@@ -328,6 +331,32 @@ returns
 .BR Note:
 This function has non-trivial performance overhead.
 .PP
+.BR memkind_try_defrag ()
+try re-allocate current allocation pointed by
+.I ptr
+in order to reduce memory fragmentation.
+On success, returns the pointer to the beginning of newly allocated memory.
+The original block pointed by
+.I ptr is invalidated and any access to it is undefined behavior. If
+.BR memkind_try_defrag ()
+fails, a
+.IR "NULL"
+is returned and the original block pointed by
+.I ptr
+is left untouched.
+If
+.I ptr
+is
+.IR "NULL" ,
+then
+.BR memkind_try_defrag ()
+returns
+.IR "NULL" .
+.BR memkind_try_defrag ()
+is not supported by TBB heap manager described in
+.B ENVIRONMENT
+section.
+.PP
 .BR memkind_free ()
 causes the allocated memory referenced by
 .I ptr
@@ -335,7 +364,8 @@ to be made available for future allocations. This pointer
 must have been returned by a previous call to
 .BR memkind_malloc (),
 .BR memkind_calloc (),
-.BR memkind_realloc ()
+.BR memkind_realloc (),
+.BR memkind_try_defrag ()
 or
 .BR memkind_posix_memalign ().
 Otherwise, if
@@ -577,7 +607,8 @@ API standards:
 .sp
 .SH "RETURN VALUE"
 .BR memkind_calloc (),
-.BR memkind_malloc ()
+.BR memkind_malloc (),
+.BR memkind_try_defrag (),
 and
 .BR memkind_realloc ()
 returns the pointer to the allocated memory or

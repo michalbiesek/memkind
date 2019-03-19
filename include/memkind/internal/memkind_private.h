@@ -98,7 +98,8 @@ struct memkind_ops {
     int (* check_addr)(struct memkind *kind, void *addr);
     void (* init_once)(void);
     int (* finalize)(struct memkind *kind);
-    size_t (* malloc_usable_size)(struct memkind *kind, void *addr);
+    size_t (* malloc_usable_size)(struct memkind *kind, void *ptr);
+    void *(* try_defrag)(struct memkind *kind, void *ptr);
 };
 
 struct memkind {

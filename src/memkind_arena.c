@@ -417,6 +417,43 @@ int memkind_arena_finalize(struct memkind *kind)
     return memkind_arena_destroy(kind);
 }
 
+static void *memkind_arena_malloc_no_tcache(struct memkind *kind, size_t size)
+{
+    void *result = NULL;
+    int err = 0;
+    unsigned int arena;
+
+    err = kind->ops->get_arena(kind, &arena, size);
+    if (MEMKIND_LIKELY(!err)) {
+        result = jemk_mallocx_check(size,
+                                    MALLOCX_ARENA(arena) | MALLOCX_TCACHE_NONE);
+    }
+    return result;
+}
+
+MEMKIND_EXPORT void* memkind_arena_try_defrag(struct memkind *kind, void *ptr)
+{
+    int bin_util;
+    int run_util;
+    size_t size;
+    void *ptr_new = NULL;
+    if (ptr) {
+        return NULL;
+    }
+    if(!memkind_default_get_defrag_hint(ptr, &bin_util, &run_util)) {
+        return NULL;
+    }
+    if (run_util > bin_util || run_util == 1<<16) {
+        return NULL;
+    }
+
+    size = memkind_arena_malloc_usable_size(ptr);
+    ptr_new = memkind_arena_malloc_no_tcache(kind,size);
+    memcpy(ptr_new, ptr, size);
+    jemk_dallocx(ptr, MALLOCX_TCACHE_NONE);
+    return ptr_new;
+}
+
 // max allocation size to be cached by tcache mechanism
 // should be aligned with jemalloc opt.lg_tcache_max
 #define TCACHE_MAX (1<<12)
