@@ -26,24 +26,24 @@
 # docker_run_build_and_test.sh - is called inside a Docker container;
 # prepares and runs memkind unit tests for specified pull request number
 #
-set -e
+set -ex
 
 if [ -n "$CODECOV_TOKEN" ]; then
     GCOV_OPTION="--enable-gcov"
 fi
 
-MEMKIND_URL=https://github.com/memkind/memkind.git
+MEMKIND_URL=https://github.com/michalbiesek/memkind.git
 
 # cloning the repo
 git clone $MEMKIND_URL .
-
+git checkout tbb-master-test
 # if pull request number specified, checking out to that PR
-if [ -n "$PULL_REQUEST_NO" ]; then
-    git fetch origin pull/"$PULL_REQUEST_NO"/head:PR-"$PULL_REQUEST_NO"
-    git checkout PR-"$PULL_REQUEST_NO"
-    git diff --check master PR-"$PULL_REQUEST_NO"
-    git merge master --no-commit --no-ff
-fi
+#if [ -n "$PULL_REQUEST_NO" ]; then
+#    git fetch origin pull/"$PULL_REQUEST_NO"/head:PR-"$PULL_REQUEST_NO"
+#    git checkout PR-"$PULL_REQUEST_NO"
+#    git diff --check master PR-"$PULL_REQUEST_NO"
+#    git merge master --no-commit --no-ff
+#fi
 
 # building jemalloc and memkind
 ./build_jemalloc.sh
@@ -61,9 +61,16 @@ if [ -n "$TBB_LIBRARY_VERSION" ]; then
     source /docker_install_tbb.sh "$TBB_LIBRARY_VERSION"
     HEAP_MANAGER="TBB"
 fi
-
+if [ -n "$TBB_LIBRARY_VERSION" ]; then
+#MEMKIND_HBW_NODES=0 MEMKIND_HEAP_MANAGER="$HEAP_MANAGER" numactl --membind=1 --cpunodebind=0 test/all_tests
+MEMKIND_HBW_NODES=0 MEMKIND_HEAP_MANAGER="$HEAP_MANAGER" numactl --membind=1 --cpunodebind=0 test/decorator_test
+MEMKIND_HBW_NODES=0 MEMKIND_HEAP_MANAGER="$HEAP_MANAGER" numactl --membind=1 --cpunodebind=0 test/allocator_perf_tool_tests
+MEMKIND_HBW_NODES=0 MEMKIND_HEAP_MANAGER="$HEAP_MANAGER" numactl --membind=1 --cpunodebind=0 test/gb_page_tests_bind_policy
+else
 # running tests and display output in case of failure
 make check || { cat test-suite.log; exit 1; }
+fi
+
 
 # running pmem examples
 find examples/.libs -name "pmem*" -executable -type f -exec sh -c "MEMKIND_HEAP_MANAGER=$HEAP_MANAGER "{}" " \;
