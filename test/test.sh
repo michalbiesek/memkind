@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#  Copyright (C) 2014 - 2018 Intel Corporation.
+#  Copyright (C) 2014 - 2019 Intel Corporation.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -172,6 +172,33 @@ function execute_gtest()
     return $ret_val
 }
 
+function check_numa()
+{
+    numactl --hardware | grep "^node 1" > /dev/null
+    if [ $? -ne 0 ]; then
+        echo "ERROR: $0 requires a NUMA enabled system with more than one node."
+        exit 1
+    fi
+}
+
+function check_hbw_nodes()
+{
+    if [ ! -f /usr/bin/memkind-hbw-nodes ]; then
+            if [ -x ./memkind-hbw-nodes ]; then
+                    export PATH=$PATH:$PWD
+            else
+                    echo "Cannot find 'memkind-hbw-nodes' in $PWD. Did you run 'make'?"
+                    exit 1
+            fi
+    fi
+    ret=$(memkind-hbw-nodes)
+
+    if [[ $ret == "" ]]; then
+        export MEMKIND_HBW_NODES=1
+        TEST_PREFIX="numactl --membind=0 --cpunodebind=$MEMKIND_HBW_NODES %s"
+    fi
+}
+
 function execute_pytest()
 {
     ret=1
@@ -213,25 +240,11 @@ function execute_pytest()
     return $ret
 }
 
-numactl --hardware | grep "^node 1" > /dev/null
-if [ $? -ne 0 ]; then
-    echo "ERROR: $0 requires a NUMA enabled system with more than one node."
-    exit 1
-fi
+# Beginning of main script!
 
-if [ ! -f /usr/bin/memkind-hbw-nodes ]; then
-        if [ -x ./memkind-hbw-nodes ]; then
-                export PATH=$PATH:$PWD
-        else
-                echo "Cannot find 'memkind-hbw-nodes' in $PWD. Did you run 'make'?"
-                exit 1
-        fi
-fi
-ret=$(memkind-hbw-nodes)
-if [[ $ret == "" ]]; then
-    export MEMKIND_HBW_NODES=1
-    TEST_PREFIX="numactl --membind=0 --cpunodebind=$MEMKIND_HBW_NODES %s"
-fi
+check_numa()
+
+check_hbw_nodes()
 
 OPTIND=1
 
@@ -292,6 +305,7 @@ while getopts "T:c:f:l:hdmsx:p:" opt; do
             ;;
         h)
             usage;
+            exit 0
             ;;
     esac
 done
