@@ -32,28 +32,28 @@ if [ -n "$CODECOV_TOKEN" ]; then
     GCOV_OPTION="--enable-gcov"
 fi
 
-MEMKIND_URL=https://github.com/memkind/memkind.git
+#MEMKIND_URL=https://github.com/memkind/memkind.git
 
 # cloning the repo
-git clone $MEMKIND_URL .
+#git clone $MEMKIND_URL .
 
 # if pull request number specified, checking out to that PR
-if [ -n "$PULL_REQUEST_NO" ]; then
-    git fetch origin pull/"$PULL_REQUEST_NO"/head:PR-"$PULL_REQUEST_NO"
-    git checkout PR-"$PULL_REQUEST_NO"
-    git diff --check master PR-"$PULL_REQUEST_NO"
-    git merge master --no-commit --no-ff
-fi
+#if [ -n "$PULL_REQUEST_NO" ]; then
+#    git fetch origin pull/"$PULL_REQUEST_NO"/head:PR-"$PULL_REQUEST_NO"
+#    git checkout PR-"$PULL_REQUEST_NO"
+#    git diff --check master PR-"$PULL_REQUEST_NO"
+#    git merge master --no-commit --no-ff
+#fi
 
 # building jemalloc and memkind
-./build_jemalloc.sh
-./autogen.sh
-./configure --prefix=/usr $GCOV_OPTION
-make -j "$(nproc --all)"
-make checkprogs -j "$(nproc --all)"
+#./build_jemalloc.sh
+#./autogen.sh
+#./configure --prefix=/usr $GCOV_OPTION
+#make -j "$(nproc --all)"
+#make checkprogs -j "$(nproc --all)"
 
 # installing memkind
-sudo make install
+#sudo make install
 
 # if TBB library version is specified install library and use it
 # as MEMKIND_HEAP_MANAGER
@@ -63,10 +63,10 @@ if [ -n "$TBB_LIBRARY_VERSION" ]; then
 fi
 
 # running tests and display output in case of failure
-make check || { cat test-suite.log; exit 1; }
+#make check || { cat test-suite.log; exit 1; }
 
 # running pmem examples
-find examples/.libs -name "pmem*" -executable -type f -exec sh -c "MEMKIND_HEAP_MANAGER=$HEAP_MANAGER "{}" " \;
+#find examples/.libs -name "pmem*" -executable -type f -exec sh -c "MEMKIND_HEAP_MANAGER=$HEAP_MANAGER "{}" " \;
 
 # executing coverage script if codecov token is set
 if [ -n "$CODECOV_TOKEN" ]; then

@@ -26,52 +26,21 @@
 # run_local.sh - builds a container with ubuntu-18.04 image
 # and runs docker_run_build_and_test.sh script inside it
 #
-# Optional parameters:
-# -number of pull request on memkind repository on GitHub
-# -Codecov token for memkind repository to upload the coverage results
-# -Threading Building Blocks library version (e.g. "2019_U4")
 #
 
-usage() {
- echo "Runs memkind unit tests inside docker container.
-When pull request number specified, it checks out repository on specific pull request,
-otherwise tests run on master branch.
-For measuring coverage of tests, Codecov token must be passed as parameter.
-For testing Threading Building Blocks, TBB library version tag must be passed as parameter,
-See https://github.com/01org/tbb/tags.
-Usage: docker_run_build_and_test.sh [-p <PR_number>] [-c <codecov_token>] [-t <TBB_LIBRARY_VERSION>]"
- exit 1;
-}
+set -ex
 
-while getopts ":p:c:t:" opt; do
-    case "${opt}" in
-        p)
-            PULL_REQUEST_NO=${OPTARG}
-            ;;
-        c)
-            CODECOV_TOKEN=${OPTARG}
-            ;;
-        t)
-            TBB_LIBRARY_VERSION=${OPTARG}
-            ;;
-        \?)
-            usage
-            exit 1
-            ;;
-    esac
-done
-
+#./build_docker.sh
 docker build --tag memkind_cont \
-             --file Dockerfile.ubuntu-18.04 \
              --build-arg http_proxy=$http_proxy \
              --build-arg https_proxy=$https_proxy \
-             .
-docker run --rm \
+             --file Dockerfile.ubuntu-18.04 .
+
+docker run -d \
+           -ti \
            --privileged=true \
-           --env http_proxy=$http_proxy \
-           --env https_proxy=$https_proxy \
-           --env GIT_SSL_NO_VERIFY=true \
            --env PULL_REQUEST_NO="$PULL_REQUEST_NO" \
            --env CODECOV_TOKEN="$CODECOV_TOKEN" \
            --env TBB_LIBRARY_VERSION="$TBB_LIBRARY_VERSION" \
+           --mount type=bind,source="$(pwd)",target=/app \
            memkind_cont /docker_run_build_and_test.sh

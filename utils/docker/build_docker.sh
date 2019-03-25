@@ -22,52 +22,13 @@
 #  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 #  ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Pull base image
-FROM ubuntu:18.04
+#
+# build_docker.sh - builds a container with ubuntu-18.04 image
+#
 
-LABEL maintainer="katarzyna.wasiuta@intel.com"
+set -e
 
-# Update the Apt cache and install basic tools
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    automake \
-    ca-certificates \
-    curl \
-    devscripts \
-    g++ \
-    git \
-    libnuma-dev \
-    libtool \
-    numactl \
-    sudo \
-    whois \
- && rm -rf /var/lib/apt/lists/*
-
-# Add user
-#ENV USER memkinduser
-#ENV USERPASS memkindpass
-#RUN useradd -m $USER -g sudo -p `mkpasswd $USERPASS`
-#RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-
-RUN mkdir /data && chown $USER:$USER /data
-VOLUME /data
-WORKDIR /data
-
-# Create directory for memkind repository
-WORKDIR /home/$USER/memkind
-
-# Allow user to create files in the home directory
-RUN chown -R $USER:sudo /home/$USER
-
-# Change user to $USER
-USER $USER
-
-# Copy scripts responsible for running tests to container
-COPY docker_install_tbb.sh /docker_install_tbb.sh
-COPY docker_run_build_and_test.sh /docker_run_build_and_test.sh
-COPY docker_run_coverage.sh /docker_run_coverage.sh
-
-# Define default command.
-#CMD ["bash"]
-# Set git user name and email to allow automatic merging
-#RUN git config --global user.email "memkinduser@intel.com"
-#RUN git config --global user.name $USER
+docker build --tag memkind_cont \
+             --build-arg http_proxy=$http_proxy \
+             --build-arg https_proxy=$https_proxy \
+             --file Dockerfile.ubuntu-18.04 .
