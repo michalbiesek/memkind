@@ -9,7 +9,7 @@ to build, test and optionally measure test coverage of any pull request to memki
 
 * **CODECOV_TOKEN** - Codecov token for memkind repository to upload the coverage results.
 
-* **PULL_REQUEST_NO** - Number of pull request on memkind repository on GitHub.
+* **HOST_WORKDIR** - Defines the host root directory of memkind project.
 
 * **TBB_LIBRARY_VERSION** - Intel Threading Building Blocks library version.
 For testing Threading Building Blocks, TBB library version tag must be passed as parameter,

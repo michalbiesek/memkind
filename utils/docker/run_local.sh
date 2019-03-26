@@ -27,17 +27,22 @@
 # and runs docker_run_build_and_test.sh script inside it
 set -e
 
+if [[ -z "$HOST_WORKDIR" ]]; then
+    HOST_WORKDIR=$(readlink -f ../..)
+fi
+
+echo $HOST_WORKDIR
+
 docker build --tag memkind_cont \
              --file Dockerfile.ubuntu-18.04 \
              --build-arg http_proxy=$http_proxy \
              --build-arg https_proxy=$https_proxy \
              .
-docker run --rm \
+docker run -it \
            --privileged=true \
            --env http_proxy=$http_proxy \
            --env https_proxy=$https_proxy \
-           --env GIT_SSL_NO_VERIFY=true \
-           --env PULL_REQUEST_NO="$PULL_REQUEST_NO" \
            --env CODECOV_TOKEN="$CODECOV_TOKEN" \
            --env TBB_LIBRARY_VERSION="$TBB_LIBRARY_VERSION" \
-           memkind_cont /docker_run_build_and_test.sh
+           --mount type=bind,source="$HOST_WORKDIR",target=/home/memkinduser/memkind \
+           memkind_cont
