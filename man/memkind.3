@@ -70,13 +70,13 @@ This header expose STANDARD and EXPERIMENTAL API. API Standards are described be
 .br
 .BI "struct memkind_config *memkind_config_new();"
 .br
-.BI "void memkind_config_delete(struct memkind_config " "*cfg" );
+.BI "int memkind_config_delete(struct memkind_config " "*cfg" );
 .br
-.BI "void memkind_config_set_path(struct memkind_config " "*cfg" ", const char " "*pmem_dir" );
+.BI "int memkind_config_set_path(struct memkind_config " "*cfg" ", const char " "*pmem_dir" );
 .br
-.BI "void memkind_config_set_size(struct memkind_config " "*cfg" ", size_t " "pmem_size" );
+.BI "int memkind_config_set_size(struct memkind_config " "*cfg" ", size_t " "pmem_size" );
 .br
-.BI "void memkind_config_set_memory_usage_policy(struct memkind_config " "*cfg" ", memkind_mem_usage_policy " "policy" );
+.BI "int memkind_config_set_memory_usage_policy(struct memkind_config " "*cfg" ", memkind_mem_usage_policy " "policy" );
 .sp
 .B "KIND MANAGEMENT:"
 .br

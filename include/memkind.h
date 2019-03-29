@@ -169,33 +169,37 @@ struct memkind_config *memkind_config_new(void);
 /// \brief Delete memkind configuration
 /// \note STANDARD API
 /// \param cfg memkind configuration
+/// \return Memkind operation status, MEMKIND_SUCCESS on success, other values on failure
 ///
-void memkind_config_delete(struct memkind_config *cfg);
+int memkind_config_delete(struct memkind_config *cfg);
 
 ///
 /// \brief Update memkind configuration with path to specified directory parameter
 /// \note STANDARD API
 /// \param cfg memkind configuration
 /// \param pmem_dir path to specified directory for PMEM kind
+/// \return Memkind operation status, MEMKIND_SUCCESS on success, other values on failure
 ///
-void memkind_config_set_path(struct memkind_config *cfg, const char *pmem_dir);
+int memkind_config_set_path(struct memkind_config *cfg, const char *pmem_dir);
 
 ///
 /// \brief Update memkind configuration with PMEM kind size
 /// \note STANDARD API
 /// \param cfg memkind configuration
 /// \param pmem_size size limit for PMEM kind
+/// \return Memkind operation status, MEMKIND_SUCCESS on success, other values on failure
 ///
-void memkind_config_set_size(struct memkind_config *cfg, size_t pmem_size);
+int memkind_config_set_size(struct memkind_config *cfg, size_t pmem_size);
 
 ///
 /// \brief Update memkind configuration with memory usage policy parameter
 /// \note STANDARD API
 /// \param cfg memkind configuration
 /// \param policy memkind memory usage policy
+/// \return Memkind operation status, MEMKIND_SUCCESS on success, other values on failure
 ///
-void memkind_config_set_memory_usage_policy(struct memkind_config *cfg,
-                                            memkind_mem_usage_policy policy);
+int memkind_config_set_memory_usage_policy(struct memkind_config *cfg,
+                                           memkind_mem_usage_policy policy);
 
 ///
 /// \brief Create kind that allocates memory with specific memory type, memory binding policy and flags.

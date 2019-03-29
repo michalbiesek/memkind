@@ -746,27 +746,31 @@ MEMKIND_EXPORT struct memkind_config *memkind_config_new(void)
     return cfg;
 }
 
-MEMKIND_EXPORT void memkind_config_delete(struct memkind_config *cfg)
+MEMKIND_EXPORT int memkind_config_delete(struct memkind_config *cfg)
 {
     jemk_free(cfg);
+    return MEMKIND_SUCCESS;
 }
 
-MEMKIND_EXPORT void memkind_config_set_path(struct memkind_config *cfg,
-                                            const char *pmem_dir)
+MEMKIND_EXPORT int memkind_config_set_path(struct memkind_config *cfg,
+                                           const char *pmem_dir)
 {
     cfg->pmem_dir = pmem_dir;
+    return MEMKIND_SUCCESS;
 }
 
-MEMKIND_EXPORT void memkind_config_set_size(struct memkind_config *cfg,
-                                            size_t pmem_size)
+MEMKIND_EXPORT int memkind_config_set_size(struct memkind_config *cfg,
+                                           size_t pmem_size)
 {
     cfg->pmem_size = pmem_size;
+    return MEMKIND_SUCCESS;
 }
 
 MEMKIND_EXPORT void memkind_config_set_memory_usage_policy(
     struct memkind_config *cfg, memkind_mem_usage_policy policy)
 {
     cfg->policy = policy;
+    return MEMKIND_SUCCESS;
 }
 
 MEMKIND_EXPORT int memkind_create_pmem(const char *dir, size_t max_size,

@@ -69,10 +69,19 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    memkind_config_set_path(test_cfg, PMEM_DIR);
-    memkind_config_set_size(test_cfg, PMEM_MAX_SIZE);
-    memkind_config_set_memory_usage_policy(test_cfg,
-                                           MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE);
+    err = memkind_config_set_path(test_cfg, PMEM_DIR);
+    if (err) {
+        return 1;
+    }
+    err = memkind_config_set_size(test_cfg, PMEM_MAX_SIZE);
+    if (err) {
+        return 1;
+    }
+    err = memkind_config_set_memory_usage_policy(test_cfg,
+                                                 MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE);
+    if (err) {
+        return 1;
+    }
 
 
     /* Create PMEM partition with specific configuration */
@@ -91,7 +100,11 @@ int main(int argc, char *argv[])
         return errno ? -errno : 1;
     }
 
-    memkind_config_delete(test_cfg);
+    err = memkind_config_delete(test_cfg);
+
+    if (err) {
+        return 1;
+    }
 
     fprintf(stdout,
             "PMEM kind and configuration was successfully created and destroyed.\n");

@@ -45,7 +45,8 @@ protected:
 
     void TearDown()
     {
-        memkind_config_delete(global_test_cfg);
+        int err = memkind_config_delete(global_test_cfg);
+        ASSERT_EQ(err, 0);
     }
 };
 
@@ -53,41 +54,44 @@ TEST_F(MemkindConfigTests, test_TC_MEMKIND_CreateAndDestroyEmptyConfig)
 {
     struct memkind_config *tmp_cfg = memkind_config_new();
     ASSERT_NE(nullptr, tmp_cfg);
-    memkind_config_delete(tmp_cfg);
+    int err = memkind_config_delete(tmp_cfg);
+    ASSERT_EQ(err, 0);
 }
 
 TEST_F(MemkindConfigTests, test_TC_MEMKIND_PmemConSetConfigSizeZero)
 {
-    memkind_config_set_size(global_test_cfg, 0U);
+    int err = memkind_config_set_size(global_test_cfg, 0U);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(global_test_cfg->pmem_size, 0U);
 }
 
 TEST_F(MemkindConfigTests, test_TC_MEMKIND_PmemSetConfigSizeNotZero)
 {
-    memkind_config_set_size(global_test_cfg, 100 * MB);
+    int err = memkind_config_set_size(global_test_cfg, 100 * MB);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(global_test_cfg->pmem_size, 100 * MB);
 }
 
 TEST_F(MemkindConfigTests, test_TC_MEMKIND_PmemSetConfigPath)
 {
-    memkind_config_set_path(global_test_cfg, PMEM_DIR);
-
+    int err = memkind_config_set_path(global_test_cfg, PMEM_DIR);
+    ASSERT_EQ(err, 0);
     ASSERT_STREQ(global_test_cfg->pmem_dir, PMEM_DIR);
 }
 
 TEST_F(MemkindConfigTests, test_TC_MEMKIND_PmemSetDefaultMemoryUsagePolicy)
 {
-    memkind_config_set_memory_usage_policy(global_test_cfg,
-                                           MEMKIND_MEM_USAGE_POLICY_DEFAULT);
-
+    int err = memkind_config_set_memory_usage_policy(global_test_cfg,
+                                                     MEMKIND_MEM_USAGE_POLICY_DEFAULT);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(global_test_cfg->policy, MEMKIND_MEM_USAGE_POLICY_DEFAULT);
 }
 
 TEST_F(MemkindConfigTests, test_TC_MEMKIND_SetConservativeMemoryUsagePolicy)
 {
-    memkind_config_set_memory_usage_policy(global_test_cfg,
-                                           MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE);
-
+    int err = memkind_config_set_memory_usage_policy(global_test_cfg,
+                                                     MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE);
+    ASSERT_EQ(err, 0);
     ASSERT_EQ(global_test_cfg->policy, MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE);
 }
 
@@ -96,12 +100,15 @@ TEST_F(MemkindConfigTests,
 {
     memkind_t pmem_kind = nullptr;
 
-    memkind_config_set_path(global_test_cfg, "/temp/non_exisitng_directory");
-    memkind_config_set_size(global_test_cfg, 0U);
-    memkind_config_set_memory_usage_policy(global_test_cfg,
-                                           MEMKIND_MEM_USAGE_POLICY_DEFAULT);
-
-    int err = memkind_create_pmem_with_config(global_test_cfg, &pmem_kind);
+    int err = memkind_config_set_path(global_test_cfg,
+                                      "/temp/non_exisitng_directory");
+    ASSERT_EQ(err, 0);
+    err = memkind_config_set_size(global_test_cfg, 0U);
+    ASSERT_EQ(err, 0);
+    err = memkind_config_set_memory_usage_policy(global_test_cfg,
+                                                 MEMKIND_MEM_USAGE_POLICY_DEFAULT);
+    ASSERT_EQ(err, 0);
+    err = memkind_create_pmem_with_config(global_test_cfg, &pmem_kind);
     ASSERT_EQ(err, MEMKIND_ERROR_INVALID);
 }
 
@@ -110,12 +117,15 @@ TEST_F(MemkindConfigTests,
 {
     memkind_t pmem_kind = nullptr;
 
-    memkind_config_set_path(global_test_cfg, PMEM_DIR);
-    memkind_config_set_size(global_test_cfg, MEMKIND_PMEM_MIN_SIZE -1);
-    memkind_config_set_memory_usage_policy(global_test_cfg,
-                                           MEMKIND_MEM_USAGE_POLICY_DEFAULT);
+    int err = memkind_config_set_path(global_test_cfg, PMEM_DIR);
+    ASSERT_EQ(err, 0);
+    err = memkind_config_set_size(global_test_cfg, MEMKIND_PMEM_MIN_SIZE -1);
+    ASSERT_EQ(err, 0);
+    err = memkind_config_set_memory_usage_policy(global_test_cfg,
+                                                 MEMKIND_MEM_USAGE_POLICY_DEFAULT);
+    ASSERT_EQ(err, 0);
 
-    int err = memkind_create_pmem_with_config(global_test_cfg, &pmem_kind);
+    err = memkind_create_pmem_with_config(global_test_cfg, &pmem_kind);
     ASSERT_EQ(err, MEMKIND_ERROR_INVALID);
 }
 
@@ -124,12 +134,15 @@ TEST_F(MemkindConfigTests,
 {
     memkind_t pmem_kind = nullptr;
 
-    memkind_config_set_path(global_test_cfg, PMEM_DIR);
-    memkind_config_set_size(global_test_cfg, MEMKIND_PMEM_MIN_SIZE -1);
-    memkind_config_set_memory_usage_policy(global_test_cfg,
-                                           MEMKIND_MEM_USAGE_POLICY_MAX_VALUE);
+    int err = memkind_config_set_path(global_test_cfg, PMEM_DIR);
+    ASSERT_EQ(err, 0);
+    err = memkind_config_set_size(global_test_cfg, MEMKIND_PMEM_MIN_SIZE -1);
+    ASSERT_EQ(err, 0);
+    err = memkind_config_set_memory_usage_policy(global_test_cfg,
+                                                 MEMKIND_MEM_USAGE_POLICY_MAX_VALUE);
+    ASSERT_EQ(err, 0);
 
-    int err = memkind_create_pmem_with_config(global_test_cfg, &pmem_kind);
+    err = memkind_create_pmem_with_config(global_test_cfg, &pmem_kind);
     ASSERT_EQ(err, MEMKIND_ERROR_INVALID);
 }
 
@@ -137,17 +150,19 @@ TEST_F(MemkindConfigTests,
        test_TC_MEMKIND_PmemCreatePmemWithParamsSuccessCheckConservativePolicy)
 {
     memkind_t pmem_kind = nullptr;
-    int err = 0;
     double blocksBeforeFree = 0;
     double blocksAfterFree = 0;
     struct memkind_pmem *priv = nullptr;
     void *temp_ptr = nullptr;
     struct stat st;
 
-    memkind_config_set_path(global_test_cfg, PMEM_DIR);
-    memkind_config_set_size(global_test_cfg, 0U);
-    memkind_config_set_memory_usage_policy(global_test_cfg,
-                                           MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE);
+    int err = memkind_config_set_path(global_test_cfg, PMEM_DIR);
+    ASSERT_EQ(err, 0);
+    err = memkind_config_set_size(global_test_cfg, 0U);
+    ASSERT_EQ(err, 0);
+    err= memkind_config_set_memory_usage_policy(global_test_cfg,
+                                                MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE);
+    ASSERT_EQ(err, 0);
     err = memkind_create_pmem_with_config(global_test_cfg, &pmem_kind);
     ASSERT_EQ(err, 0);
 
