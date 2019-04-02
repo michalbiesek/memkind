@@ -1,0 +1,11 @@
+autohbw
+include
+include/memkind/internal
+jemalloc/include/jemalloc/internal
+jemalloc/include/msvc_compat
+jemalloc/include/msvc_compat/C99
+jemalloc/msvc/projects/vc2015/test_threads
+jemalloc/test/include/test
+test
+test/allocator_perf_tool
+test/gtest_fused/gtest
