@@ -24,6 +24,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/jemalloc/obj/include
+JE_PREFIX ?= jemk_
 
 lib_LTLIBRARIES = libmemkind.la
 
@@ -432,7 +433,15 @@ save\n\
 end
 endef
 
-static_lib: jemalloc/obj/lib/libjemalloc_pic.a libmemkind.la
+deps_jemalloc:
+	cd jemalloc && autoconf
+	mkdir -p jemalloc/obj
+	cd jemalloc/obj && ../configure --enable-autogen --with-jemalloc-prefix="$(JE_PREFIX)" --without-export \
+	--with-version=5.0.0-0-g0 --disable-fill --disable-initial-exec-tls \
+	--with-malloc-conf="narenas:256,lg_tcache_max:12"
+	cd jemalloc/obj && $(MAKE)
+
+static_lib: deps_jemalloc jemalloc/obj/lib/libjemalloc_pic.a libmemkind.la
 	bash -c "ar -M < <(echo -e '$(ar_prog)')"
 	cp libmemkind.a .libs/
 	rm libmemkind.a

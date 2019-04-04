@@ -125,8 +125,11 @@ memkind functional tests
 
 cd %{_builddir}/%{buildsubdir}
 echo %{version} > %{_builddir}/%{buildsubdir}/VERSION
-./build.sh --prefix=%{_prefix} --includedir=%{_includedir} --libdir=%{_libdir} \
+./autogen.sh
+./configure --prefix=%{_prefix} --includedir=%{_includedir} --libdir=%{_libdir} \
            --bindir=%{_bindir} --docdir=%{_docdir}/%{namespace} --mandir=%{_mandir} --sbindir=%{_sbindir}
+make %{?_smp_mflags} __MAKE_FLAGS__
+make %{?_smp_mflags} __MAKE_FLAGS__ checkprogs
 
 %install
 cd %{_builddir}/%{buildsubdir}
