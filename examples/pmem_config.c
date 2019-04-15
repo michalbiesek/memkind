@@ -79,17 +79,18 @@ int main(int argc, char *argv[])
     // Create PMEM partition with specific configuration
     err =  memkind_create_pmem_with_config(test_cfg, &pmem_kind);
     if (err) {
+        memkind_config_delete(test_cfg);
         print_err_message(err);
         return 1;
     }
 
     err = memkind_destroy_kind(pmem_kind);
+    memkind_config_delete(test_cfg);
+
     if (err) {
         print_err_message(err);
         return 1;
     }
-
-    memkind_config_delete(test_cfg);
 
     fprintf(stdout,
             "PMEM kind and configuration was successfully created and destroyed.\n");
