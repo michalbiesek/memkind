@@ -53,6 +53,8 @@ int memkind_pmem_destroy(struct memkind *kind);
 void *memkind_pmem_mmap(struct memkind *kind, void *addr, size_t size);
 int memkind_pmem_get_mmap_flags(struct memkind *kind, int *flags);
 
+int get_fallocate_failed ();
+
 struct memkind_pmem {
     int fd;
     off_t offset;

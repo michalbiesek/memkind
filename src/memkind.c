@@ -589,6 +589,11 @@ MEMKIND_EXPORT void *memkind_malloc(struct memkind *kind, size_t size)
     }
 #endif
 
+    if (get_fallocate_failed()) {
+        errno = ENOMEM;
+        return NULL;
+    }
+
     result = kind->ops->malloc(kind, size);
 
 #ifdef MEMKIND_DECORATION_ENABLED
@@ -612,6 +617,11 @@ MEMKIND_EXPORT void *memkind_calloc(struct memkind *kind, size_t num,
         memkind_calloc_pre(&kind, &num, &size);
     }
 #endif
+
+    if (get_fallocate_failed()) {
+        errno = ENOMEM;
+        return NULL;
+    }
 
     result = kind->ops->calloc(kind, num, size);
 
@@ -659,6 +669,10 @@ MEMKIND_EXPORT void *memkind_realloc(struct memkind *kind, void *ptr,
         memkind_realloc_pre(&kind, &ptr, &size);
     }
 #endif
+    if (get_fallocate_failed()) {
+        errno = ENOMEM;
+        return NULL;
+    }
 
     if (!kind) {
         result = heap_manager_realloc(ptr, size);

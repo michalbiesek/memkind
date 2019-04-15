@@ -34,6 +34,12 @@
 #include <jemalloc/jemalloc.h>
 #include <assert.h>
 
+struct fallocate_check{
+    int fallocate_failed;
+};
+
+static struct fallocate_check f_check;
+
 MEMKIND_EXPORT struct memkind_ops MEMKIND_PMEM_OPS = {
     .create = memkind_pmem_create,
     .destroy = memkind_pmem_destroy,
@@ -226,6 +232,11 @@ exit:
     return err;
 }
 
+MEMKIND_EXPORT int get_fallocate_failed ()
+{
+    return f_check.fallocate_failed;
+}
+
 MEMKIND_EXPORT int memkind_pmem_destroy(struct memkind *kind)
 {
     struct memkind_pmem *priv = kind->priv;
@@ -258,6 +269,8 @@ MEMKIND_EXPORT void *memkind_pmem_mmap(struct memkind *kind, void *addr,
     if ((errno = posix_fallocate(priv->fd, priv->offset, (off_t)size)) != 0) {
         if (pthread_mutex_unlock(&priv->pmem_lock) != 0)
             assert(0 && "failed to release mutex");
+        f_check.fallocate_failed = 1;
+        errno = ENOMEM;
         return MAP_FAILED;
     }
 
