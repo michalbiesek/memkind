@@ -122,8 +122,10 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    sprintf(ptr_default, "Hello world from standard memory - ptr_default.\n");
-    sprintf(ptr_pmem, "Hello world from file-backed memory - ptr_pmem.\n");
+    snprintf(ptr_default, size,
+             "Hello world from standard memory - ptr_default.\n");
+    snprintf(ptr_pmem, HEAP_LIMIT_SIMULATE,
+             "Hello world from file-backed memory - ptr_pmem.\n");
 
     fprintf(stdout, "%s", ptr_default);
     fprintf(stdout, "%s", ptr_pmem);

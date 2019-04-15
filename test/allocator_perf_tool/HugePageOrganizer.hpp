@@ -61,9 +61,9 @@ private:
     {
         std::string line;
         char path[128];
-        sprintf(path,
-                "/sys/devices/system/node/node%d/hugepages/hugepages-2048kB/nr_hugepages",
-                node_number);
+        snprintf(path, 128,
+                 "/sys/devices/system/node/node%d/hugepages/hugepages-2048kB/nr_hugepages",
+                 node_number);
         std::ifstream file(path);
         if (!file) {
             return -1;
@@ -75,9 +75,9 @@ private:
     int set_nr_hugepages(int nr_hugepages, int node_number)
     {
         char cmd[128];
-        sprintf(cmd, "sudo sh -c \"echo %d > \
+        snprintf(cmd, 128, "sudo sh -c \"echo %d > \
             /sys/devices/system/node/node%d/hugepages/hugepages-2048kB/nr_hugepages\"",
-                nr_hugepages, node_number);
+                 nr_hugepages, node_number);
         if (system(cmd) || (get_nr_hugepages(node_number) != nr_hugepages)) {
             return -1;
         }

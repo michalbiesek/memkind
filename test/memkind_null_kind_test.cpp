@@ -168,7 +168,7 @@ TEST_F(MemkindNullKindTests,
     test1 = (char *)memkind_malloc(MEMKIND_DEFAULT, size);
     ASSERT_NE(test1, nullptr);
 
-    sprintf(test1, "%s", val);
+    snprintf(test1, size, "%s", val);
 
     size *= 2;
     test2 = (char *)memkind_realloc(nullptr, test1, size);
@@ -201,7 +201,7 @@ TEST_F(MemkindNullKindTests,
     test1 = (char *)memkind_malloc(MEMKIND_DEFAULT, size);
     ASSERT_NE(test1, nullptr);
 
-    sprintf(test1, "%s", val);
+    snprintf(test1, size, "%s", val);
 
     size = 4;
     test2 = (char *)memkind_realloc(nullptr, test1, size);

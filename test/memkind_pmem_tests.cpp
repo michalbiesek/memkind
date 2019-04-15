@@ -140,7 +140,7 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemMalloc)
     default_str = (char *)memkind_malloc(pmem_kind, size);
     ASSERT_NE(nullptr, default_str);
 
-    sprintf(default_str, "memkind_malloc MEMKIND_PMEM\n");
+    snprintf(default_str, size, "memkind_malloc MEMKIND_PMEM\n");
     printf("%s", default_str);
 
     memkind_free(pmem_kind, default_str);
@@ -181,7 +181,7 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemCallocSmallClassMultipleTimes)
         ASSERT_EQ(*default_str, 0);
         ASSERT_EQ(memcmp(default_str, default_str + 1, size - 1), 0);
 
-        sprintf(default_str, "memkind_calloc MEMKIND_PMEM\n");
+        snprintf(default_str, size, "memkind_calloc MEMKIND_PMEM\n");
 
         memkind_free(pmem_kind, default_str);
     }
@@ -244,7 +244,7 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemCallocHugeClassMultipleTimes)
         ASSERT_EQ(*default_str, 0);
         ASSERT_EQ(memcmp(default_str, default_str + 1, size - 1), 0);
 
-        sprintf(default_str, "memkind_calloc MEMKIND_PMEM\n");
+        snprintf(default_str, size, "memkind_calloc MEMKIND_PMEM\n");
 
         memkind_free(pmem_kind, default_str);
     }
@@ -314,13 +314,15 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemRealloc)
     default_str = (char *)memkind_realloc(pmem_kind, default_str, size1);
     ASSERT_NE(nullptr, default_str);
 
-    sprintf(default_str, "memkind_realloc MEMKIND_PMEM with size %zu\n", size1);
+    snprintf(default_str, size1, "memkind_realloc MEMKIND_PMEM with size %zu\n",
+             size1);
     printf("%s", default_str);
 
     default_str = (char *)memkind_realloc(pmem_kind, default_str, size2);
     ASSERT_NE(nullptr, default_str);
 
-    sprintf(default_str, "memkind_realloc MEMKIND_PMEM with size %zu\n", size2);
+    snprintf(default_str, size2, "memkind_realloc MEMKIND_PMEM with size %zu\n",
+             size2);
     printf("%s", default_str);
 
     memkind_free(pmem_kind, default_str);
@@ -515,7 +517,7 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemReallocIncreaseSize)
     test1 = (char *)memkind_malloc(pmem_kind, size);
     ASSERT_NE(test1, nullptr);
 
-    sprintf(test1, "%s", val);
+    snprintf(test1, size, "%s", val);
 
     size *= 2;
     test2 = (char *)memkind_realloc(pmem_kind, test1, size);
@@ -537,7 +539,7 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemReallocIncreaseSizeNullKindVariant)
     test1 = (char *)memkind_malloc(pmem_kind, size);
     ASSERT_NE(test1, nullptr);
 
-    sprintf(test1, "%s", val);
+    snprintf(test1, size, "%s", val);
 
     size *= 2;
     test2 = (char *)memkind_realloc(nullptr, test1, size);
@@ -559,7 +561,7 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemReallocDecreaseSize)
     test1 = (char *)memkind_malloc(pmem_kind, size);
     ASSERT_NE(test1, nullptr);
 
-    sprintf(test1, "%s", val);
+    snprintf(test1, size, "%s", val);
 
     size = 4;
     test2 = (char *)memkind_realloc(pmem_kind, test1, size);
@@ -581,7 +583,7 @@ TEST_F(MemkindPmemTests, test_TC_MEMKIND_PmemReallocDecreaseSizeNullKindVariant)
     test1 = (char *)memkind_malloc(pmem_kind, size);
     ASSERT_NE(test1, nullptr);
 
-    sprintf(test1, "%s", val);
+    snprintf(test1, size, "%s", val);
 
     size = 4;
     test2 = (char *)memkind_realloc(nullptr, test1, size);

@@ -37,6 +37,7 @@
 #include <stdlib.h>
 
 #define PMEM_MAX_SIZE (1024 * 1024 * 32)
+#define MB (1024 * 1024)
 
 static char path[PATH_MAX]="/tmp/";
 
@@ -84,30 +85,31 @@ int main(int argc, char *argv[])
     }
 
     // Allocate 8 MB of 31.9 MB available
-    pmem_str2 = (char *)memkind_malloc(pmem_kind, 8 * 1024 * 1024);
+    pmem_str2 = (char *)memkind_malloc(pmem_kind, 8 * MB);
     if (pmem_str2 == NULL) {
         fprintf(stderr, "Unable to allocate pmem string (pmem_str2).\n");
         return 1;
     }
 
     // Allocate 16 MB of 23.9 MB available
-    pmem_str3 = (char *)memkind_malloc(pmem_kind, 16 * 1024 * 1024);
+    pmem_str3 = (char *)memkind_malloc(pmem_kind, 16 * MB);
     if (pmem_str3 == NULL) {
         fprintf(stderr, "Unable to allocate pmem string (pmem_str3).\n");
         return 1;
     }
 
     // Allocate 16 MB of 7.9 MB available - Out Of Memory expected
-    pmem_str4 = (char *)memkind_malloc(pmem_kind, 16 * 1024 * 1024);
+    pmem_str4 = (char *)memkind_malloc(pmem_kind, 16 * MB);
     if (pmem_str4 != NULL) {
         fprintf(stderr,
                 "Failure, this allocation should not be possible (expected result was NULL).\n");
         return 1;
     }
 
-    sprintf(pmem_str1, "Hello world from pmem - pmem_str1.\n");
-    sprintf(pmem_str2, "Hello world from pmem - pmem_str2.\n");
-    sprintf(pmem_str3, "Hello world from persistent memory - pmem_str3.\n");
+    snprintf(pmem_str1, 512, "Hello world from pmem - pmem_str1.\n");
+    snprintf(pmem_str2, 8 * MB, "Hello world from pmem - pmem_str2.\n");
+    snprintf(pmem_str3, 16 * MB,
+             "Hello world from persistent memory - pmem_str3.\n");
 
     fprintf(stdout, "%s", pmem_str1);
     fprintf(stdout, "%s", pmem_str2);

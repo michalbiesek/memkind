@@ -90,9 +90,9 @@ int main(int argc, char **argv)
     fprintf(stdout,
             "Memory was successfully allocated in default kind and pmem kind.\n");
 
-    sprintf(ptr[10], "Hello world from standard memory - ptr[10].\n");
-    sprintf(ptr[40], "Hello world from standard memory - ptr[40].\n");
-    sprintf(ptr[80], "Hello world from persistent memory - ptr[80].\n");
+    snprintf(ptr[10], size, "Hello world from standard memory - ptr[10].\n");
+    snprintf(ptr[40], size, "Hello world from standard memory - ptr[40].\n");
+    snprintf(ptr[80], size, "Hello world from persistent memory - ptr[80].\n");
 
     fprintf(stdout, "%s", ptr[10]);
     fprintf(stdout, "%s", ptr[40]);

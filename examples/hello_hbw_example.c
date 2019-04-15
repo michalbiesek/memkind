@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 - 2018 Intel Corporation.
+ * Copyright (C) 2014 - 2019 Intel Corporation.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,9 +59,10 @@ int main(int argc, char **argv)
         goto exit;
     }
 
-    sprintf(default_str, "Hello world from standard memory\n");
-    sprintf(hbw_str, "Hello world from high bandwidth memory\n");
-    sprintf(hbw_hugetlb_str, "Hello world from high bandwidth 2 MB paged memory\n");
+    snprintf(default_str, size, "Hello world from standard memory\n");
+    snprintf(hbw_str, size, "Hello world from high bandwidth memory\n");
+    snprintf(hbw_hugetlb_str, size,
+             "Hello world from high bandwidth 2 MB paged memory\n");
 
     fprintf(stdout, "%s", default_str);
     fprintf(stdout, "%s", hbw_str);
