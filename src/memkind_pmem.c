@@ -221,7 +221,8 @@ MEMKIND_EXPORT int memkind_pmem_create(struct memkind *kind,
 
 exit:
     /* err is set, please don't overwrite it with result of pthread_mutex_destroy */
-    pthread_mutex_destroy(&priv->pmem_lock);
+    if (pthread_mutex_destroy(&priv->pmem_lock) != 0)
+        assert(0 && "failed to destroy mutex");
     jemk_free(priv);
     return err;
 }
@@ -232,7 +233,8 @@ MEMKIND_EXPORT int memkind_pmem_destroy(struct memkind *kind)
 
     memkind_arena_destroy(kind);
 
-    pthread_mutex_destroy(&priv->pmem_lock);
+    if (pthread_mutex_destroy(&priv->pmem_lock) != 0)
+        assert(0 && "failed to destroy mutex");
 
     (void) close(priv->fd);
     jemk_free(priv);
