@@ -277,7 +277,7 @@ MEMKIND_EXPORT void *memkind_pmem_mmap(struct memkind *kind, void *addr,
         return MAP_FAILED;
     }
 
-    if ((result = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, priv->fd,
+    if ((result = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE, priv->fd,
                        priv->offset)) != MAP_FAILED) {
         priv->offset += size;
     }
