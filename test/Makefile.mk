@@ -77,6 +77,7 @@ test_all_tests_SOURCES = $(fused_gtest) \
                          test/check.cpp \
                          test/check.h \
                          test/common.h \
+                         test/defrag_test.cpp \
                          test/dlopen_test.cpp \
                          test/error_message_tests.cpp \
                          test/get_arena_test.cpp \

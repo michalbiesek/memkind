@@ -62,6 +62,11 @@ void memkind_arena_free_with_kind_detect(void *ptr);
 size_t memkind_arena_malloc_usable_size(void *ptr);
 int memkind_arena_update_memory_usage_policy(struct memkind *kind,
                                              memkind_mem_usage_policy policy);
+int memkind_get_defrag_hint(void* ptr_in);
+int memkind_get_defrag_hint_1(void* ptr_in);
+int memkind_get_defrag_hint_2(void* ptr_in);
+void* memkind_arena_try_defrag(struct memkind *kind, void *ptr);
+int memkind_check_defrag(void* ptr);
 #ifdef __cplusplus
 }
 #endif

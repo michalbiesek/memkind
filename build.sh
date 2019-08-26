@@ -28,7 +28,7 @@ cd $(dirname $0)
 EXTRA_CONF=$@
 
 ./autogen.sh
-./configure $EXTRA_CONF
+./configure $EXTRA_CONF --enable-debug
 
 #use V=1 for full cmdlines of build
 make all -j`nproc`

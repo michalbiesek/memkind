@@ -762,3 +762,147 @@ void memkind_arena_init(struct memkind *kind)
         }
     }
 }
+
+//#define CHECK_CUR_SLAB  (ptr_in >= SLABCUR_READ(out))
+//    {
+//        if ((char*)ptr_in < (char*)SLABCUR_READ(out) + SIZE_READ(out))
+
+//#define CHECK_BIN_UTILIZATION           if(NFREE_READ(out) * BIN_NREGS_READ(out) >= NREGS_READ(out) * BIN_NFREE_READ(out))
+//          {
+//            if(NFREE_READ(out) > 0)
+#define OUTPUT_UTIL (size_t)(sizeof(void *) + sizeof(size_t) * 5)
+#define SLABCUR_READ(out) (*(void **)out)
+#define COUNTS(out) ((size_t *)((void **)out + 1))
+#define NFREE_READ(out) COUNTS(out)[0]
+#define NREGS_READ(out) COUNTS(out)[1]
+#define SIZE_READ(out) (uintptr_t)COUNTS(out)[2]
+#define BIN_NFREE_READ(out) COUNTS(out)[3]
+#define BIN_NREGS_READ(out) COUNTS(out)[4]
+
+MEMKIND_EXPORT int memkind_check_defrag(void* ptr)
+{
+   void **in = &ptr;
+   char out[OUTPUT_UTIL] = {-1};
+   size_t out_sz= OUTPUT_UTIL;
+//   void *out = jemk_mallocx(out_sz, 0);
+   int err = jemk_mallctl("experimental.utilization.query", out, &out_sz, in, sizeof(const void *));
+   if (err) {
+        log_err("Could not get information about arena utilization.");
+        return MEMKIND_ERROR_RUNTIME;
+   }
+    if (ptr >= SLABCUR_READ(out))
+    {
+        if ((char*)ptr < (char*)SLABCUR_READ(out) + SIZE_READ(out))
+        {
+          if(NFREE_READ(out) * BIN_NREGS_READ(out) >= NREGS_READ(out) * BIN_NFREE_READ(out))
+          {
+            if(NFREE_READ(out) > 0)
+            {
+                return MEMKIND_SUCCESS;
+            }
+          }
+        }
+    }
+
+   return MEMKIND_ERROR_OPERATION_FAILED;
+}
+
+MEMKIND_EXPORT int memkind_get_defrag_hint(void* ptr_in)
+{
+    size_t out_sz = sizeof(void *) + sizeof(size_t) * 5;
+    size_t in_sz = sizeof(const void *);
+    void **in = &ptr_in;
+    void *out = jemk_mallocx(out_sz, 0);
+    int err = jemk_mallctl("experimental.utilization.query", out, &out_sz, in, in_sz);
+    if (err) {
+        jemk_free(out);
+        log_fatal("ERROR!");
+        abort();
+    }
+    if (ptr_in >= SLABCUR_READ(out))
+    {
+        if ((char*)ptr_in < (char*)SLABCUR_READ(out) + SIZE_READ(out))
+        {
+          if(NFREE_READ(out) * BIN_NREGS_READ(out) >= NREGS_READ(out) * BIN_NFREE_READ(out))
+          {
+            if(NFREE_READ(out) > 0)
+            {
+                jemk_free(out);
+                return 0;
+            }
+          }
+        }
+    }
+    jemk_free(out);
+    return 1;
+}
+
+MEMKIND_EXPORT int memkind_get_defrag_hint_1(void* ptr_in)
+{
+    size_t out_sz = sizeof(void *) + sizeof(size_t) * 5;
+    size_t in_sz = sizeof(const void *);
+    void **in = &ptr_in;
+    void *out = jemk_mallocx(out_sz, 0);
+    int err = jemk_mallctl("experimental.utilization.query", out, &out_sz, in, in_sz);
+    if (err) {
+        jemk_free(out);
+        log_fatal("ERROR!");
+        abort();
+    }
+    if (ptr_in >= SLABCUR_READ(out))
+    {
+        if ((char*)ptr_in < (char*)SLABCUR_READ(out) + SIZE_READ(out))
+        {
+            jemk_free(out);
+            return 0;
+        }
+    }
+    jemk_free(out);
+    return 1;
+}
+
+MEMKIND_EXPORT int memkind_get_defrag_hint_2(void* ptr_in)
+{
+    size_t out_sz = sizeof(void *) + sizeof(size_t) * 5;
+    size_t in_sz = sizeof(const void *);
+    void **in = &ptr_in;
+    void *out = jemk_mallocx(out_sz, 0);
+    int err = jemk_mallctl("experimental.utilization.query", out, &out_sz, in, in_sz);
+    if (err) {
+        jemk_free(out);
+        log_fatal("ERROR!");
+        abort();
+    }
+    if(NFREE_READ(out) * BIN_NREGS_READ(out) >= NREGS_READ(out) * BIN_NFREE_READ(out))
+    {
+        if(NFREE_READ(out) > 0)
+        {
+            jemk_free(out);
+            return 0;
+        }
+    }
+    jemk_free(out);
+    return 1;
+}
+
+MEMKIND_EXPORT void* memkind_arena_try_defrag(struct memkind *kind, void *ptr)
+{
+    if (!ptr) {
+        return NULL;
+    }
+
+    int res = memkind_get_defrag_hint(ptr);
+    if (res) {
+        return NULL;
+    }
+
+    size_t size = memkind_arena_malloc_usable_size(ptr);
+    if (get_tcache_flag(kind->partition, size) > TCACHE_MAX)
+    {
+        return NULL;
+    }
+    void *ptr_new = memkind_arena_malloc(kind, size);
+    memcpy(ptr_new, ptr, size);
+    memkind_arena_free(kind, ptr);
+    return ptr_new;
+}
