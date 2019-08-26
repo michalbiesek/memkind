@@ -481,11 +481,19 @@ MEMKIND_EXPORT struct memkind *memkind_arena_detect_kind(void *ptr)
     return (kind) ? kind : MEMKIND_DEFAULT;
 }
 
+static inline bool is_size_fit_in_tcache(unsigned partition, size_t size)
+{
+    if(size > TCACHE_MAX || partition >= MEMKIND_NUM_BASE_KIND) {
+        return false;
+    }
+    return true;
+}
+
 static inline int get_tcache_flag(unsigned partition, size_t size)
 {
 
     // do not cache allocation larger than tcache_max nor those coming from non-static kinds
-    if(size > TCACHE_MAX || partition >= MEMKIND_NUM_BASE_KIND) {
+    if(!is_size_fit_in_tcache(partition, size)) {
         return MALLOCX_TCACHE_NONE;
     }
 
@@ -508,6 +516,21 @@ static inline int get_tcache_flag(unsigned partition, size_t size)
         }
     }
     return MALLOCX_TCACHE(tcache_map[partition]);
+}
+
+void *memkind_arena_malloc_no_tcache(struct memkind *kind, size_t size)
+{
+    void *result = NULL;
+    unsigned arena;
+    if( kind->ops->get_arena) {
+        int err = kind->ops->get_arena(kind, &arena, size);
+        if (MEMKIND_LIKELY(!err)) {
+            result = jemk_mallocx_check(size, MALLOCX_ARENA(arena) | MALLOCX_TCACHE_NONE);
+        }
+    } else {
+        result = jemk_mallocx_check(size, MALLOCX_TCACHE_NONE);
+    }
+    return result;
 }
 
 MEMKIND_EXPORT void *memkind_arena_malloc(struct memkind *kind, size_t size)
@@ -861,4 +884,64 @@ int memkind_arena_background_thread(void)
         return MEMKIND_ERROR_INVALID;
     }
     return err;
+}
+
+#define OUTPUT_UTIL (size_t)(sizeof(void *) + sizeof(size_t) * 5)
+#define SLABCUR_READ(out) (*(void **)out)
+#define COUNTS(out) ((size_t *)((void **)out + 1))
+#define NFREE_READ(out) COUNTS(out)[0]
+#define NREGS_READ(out) COUNTS(out)[1]
+#define SIZE_READ(out) (uintptr_t)COUNTS(out)[2]
+#define BIN_NFREE_READ(out) COUNTS(out)[3]
+#define BIN_NREGS_READ(out) COUNTS(out)[4]
+
+static bool memkind_check_defrag_condition(void* ptr_in)
+{
+    if (!ptr_in) {
+        return false;
+    }
+    size_t out_sz = sizeof(void *) + sizeof(size_t) * 5;
+    size_t in_sz = sizeof(const void *);
+    void **in = &ptr_in;
+    void *out = malloc(8);
+    int err = jemk_mallctl("experimental.utilization.query", out, &out_sz, in, in_sz);
+    if (err) {
+        free(out);
+        return false;
+    }
+    if ((ptr_in >= SLABCUR_READ(out)) &&
+        ((char*)ptr_in < (char*)SLABCUR_READ(out) + SIZE_READ(out)) &&
+        (NFREE_READ(out) * BIN_NREGS_READ(out) >= NREGS_READ(out) * BIN_NFREE_READ(out)) &&
+        (NFREE_READ(out) > 0)) {
+            free(out);
+            return true;
+    }
+    free(out);
+    return false;
+}
+
+void * memkind_defrag_allocation(struct memkind *kind, void *ptr, size_t size)
+{
+    void *ptr_new = memkind_arena_malloc(kind, size);
+    memcpy(ptr_new, ptr, size);
+    memkind_arena_free(kind, ptr);
+    return ptr_new;
+}
+
+void* memkind_arena_try_defrag_with_kind_detect (void *ptr)
+{
+    return memkind_arena_try_defrag(memkind_detect_kind(ptr),ptr);
+}
+
+void* memkind_arena_try_defrag(struct memkind *kind, void *ptr)
+{
+    if(!memkind_check_defrag_condition(ptr)) {
+        return NULL;
+    }
+    size_t size = memkind_arena_malloc_usable_size(ptr);
+    if (is_size_fit_in_tcache(kind->partition, size))
+    {
+        return NULL;
+    }
+    return memkind_defrag_allocation(kind, ptr, size);
 }

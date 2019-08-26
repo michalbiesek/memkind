@@ -54,6 +54,8 @@ int tbb_update_cached_stats(void);
 /* get allocator stat for TBB (unsupported) */
 int tbb_get_global_stat(memkind_stat_type stat, size_t *value);
 
+/* try defrag allocation for TBB (unsupported) */
+void* tbb_pool_try_defrag_with_kind_detect(void *ptr);
 #ifdef __cplusplus
 }
 #endif

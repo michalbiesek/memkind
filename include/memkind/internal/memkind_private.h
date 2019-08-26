@@ -63,7 +63,6 @@ extern "C" {
 #define jemk_free                   JE_SYMBOL(free)
 #define jemk_dallocx                JE_SYMBOL(dallocx)
 #define jemk_malloc_usable_size     JE_SYMBOL(malloc_usable_size)
-#define jemk_get_defrag_hint        JE_SYMBOL(get_defrag_hint)
 
 enum memkind_const_private {
     MEMKIND_NAME_LENGTH_PRIV = 64
@@ -92,7 +91,8 @@ struct memkind_ops {
     size_t (* malloc_usable_size)(struct memkind *kind, void *ptr);
     int (* update_memory_usage_policy)(struct memkind *kind,
                                        memkind_mem_usage_policy policy);
-    int ( *get_stat)(memkind_t kind, memkind_stat_type stat, size_t *value);
+    int (* get_stat)(memkind_t kind, memkind_stat_type stat, size_t *value);
+    void * (* try_defrag) (struct memkind *kind, void *ptr);
 };
 
 struct memkind {
