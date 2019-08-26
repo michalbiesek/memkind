@@ -481,11 +481,19 @@ MEMKIND_EXPORT struct memkind *memkind_arena_detect_kind(void *ptr)
     return (kind) ? kind : MEMKIND_DEFAULT;
 }
 
+static inline bool is_size_fit_in_tcache(unsigned partition, size_t size)
+{
+    if (size > TCACHE_MAX || partition >= MEMKIND_NUM_BASE_KIND) {
+        return false;
+    }
+    return true;
+}
+
 static inline int get_tcache_flag(unsigned partition, size_t size)
 {
 
     // do not cache allocation larger than tcache_max nor those coming from non-static kinds
-    if(size > TCACHE_MAX || partition >= MEMKIND_NUM_BASE_KIND) {
+    if(!is_size_fit_in_tcache(partition, size)) {
         return MALLOCX_TCACHE_NONE;
     }
 
@@ -881,4 +889,53 @@ int memkind_arena_background_thread(void)
         return MEMKIND_ERROR_INVALID;
     }
     return err;
+}
+
+struct mem_util_stats {
+    void *destination_slab; //address of the slab of a potential realloaction would go to ( NULL in case of large/huge allocation)
+    size_t nfree;           // number of free regions in the slab
+    size_t nregs;           // number of regions in the slab
+    size_t slab_size;       //size of the slab in bytes
+    size_t bin_nfree;       // total number of free regions in the bin the slab belongs to
+    size_t bin_nregs;       // total number of regions in the bin the slab belongs to
+};
+
+void *memkind_arena_transfer_allocation_with_kind_detect (void *ptr)
+{
+    return memkind_arena_transfer_allocation(memkind_detect_kind(ptr), ptr);
+}
+
+void *memkind_arena_transfer_allocation(struct memkind *kind, void *ptr)
+{
+    if (!ptr) {
+        return NULL;
+    }
+
+    size_t size = memkind_arena_malloc_usable_size(ptr);
+    if (is_size_fit_in_tcache(kind->partition, size)) {
+        return NULL;
+    }
+
+    size_t out_sz = sizeof(struct mem_util_stats);
+    struct mem_util_stats out;
+    int err = jemk_mallctl("experimental.utilization.query", &out, &out_sz, &ptr, sizeof(ptr));
+    if (err) {
+        log_err("Error on get utilization query");
+        return NULL;
+    }
+
+    // Check if input pointer resides in the same slab of reallcoation
+    // Check if occupied regions inside the slab are below average occupied regions inside bin
+    // Check if there are some free regions in the destination slab
+    if((out.destination_slab) &&
+        (ptr >= out.destination_slab) &&
+        ((char*)ptr < (char*)out.destination_slab + out.slab_size) &&
+        (out.nfree * out.bin_nregs >= out.nregs * out.bin_nfree &&
+        out.nfree != 0) ) {
+            void *ptr_new = memkind_arena_malloc(kind, size);
+            memcpy(ptr_new, ptr, size);
+            memkind_arena_free(kind, ptr);
+            return ptr_new;
+    }
+    return NULL;
 }
