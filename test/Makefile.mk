@@ -224,13 +224,21 @@ test_alloc_benchmark_tbb_SOURCES = test/alloc_benchmark.c \
                                    test/tbbmalloc.h \
                                    # end
 
-# Pmem fragmentation benchmark
-check_PROGRAMS += test/fragmentation_benchmark_pmem
-test_fragmentation_benchmark_pmem_LDADD = libmemkind.la
-test_fragmentation_benchmark_pmem_SOURCES = test/fragmentation_benchmark_pmem.cpp
-test_fragmentation_benchmark_pmem_CXXFLAGS = -O0 -Wall
+# Pmem fragmentation benchmarks
+check_PROGRAMS += test/fragmentation_bench_pmem
+test_fragmentation_bench_pmem_LDADD = libmemkind.la
+test_fragmentation_bench_pmem_SOURCES = test/fragmentation_benchmark_pmem.cpp
+test_fragmentation_bench_pmem_CXXFLAGS = -O0 -Wall
 if HAVE_CXX11
-test_fragmentation_benchmark_pmem_CXXFLAGS += -std=c++11
+test_fragmentation_bench_pmem_CXXFLAGS += -std=c++11
+endif
+
+check_PROGRAMS += test/fragmentation_multi_bench_pmem
+test_fragmentation_multi_bench_pmem_LDADD = libmemkind.la
+test_fragmentation_multi_bench_pmem_SOURCES = test/fragmentation_multi_bench_pmem.cpp
+test_fragmentation_multi_bench_pmem_CXXFLAGS = -O0 -Wall
+if HAVE_CXX11
+test_fragmentation_multi_bench_pmem_CXXFLAGS += -std=c++11
 endif
 
 # Examples as tests

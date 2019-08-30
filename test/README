@@ -60,7 +60,8 @@ This is scenario for all stress and longevity tests.
 BENCHMARKS
 ===============
 
-fragmentation_benchmark_pmem
+fragmentation_bench_pmem
+fragmentation_multi_bench_pmem
 ------------
 The program logging memory fragmentation of specific workload.
 
@@ -73,7 +74,7 @@ The program takes, as arguments:
 
 For example:
 
-    ./fragmentation_benchmark_pmem /mnt/pmem 17 0 60 output.txt
+    ./fragmentation_bench_pmem /mnt/pmem 17 0 60 output.txt
 
 This will create PMEM kind limited with 17 MB in /mnt/pmem/ with default memory usage policy
 and save results in output.txt file after 60 seconds.
