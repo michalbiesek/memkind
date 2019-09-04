@@ -60,11 +60,12 @@ if [ -n "$TBB_LIBRARY_VERSION" ]; then
     HEAP_MANAGER="TBB"
 fi
 
+test/.libs/allocator_perf_tool_tests --gtest_filter=PmemAllocPerformanceTest*
 # running tests and display output in case of failure
-make check || { cat test-suite.log; exit 1; }
+#make check || { cat test-suite.log; exit 1; }
 
 # running pmem examples
-find examples/.libs -name "pmem*" -executable -type f -exec sh -c "MEMKIND_HEAP_MANAGER=$HEAP_MANAGER "{}" " \;
+#find examples/.libs -name "pmem*" -executable -type f -exec sh -c "MEMKIND_HEAP_MANAGER=$HEAP_MANAGER "{}" " \;
 
 # executing coverage script if codecov token is set
 if [ -n "$CODECOV_TOKEN" ]; then
