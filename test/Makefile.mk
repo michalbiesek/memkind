@@ -233,6 +233,14 @@ if HAVE_CXX11
 test_fragmentation_benchmark_pmem_CXXFLAGS += -std=c++11
 endif
 
+check_PROGRAMS += test/fragmentation_benchmark_pmem_multi
+test_fragmentation_benchmark_pmem_multi_LDADD = libmemkind.la
+test_fragmentation_benchmark_pmem_multi_SOURCES = test/fragmentation_benchmark_pmem_multi.cpp
+test_fragmentation_benchmark_pmem_multi_CXXFLAGS = -O0 -Wall
+if HAVE_CXX11
+test_fragmentation_benchmark_pmem_multi_CXXFLAGS += -std=c++11
+endif
+
 # Examples as tests
 check_PROGRAMS += test/autohbw_candidates \
                   test/filter_memkind \

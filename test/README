@@ -78,6 +78,27 @@ For example:
 This will create PMEM kind limited with 17 MB in /mnt/pmem/ with default memory usage policy
 and save results in output.txt file after 60 seconds.
 
+fragmentation_benchmark_pmem_multi
+------------
+The program logging memory fragmentation of specific workload (defined by min_size and max_size)
+in files with date and timestamps ("bench_multi_thread_x_yyyymmdd-hhmm.log").
+
+The program takes, as arguments:
+* pmem_path - path where file-backed memory kind should be created
+* pmem_size - file-backed memory kind size limit, given in megabytes
+* pmem_memory_usage_policy - 0 - MEMKIND_MEM_USAGE_POLICY_DEFAULT, 1 - MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE
+* min_size - minimum allocation size, given in kilobytes
+* max_size - maximum allocation size, given in kilobytes
+* iteration - number of iterations inside the thread
+* thread_no - number of threads
+
+For example:
+
+    ./fragmentation_benchmark_pmem_multi /mnt/pmem 800 1 128 256 100000 5
+
+This will create PMEM kind limited with 800 MB in /mnt/pmem/ with conservative memory usage policy
+and save results in 5 log files(for each thread) after 100000 operations inside the thread.
+
 MANUAL TESTING
 ==============
 In order to run tests on local machine, test.sh should be executed.
