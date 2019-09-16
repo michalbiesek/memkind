@@ -34,4 +34,6 @@
 
 CODECOV_TOKEN=$1
 MEMKIND_REPO_PATH=$2
+echo "Run coverage executed."
+
 bash <(curl -s https://codecov.io/bash) -t "$CODECOV_TOKEN" -p "$MEMKIND_REPO_PATH" -Z

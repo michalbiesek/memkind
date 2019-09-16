@@ -61,7 +61,7 @@ if [ -n "$TBB_LIBRARY_VERSION" ]; then
 fi
 
 # running tests and display output in case of failure
-make check || { cat test-suite.log; exit 1; }
+#make check || { cat test-suite.log; exit 1; }
 
 # running pmem examples
 find examples/.libs -name "pmem*" -executable -type f -exec sh -c "MEMKIND_HEAP_MANAGER=$HEAP_MANAGER "{}" " \;
