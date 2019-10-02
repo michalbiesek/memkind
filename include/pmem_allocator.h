@@ -47,6 +47,7 @@ namespace libmemkind
     enum class allocation_policy {
         DEFAULT = MEMKIND_MEM_USAGE_POLICY_DEFAULT,
         CONSERVATIVE = MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE,
+        CPU_PRIORITIZE = MEMKIND_MEM_USAGE_POLICY_CPU_PRIORITIZE,
         MAX
     };
 

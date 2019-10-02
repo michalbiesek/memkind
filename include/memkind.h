@@ -150,8 +150,9 @@ enum {
 
 /// \brief Memkind memory usage policy
 typedef enum memkind_mem_usage_policy {
-    MEMKIND_MEM_USAGE_POLICY_DEFAULT      = 0,        /**<  Default  memory usage  */
-    MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE = 1,        /**<  Minimize memory usage at all costs, */
+    MEMKIND_MEM_USAGE_POLICY_DEFAULT        = 0,        /**<  Default  memory usage  */
+    MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE   = 1,        /**<  Minimize memory usage at all costs, */
+    MEMKIND_MEM_USAGE_POLICY_CPU_PRIORITIZE = 2,        /**<  Prioritize CPU usage at all costs, */
     MEMKIND_MEM_USAGE_POLICY_MAX_VALUE
 } memkind_mem_usage_policy;
 

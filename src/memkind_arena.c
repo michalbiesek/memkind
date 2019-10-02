@@ -118,6 +118,7 @@ static void arena_config_init()
 #define MALLOCX_ARENA_MAX           0xffe        // copy-pasted from jemalloc/internal/jemalloc_internal.h
 #define DIRTY_DECAY_MS_DEFAULT      10000        // copy-pasted from jemalloc/internal/arena_types.h DIRTY_DECAY_MS_DEFAULT
 #define DIRTY_DECAY_MS_CONSERVATIVE     0
+#define DIRTY_DECAY_MS_CPU_PRIORITIZE     100000
 
 static struct memkind *arena_registry_g[MALLOCX_ARENA_MAX];
 static pthread_mutex_t arena_registry_write_lock;
@@ -575,6 +576,9 @@ MEMKIND_EXPORT int memkind_arena_update_memory_usage_policy(
             break;
         case MEMKIND_MEM_USAGE_POLICY_CONSERVATIVE:
             dirty_decay_val = DIRTY_DECAY_MS_CONSERVATIVE;
+            break;
+        case MEMKIND_MEM_USAGE_POLICY_CPU_PRIORITIZE:
+            dirty_decay_val = DIRTY_DECAY_MS_CPU_PRIORITIZE;
             break;
         default:
             log_err("Unrecognized memory policy %d", policy);
