@@ -137,13 +137,13 @@ MEMKIND_EXPORT int memkind_dax_kmem_get_mbind_nodemask(struct memkind *kind,
 MEMKIND_EXPORT int memkind_dax_kmem_all_get_mbind_nodemask(struct memkind *kind,
                                                            unsigned long *nodemask, unsigned long maxnode)
 {
-    int cpu;
     struct bitmask nodemask_bm = {maxnode, nodemask};
     struct bandwidth_closest_numanode_t *g = &memkind_dax_kmem_closest_numanode_g;
     pthread_once(&memkind_dax_kmem_closest_numanode_once_g,
                  memkind_dax_kmem_closest_numanode_init);
 
     if (MEMKIND_LIKELY(!g->init_err && nodemask)) {
+        int cpu;
         numa_bitmask_clearall(&nodemask_bm);
         for (cpu = 0; cpu < g->num_cpu; ++cpu) {
             numa_bitmask_setbit(&nodemask_bm, g->closest_numanode[cpu]);
