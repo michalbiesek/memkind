@@ -94,8 +94,10 @@ static int get_dax_kmem_nodes(struct bitmask *dax_kmem_node_mask)
 
     daxctl_unref(ctx);
 
-    return (numa_bitmask_weight(dax_kmem_node_mask)) ? MEMKIND_SUCCESS :
-           MEMKIND_ERROR_UNAVAILABLE;
+    return MEMKIND_SUCCESS;
+
+//    return (numa_bitmask_weight(dax_kmem_node_mask)) ? MEMKIND_SUCCESS :
+//           MEMKIND_ERROR_UNAVAILABLE;
 }
 static int fill_dax_kmem_values_automatic(int *bandwidth)
 {
