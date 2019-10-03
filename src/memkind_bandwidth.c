@@ -49,16 +49,22 @@ struct bandwidth_nodes_t {
 static void bandwidth_assign_arbitrary_values(int *bandwidth,
                                               struct bitmask *numa_nodes_bm)
 {
-    int i, nodes_num = numa_num_configured_nodes();
+    unsigned i;
+    int nodes_num = numa_num_configured_nodes();
 
     for (i = 0; i<NUMA_NUM_NODES; i++) {
-        if (i >= nodes_num) {
-            bandwidth[i] = BANDWIDTH_NODE_NOT_PRESENT;
-        } else if (numa_bitmask_isbitset(numa_nodes_bm, i)) {
+        if (numa_bitmask_isbitset(numa_nodes_bm, i)) {
             bandwidth[i] = BANDWIDTH_NODE_HIGH_VAL;
-        } else {
-            bandwidth[i] = BANDWIDTH_NODE_LOW_VAL;
+            nodes_num--;
         }
+    }
+
+    for (i = 0; i<NUMA_NUM_NODES; i++) {
+        if (!numa_bitmask_isbitset(numa_nodes_bm, i)) {
+            bandwidth[i] = BANDWIDTH_NODE_LOW_VAL;
+            nodes_num--;
+        }
+        if (nodes_num==0) break;
     }
 }
 
