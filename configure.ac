@@ -93,7 +93,7 @@ AC_SUBST([enable_decorators])
 
 #============================debug=============================================
 AC_ARG_ENABLE([debug],
-  [AS_HELP_STRING([--enable-debug], [Build debugging code and compile with -O0 -g])],
+  [AS_HELP_STRING([--enable-debug], [Build debugging code and compile with -g])],
 [if test "x$enable_debug" = "xno" ; then
   enable_debug="0"
 else
@@ -104,8 +104,8 @@ fi
 )
 if test "x$enable_debug" = "x1" ; then
   AC_DEFINE([MEMKIND_DEBUG], [ ], [Enables code for debugging])
-  CFLAGS="$CFLAGS -O0 -g"
-  CXXFLAGS="$CXXFLAGS -O0 -g"
+  CFLAGS="$CFLAGS -Og"
+  CXXFLAGS="$CXXFLAGS -Og"
 fi
 AC_SUBST([enable_debug])
 

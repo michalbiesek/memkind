@@ -977,8 +977,8 @@ AC_SUBST([enable_debug])
 dnl Only optimize if not debugging.
 if test "x$enable_debug" = "x0" ; then
   if test "x$GCC" = "xyes" ; then
-    JE_CFLAGS_ADD([-O3])
-    JE_CXXFLAGS_ADD([-O3])
+    JE_CFLAGS_ADD([-O2])
+    JE_CXXFLAGS_ADD([-O2])
     JE_CFLAGS_ADD([-funroll-loops])
   elif test "x$je_cv_msvc" = "xyes" ; then
     JE_CFLAGS_ADD([-O2])
