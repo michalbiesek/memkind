@@ -117,7 +117,7 @@ static void arena_config_init()
 
 #define MALLOCX_ARENA_MAX           0xffe        // copy-pasted from jemalloc/internal/jemalloc_internal.h
 #define DIRTY_DECAY_MS_DEFAULT      10000        // copy-pasted from jemalloc/internal/arena_types.h DIRTY_DECAY_MS_DEFAULT
-#define DIRTY_DECAY_MS_CONSERVATIVE     0
+#define DIRTY_DECAY_MS_CONSERVATIVE     58720256
 
 static struct memkind *arena_registry_g[MALLOCX_ARENA_MAX];
 static pthread_mutex_t arena_registry_write_lock;
@@ -584,8 +584,8 @@ MEMKIND_EXPORT int memkind_arena_update_memory_usage_policy(
     for (i = 0; i < kind->arena_map_len; ++i) {
         char cmd[64];
 
-        snprintf(cmd, sizeof(cmd), "arena.%u.dirty_decay_ms", kind->arena_zero + i);
-        err = jemk_mallctl(cmd, NULL, NULL, (void *)&dirty_decay_val, sizeof(ssize_t));
+        snprintf(cmd, sizeof(cmd), "arena.%u.retain_grow_limit", kind->arena_zero + i);
+        err = jemk_mallctl(cmd, NULL, NULL, (void *)&dirty_decay_val, sizeof(size_t));
         if ( err ) {
             log_err("Incorrect dirty_decay_ms value %zu", dirty_decay_val);
             return MEMKIND_ERROR_INVALID;
