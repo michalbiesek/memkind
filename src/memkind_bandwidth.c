@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include <jemalloc/jemalloc.h>
 
@@ -215,6 +216,16 @@ int bandwidth_create_nodes(const int *bandwidth, int *num_unique,
             jemk_free(*bandwidth_nodes);
         }
     }
+    fprintf(stderr, "\n bandwidth_create_nodes closest_numanode");
+    for (i = 0; i < *num_unique; ++i) {
+        int j;
+        fprintf(stderr, "\n i %d, bandwidth %d",i,(*bandwidth_nodes)[i].bandwidth);
+        fprintf(stderr, "\n num_numanodes %d \n",(*bandwidth_nodes)[i].num_numanodes);
+        for (j = 0; j < *num_unique; ++j) {
+            fprintf(stderr, "\n numanodes %d value %d \n",j,(*bandwidth_nodes)[i].numanodes[j]);
+        }
+    }
+
     return err;
 }
 
@@ -240,6 +251,7 @@ int bandwidth_set_closest_numanode(int num_unique,
     match.bandwidth = -1;
     int target_bandwidth = bandwidth_nodes[num_unique-1].bandwidth;
 
+    memset(closest_numanode, -1, num_cpunode);
     for (i = 0; i < num_cpunode; ++i) {
         closest_numanode[i] = -1;
     }
@@ -257,8 +269,8 @@ int bandwidth_set_closest_numanode(int num_unique,
             min_unique = 1;
             for (j = 0; j < match.num_numanodes; ++j) {
                 old_errno = errno;
-                distance = numa_distance(numa_node_of_cpu(i),
-                                         match.numanodes[j]);
+                int test_node = numa_node_of_cpu(i);
+                distance = numa_distance(test_node, match.numanodes[j]);
                 errno = old_errno;
                 if (distance < min_distance) {
                     min_distance = distance;
@@ -272,6 +284,10 @@ int bandwidth_set_closest_numanode(int num_unique,
                 err = MEMKIND_ERROR_RUNTIME;
             }
         }
+    }
+    fprintf(stderr, "\n bandwidth_set_closest_numanode closest_numanode");
+    for (i = 0; i < num_cpunode; ++i) {
+        fprintf(stderr, "\n i %d, closest_numanode %d",i,closest_numanode[i]);
     }
     return err;
 }
