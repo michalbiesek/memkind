@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include <jemalloc/jemalloc.h>
 
@@ -214,6 +215,16 @@ int bandwidth_create_nodes(const int *bandwidth, int *num_unique,
             jemk_free(*bandwidth_nodes);
         }
     }
+    fprintf(stderr, "\n bandwidth_create_nodes closest_numanode");
+    for (i = 0; i < *num_unique; ++i) {
+        int j;
+        fprintf(stderr, "\n i %d, bandwidth %d",i,(*bandwidth_nodes)[i].bandwidth);
+        fprintf(stderr, "\n num_numanodes %d \n",(*bandwidth_nodes)[i].num_numanodes);
+        for (j = 0; j < *num_unique; ++j) {
+            fprintf(stderr, "\n numanodes %d value %d \n",j,(*bandwidth_nodes)[i].numanodes[j]);
+        }
+    }
+
     return err;
 }
 
@@ -271,6 +282,10 @@ int bandwidth_set_closest_numanode(int num_unique,
                 err = MEMKIND_ERROR_RUNTIME;
             }
         }
+    }
+    fprintf(stderr, "\n bandwidth_set_closest_numanode closest_numanode");
+    for (i = 0; i < num_cpunode; ++i) {
+        fprintf(stderr, "\n i %d, closest_numanode %d",i,closest_numanode[i]);
     }
     return err;
 }
