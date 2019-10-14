@@ -88,6 +88,12 @@ This header expose STANDARD and EXPERIMENTAL API. API Standards are described be
 .br
 .BI "int memkind_check_available(memkind_t " "kind" );
 .sp
+.B "STATISTICS:"
+.br
+.BI "int memkind_refresh_stats(void);"
+.br
+.BI "int memkind_get_stat(memkind_t " "kind" ", memkind_stat " "stat_type" ", size_t " "*stat" );
+.sp
 .B "DECORATORS:"
 .br
 .BI "void memkind_malloc_pre(memkind_t " "*kind" ", size_t " "*size" );

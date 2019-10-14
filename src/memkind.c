@@ -865,3 +865,22 @@ MEMKIND_EXPORT int memkind_get_kind_by_partition(int partition,
     return memkind_get_kind_by_partition_internal(partition, kind);
 }
 
+MEMKIND_EXPORT int memkind_refresh_stats(void)
+{
+    return heap_manager_refresh_stats();
+}
+
+MEMKIND_EXPORT int memkind_get_stat(memkind_t kind, memkind_stat stat_type,
+                                    size_t *stat)
+{
+    if (MEMKIND_UNLIKELY(stat_type >= MEMKIND_STATS_MAX_VALUE)) {
+        log_err("Unrecognized memory statistic %d", stat_type);
+        return MEMKIND_ERROR_INVALID;
+    }
+
+    if (!kind) {
+        return heap_manager_get_stat(stat_type, stat);
+    } else {
+        return kind->ops->get_stat(kind, stat_type, stat);
+    }
+}

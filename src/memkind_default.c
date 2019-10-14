@@ -22,6 +22,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <memkind/internal/memkind_arena.h>
 #include <memkind/internal/memkind_default.h>
 #include <memkind/internal/memkind_private.h>
 #include <memkind/internal/memkind_log.h>
@@ -35,9 +36,30 @@
 #include <jemalloc/jemalloc.h>
 #include <stdint.h>
 
+#include "config.h"
+
 #ifndef MADV_NOHUGEPAGE
 #define MADV_NOHUGEPAGE 15
 #endif
+
+static int memkind_default_get_kind_stat (memkind_t kind,
+                                          memkind_stat stat_type, size_t *stat)
+{
+    switch (stat_type) {
+        case MEMKIND_STATS_RESIDENT:
+            *stat = get_arenas_resident_stat(1, ARENA_LIMIT_DEFAULT_KIND);
+            break;
+        case MEMKIND_STATS_ACTIVE:
+            *stat = get_arenas_active_stat(1, ARENA_LIMIT_DEFAULT_KIND);
+            break;
+        case MEMKIND_STATS_ALLOCATED:
+            *stat = get_arenas_allocated_stat(1, ARENA_LIMIT_DEFAULT_KIND);
+            break;
+        default:  //not reached
+            return MEMKIND_ERROR_INVALID;
+    }
+    return MEMKIND_SUCCESS;
+}
 
 MEMKIND_EXPORT struct memkind_ops MEMKIND_DEFAULT_OPS = {
     .create = memkind_default_create,
@@ -49,7 +71,8 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_DEFAULT_OPS = {
     .free = memkind_default_free,
     .init_once = memkind_default_init_once,
     .malloc_usable_size = memkind_default_malloc_usable_size,
-    .finalize = memkind_default_destroy
+    .finalize = memkind_default_destroy,
+    .get_stat = memkind_default_get_kind_stat
 };
 
 MEMKIND_EXPORT int memkind_default_create(struct memkind *kind,

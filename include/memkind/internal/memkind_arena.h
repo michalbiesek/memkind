@@ -64,6 +64,14 @@ size_t memkind_arena_malloc_usable_size(void *ptr);
 int memkind_arena_update_memory_usage_policy(struct memkind *kind,
                                              memkind_mem_usage_policy policy);
 int memkind_arena_background_thread(void);
+int memkind_arena_refresh_stats(void);
+int memkind_arena_get_kind_stat(struct memkind *kind, memkind_stat stat_type,
+                                size_t *stat);
+int memkind_arena_get_global_stat(memkind_stat stat_type, size_t *stat);
+size_t get_arenas_resident_stat(unsigned arena_start, unsigned arena_map_len);
+size_t get_arenas_active_stat(unsigned arena_start, unsigned arena_map_len);
+size_t get_arenas_allocated_stat(unsigned arena_start, unsigned arena_map_len);
+
 #ifdef __cplusplus
 }
 #endif

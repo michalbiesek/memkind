@@ -48,6 +48,13 @@
 #include "config.h"
 
 #define HUGE_PAGE_SIZE (1ull << MEMKIND_MASK_PAGE_SIZE_2MB)
+#define PAGE_2_BYTES(x) ((x) << 12)
+
+static const char *const global_stats[MEMKIND_STATS_MAX_VALUE] = {
+    "stats.resident",
+    "stats.active",
+    "stats.allocated"
+};
 
 static void *jemk_mallocx_check(size_t size, int flags);
 static void *jemk_rallocx_check(void *ptr, size_t size, int flags);
@@ -547,6 +554,12 @@ MEMKIND_EXPORT void *memkind_arena_realloc(struct memkind *kind, void *ptr,
     return ptr;
 }
 
+int memkind_arena_refresh_stats(void)
+{
+    uint64_t epoch = 1;
+    return jemk_mallctl("epoch", NULL, NULL, &epoch, sizeof(epoch));
+}
+
 MEMKIND_EXPORT void *memkind_arena_realloc_with_kind_detect(void *ptr,
                                                             size_t size)
 {
@@ -767,6 +780,88 @@ void memkind_arena_init(struct memkind *kind)
             abort();
         }
     }
+}
+
+size_t get_arenas_resident_stat(unsigned arena_start, unsigned arena_map_len)
+{
+    size_t stat = 0;
+    size_t sz = sizeof(size_t);
+    size_t temp_stat;
+    unsigned i;
+    char cmd[128];
+    for (i = 0; i < arena_map_len; ++i) {
+        snprintf(cmd, 128, "stats.arenas.%u.resident", arena_start + i);
+        jemk_mallctl(cmd, &temp_stat, &sz, NULL, 0);
+        stat += temp_stat;
+    }
+    return stat;
+}
+
+size_t get_arenas_active_stat(unsigned arena_start, unsigned arena_map_len)
+{
+    size_t stat = 0;
+    size_t sz = sizeof(size_t);
+    size_t temp_stat;
+    unsigned i;
+    char cmd[128];
+
+    for (i = 0; i < arena_map_len; ++i) {
+        snprintf(cmd, 128, "stats.arenas.%u.pactive", arena_start + i);
+        jemk_mallctl(cmd, &temp_stat, &sz, NULL, 0);
+        stat += PAGE_2_BYTES(temp_stat);
+    }
+    return stat;
+}
+
+size_t get_arenas_allocated_stat(unsigned arena_start, unsigned arena_map_len)
+{
+    size_t stat = 0;
+    size_t sz = sizeof(size_t);
+    size_t temp_stat;
+    unsigned i;
+    char cmd[128];
+
+    for(i = 0; i < arena_map_len; i++) {
+        snprintf(cmd, 128, "stats.arenas.%u.small.allocated", arena_start + i);
+        jemk_mallctl(cmd, &temp_stat, &sz, NULL, 0);
+        stat += temp_stat;
+        snprintf(cmd, 128, "stats.arenas.%u.large.allocated", arena_start + i);
+        jemk_mallctl(cmd, &temp_stat, &sz, NULL, 0);
+        stat += temp_stat;
+    }
+    return stat;
+}
+
+int memkind_arena_get_kind_stat(struct memkind *kind, memkind_stat stat_type,
+                                size_t *stat)
+{
+    switch (stat_type) {
+        case MEMKIND_STATS_RESIDENT:
+            *stat = get_arenas_resident_stat(kind->arena_zero, kind->arena_map_len);
+            break;
+        case MEMKIND_STATS_ACTIVE:
+            *stat = get_arenas_active_stat(kind->arena_zero, kind->arena_map_len);
+            break;
+        case MEMKIND_STATS_ALLOCATED:
+            *stat = get_arenas_allocated_stat(kind->arena_zero, kind->arena_map_len);
+            break;
+        default:
+            //not reached
+            return MEMKIND_ERROR_INVALID;
+            break;
+    }
+    return MEMKIND_SUCCESS;
+}
+
+int memkind_arena_get_global_stat(memkind_stat stat_type, size_t *stat)
+{
+    size_t sz = sizeof(size_t);
+    int err = jemk_mallctl(global_stats[stat_type], stat, &sz, NULL, 0);
+    if (err) {
+        log_err("Error on get global statistic.");
+        return MEMKIND_ERROR_INVALID;
+    }
+    return err;
 }
 
 int memkind_arena_background_thread(void)
