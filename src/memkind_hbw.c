@@ -184,7 +184,7 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_HBW_INTERLEAVE_OPS = {
 struct hbw_closest_numanode_t {
     int init_err;
     int num_cpu;
-    int *closest_numanode;
+    int **closest_numanode;
 };
 
 static struct hbw_closest_numanode_t memkind_hbw_closest_numanode_g;
@@ -223,7 +223,11 @@ MEMKIND_EXPORT int memkind_hbw_get_mbind_nodemask(struct memkind *kind,
         numa_bitmask_clearall(&nodemask_bm);
         int cpu = sched_getcpu();
         if (MEMKIND_LIKELY(cpu < g->num_cpu)) {
-            numa_bitmask_setbit(&nodemask_bm, g->closest_numanode[cpu]);
+            int i = 0;
+            while (g->closest_numanode[cpu][i] != -1) {
+                numa_bitmask_setbit(&nodemask_bm, g->closest_numanode[cpu][i]);
+                i++;
+            }
         } else {
             return MEMKIND_ERROR_RUNTIME;
         }
@@ -244,7 +248,11 @@ MEMKIND_EXPORT int memkind_hbw_all_get_mbind_nodemask(struct memkind *kind,
         int cpu;
         numa_bitmask_clearall(&nodemask_bm);
         for (cpu = 0; cpu < g->num_cpu; ++cpu) {
-            numa_bitmask_setbit(&nodemask_bm, g->closest_numanode[cpu]);
+            int i = 0;
+            while(g->closest_numanode[cpu][i] != -1) {
+                numa_bitmask_setbit(&nodemask_bm, g->closest_numanode[cpu][i]);
+                i++;
+            }
         }
     }
     return g->init_err;
@@ -361,11 +369,18 @@ static void memkind_hbw_closest_numanode_init(void)
     struct hbw_closest_numanode_t *g = &memkind_hbw_closest_numanode_g;
     int *bandwidth = (int *)jemk_calloc(NUMA_NUM_NODES, sizeof(int));
     int num_unique = 0;
+    int i;
 
     struct bandwidth_nodes_t *bandwidth_nodes = NULL;
+    int num_nodes = numa_num_configured_nodes();
 
     g->num_cpu = numa_num_configured_cpus();
-    g->closest_numanode = (int *)jemk_malloc(sizeof(int) * g->num_cpu);
+    g->closest_numanode = (int **)jemk_malloc(sizeof(int*) * g->num_cpu + (g->num_cpu * num_nodes * (sizeof(int))));
+    int* offset = (int*)&(g->closest_numanode[g->num_cpu]);
+    for(i = 0; i < g->num_cpu; i++, offset += num_nodes) {
+        g->closest_numanode[i] = offset;
+        memset(g->closest_numanode[i], -1, sizeof(int) * num_nodes);
+    }
 
     if (!(g->closest_numanode && bandwidth)) {
         g->init_err = MEMKIND_ERROR_MALLOC;

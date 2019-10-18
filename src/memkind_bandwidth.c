@@ -220,7 +220,7 @@ int bandwidth_create_nodes(const int *bandwidth, int *num_unique,
 
 int bandwidth_set_closest_numanode(int num_unique,
                                    const struct bandwidth_nodes_t *bandwidth_nodes,
-                                   int num_cpunode, int *closest_numanode)
+                                   int num_cpunode, int **closest_numanode)
 {
     /***************************************************************************
     *   num_unique (IN):                                                       *
@@ -230,8 +230,8 @@ int bandwidth_set_closest_numanode(int num_unique,
     *   num_cpunode (IN):                                                      *
     *       Number of cpu's and length of closest_numanode.                    *
     *   closest_numanode (OUT):                                                *
-    *       Vector that maps cpu index to closest numa node of the specified   *
-    *       bandwidth.                                                         *
+    *       Vector that maps cpu index to closest numa node(s)                 *
+    *       of the specified bandwidth.                                        *
     *   RETURNS zero on success, error code on failure                         *
     ***************************************************************************/
     int err = MEMKIND_SUCCESS;
@@ -239,10 +239,8 @@ int bandwidth_set_closest_numanode(int num_unique,
     struct bandwidth_nodes_t match;
     match.bandwidth = -1;
     int target_bandwidth = bandwidth_nodes[num_unique-1].bandwidth;
+    int num_nodes = numa_num_configured_nodes();
 
-    for (i = 0; i < num_cpunode; ++i) {
-        closest_numanode[i] = -1;
-    }
     for (i = 0; i < num_unique; ++i) {
         if (bandwidth_nodes[i].bandwidth == target_bandwidth) {
             match = bandwidth_nodes[i];
@@ -257,19 +255,20 @@ int bandwidth_set_closest_numanode(int num_unique,
             min_unique = 1;
             for (j = 0; j < match.num_numanodes; ++j) {
                 old_errno = errno;
-                distance = numa_distance(numa_node_of_cpu(i),
-                                         match.numanodes[j]);
+                distance = numa_distance(numa_node_of_cpu(i), match.numanodes[j]);
                 errno = old_errno;
                 if (distance < min_distance) {
                     min_distance = distance;
-                    closest_numanode[i] = match.numanodes[j];
+                    //clean array in case of multiple num_nodes was set
+                    if (min_unique > 1) {
+                        memset(closest_numanode[i], -1, sizeof(int) * num_nodes);
+                    }
+                    closest_numanode[i][0] = match.numanodes[j];
                     min_unique = 1;
                 } else if (distance == min_distance) {
-                    min_unique = 0;
+                    closest_numanode[i][min_unique] = match.numanodes[j];
+                    min_unique++;
                 }
-            }
-            if (!min_unique) {
-                err = MEMKIND_ERROR_RUNTIME;
             }
         }
     }
