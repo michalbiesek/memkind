@@ -58,7 +58,7 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_DAX_KMEM_OPS = {
 struct dax_closest_numanode_t {
     int init_err;
     int num_cpu;
-    int *closest_numanode;
+    int **closest_numanodes;
 };
 
 static struct dax_closest_numanode_t memkind_dax_kmem_closest_numanode_g;
@@ -141,7 +141,11 @@ int memkind_dax_kmem_get_mbind_nodemask(struct memkind *kind,
         numa_bitmask_clearall(&nodemask_bm);
         int cpu = sched_getcpu();
         if (MEMKIND_LIKELY(cpu < g->num_cpu)) {
-            numa_bitmask_setbit(&nodemask_bm, g->closest_numanode[cpu]);
+            int i = 0;
+            while (g->closest_numanodes[cpu][i] != NODE_NOT_PRESENT) {
+                numa_bitmask_setbit(&nodemask_bm, g->closest_numanodes[cpu][i]);
+                i++;
+            }
         } else {
             return MEMKIND_ERROR_RUNTIME;
         }
@@ -161,7 +165,11 @@ MEMKIND_EXPORT int memkind_dax_kmem_all_get_mbind_nodemask(struct memkind *kind,
         int cpu;
         numa_bitmask_clearall(&nodemask_bm);
         for (cpu = 0; cpu < g->num_cpu; ++cpu) {
-            numa_bitmask_setbit(&nodemask_bm, g->closest_numanode[cpu]);
+            int i = 0;
+            while (g->closest_numanodes[cpu][i] != NODE_NOT_PRESENT) {
+                numa_bitmask_setbit(&nodemask_bm, g->closest_numanodes[cpu][i]);
+                i++;
+            }
         }
     }
     return g->init_err;
@@ -175,10 +183,12 @@ static void memkind_dax_kmem_closest_numanode_init(void)
 
     struct bandwidth_nodes_t *bandwidth_nodes = NULL;
 
-    g->num_cpu = numa_num_configured_cpus();
-    g->closest_numanode = (int *)jemk_malloc(sizeof(int) * g->num_cpu);
+    int num_nodes = numa_num_configured_nodes();
 
-    if (!(g->closest_numanode && bandwidth)) {
+    g->num_cpu = numa_num_configured_cpus();
+    g->closest_numanodes = NULL;
+
+    if (!bandwidth) {
         g->init_err = MEMKIND_ERROR_MALLOC;
         log_err("jemk_malloc() failed.");
         goto exit;
@@ -193,18 +203,13 @@ static void memkind_dax_kmem_closest_numanode_init(void)
     if (g->init_err)
         goto exit;
 
-    g->init_err = bandwidth_set_closest_numanode(num_unique, bandwidth_nodes,
-                                                 g->num_cpu, g->closest_numanode);
+    g->init_err = bandwidth_set_closest_numanodes(num_unique, bandwidth_nodes,
+                                                  g->num_cpu, num_nodes, &g->closest_numanodes);
 
 exit:
 
     jemk_free(bandwidth_nodes);
     jemk_free(bandwidth);
-
-    if (g->init_err) {
-        jemk_free(g->closest_numanode);
-        g->closest_numanode = NULL;
-    }
 }
 
 void memkind_dax_kmem_init_once(void)
