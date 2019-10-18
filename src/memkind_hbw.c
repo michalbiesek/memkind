@@ -184,7 +184,7 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_HBW_INTERLEAVE_OPS = {
 struct hbw_closest_numanode_t {
     int init_err;
     int num_cpu;
-    int *closest_numanode;
+    int **closest_numanode;
 };
 
 static struct hbw_closest_numanode_t memkind_hbw_closest_numanode_g;
@@ -223,7 +223,11 @@ MEMKIND_EXPORT int memkind_hbw_get_mbind_nodemask(struct memkind *kind,
         numa_bitmask_clearall(&nodemask_bm);
         int cpu = sched_getcpu();
         if (MEMKIND_LIKELY(cpu < g->num_cpu)) {
-            numa_bitmask_setbit(&nodemask_bm, g->closest_numanode[cpu]);
+            int i = 0;
+            while (g->closest_numanode[cpu][i] != -1) {
+                numa_bitmask_setbit(&nodemask_bm, g->closest_numanode[cpu][i]);
+                i++;
+            }
         } else {
             return MEMKIND_ERROR_RUNTIME;
         }
@@ -244,7 +248,11 @@ MEMKIND_EXPORT int memkind_hbw_all_get_mbind_nodemask(struct memkind *kind,
         int cpu;
         numa_bitmask_clearall(&nodemask_bm);
         for (cpu = 0; cpu < g->num_cpu; ++cpu) {
-            numa_bitmask_setbit(&nodemask_bm, g->closest_numanode[cpu]);
+            int i = 0;
+            while(g->closest_numanode[cpu][i] != -1) {
+                numa_bitmask_setbit(&nodemask_bm, g->closest_numanode[cpu][i]);
+                i++;
+            }
         }
     }
     return g->init_err;
@@ -365,9 +373,8 @@ static void memkind_hbw_closest_numanode_init(void)
     struct bandwidth_nodes_t *bandwidth_nodes = NULL;
 
     g->num_cpu = numa_num_configured_cpus();
-    g->closest_numanode = (int *)jemk_malloc(sizeof(int) * g->num_cpu);
 
-    if (!(g->closest_numanode && bandwidth)) {
+    if (!bandwidth) {
         g->init_err = MEMKIND_ERROR_MALLOC;
         log_err("jemk_malloc() failed.");
         goto exit;
@@ -389,11 +396,6 @@ exit:
 
     jemk_free(bandwidth_nodes);
     jemk_free(bandwidth);
-
-    if (g->init_err) {
-        jemk_free(g->closest_numanode);
-        g->closest_numanode = NULL;
-    }
 }
 
 MEMKIND_EXPORT void memkind_hbw_init_once(void)

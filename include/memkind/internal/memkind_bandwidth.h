@@ -41,7 +41,7 @@ int bandwidth_fill_nodes(int *bandwidth, fill_bandwidth_values fill,
                          const char *env);
 int bandwidth_set_closest_numanode(int num_unique,
                                    const struct bandwidth_nodes_t *bandwidth_nodes,
-                                   int num_cpunode, int *closest_numanode);
+                                   int num_cpunode, int **closest_numanode);
 
 #ifdef __cplusplus
 }
