@@ -329,7 +329,7 @@ static void memkind_destroy_dynamic_kind_from_register(unsigned int i,
     if (i >= MEMKIND_NUM_BASE_KIND) {
         memkind_registry_g.partition_map[i] = NULL;
         --memkind_registry_g.num_kind;
-        jemk_free(kind);
+        free(kind);
     }
 }
 
@@ -499,17 +499,17 @@ static int memkind_create(struct memkind_ops *ops, const char *name,
             goto exit;
         }
     }
-    *kind = (struct memkind *)jemk_calloc(1, sizeof(struct memkind));
+    *kind = (struct memkind *)calloc(1, sizeof(struct memkind));
     if (!*kind) {
         err = MEMKIND_ERROR_MALLOC;
-        log_err("jemk_calloc() failed.");
+        log_err("calloc() failed.");
         goto exit;
     }
 
     (*kind)->partition = memkind_registry_g.num_kind;
     err = ops->create(*kind, ops, name);
     if (err) {
-        jemk_free(*kind);
+        free(*kind);
         goto exit;
     }
     memkind_registry_g.partition_map[id_kind] = *kind;
@@ -756,14 +756,14 @@ exit:
 
 MEMKIND_EXPORT struct memkind_config *memkind_config_new(void)
 {
-    struct memkind_config *cfg = (struct memkind_config *)jemk_malloc(sizeof(
+    struct memkind_config *cfg = (struct memkind_config *)malloc(sizeof(
                                                                           struct memkind_config));
     return cfg;
 }
 
 MEMKIND_EXPORT void memkind_config_delete(struct memkind_config *cfg)
 {
-    jemk_free(cfg);
+    free(cfg);
 }
 
 MEMKIND_EXPORT void memkind_config_set_path(struct memkind_config *cfg,
