@@ -22,6 +22,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <memkind/internal/memkind_arena.h>
 #include <memkind/internal/memkind_default.h>
 #include <memkind/internal/memkind_private.h>
 #include <memkind/internal/memkind_log.h>
@@ -34,6 +35,8 @@
 #include <errno.h>
 #include <jemalloc/jemalloc.h>
 #include <stdint.h>
+
+#include "config.h"
 
 #ifndef MADV_NOHUGEPAGE
 #define MADV_NOHUGEPAGE 15
@@ -49,7 +52,8 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_DEFAULT_OPS = {
     .free = memkind_default_free,
     .init_once = memkind_default_init_once,
     .malloc_usable_size = memkind_default_malloc_usable_size,
-    .finalize = memkind_default_destroy
+    .finalize = memkind_default_destroy,
+    .get_stat = memkind_arena_get_kind_stat
 };
 
 MEMKIND_EXPORT int memkind_default_create(struct memkind *kind,

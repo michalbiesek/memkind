@@ -48,6 +48,12 @@ size_t tbb_pool_malloc_usable_size_with_kind_detect(void *ptr);
 /* ptr pointer must come from the valid TBB pool allocation */
 struct memkind *tbb_detect_kind(void *ptr);
 
+/* refresh stats for TBB (unsupported) */
+int tbb_refresh_stats(void);
+
+/* get allocator stat for TBB (unsupported) */
+int tbb_get_global_stat(memkind_stat stat_type, size_t *stat);
+
 #ifdef __cplusplus
 }
 #endif
