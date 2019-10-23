@@ -547,6 +547,15 @@ static void memkind_construct(void)
         if (env && strcmp(env, "1") == 0) {
             memkind_arena_background_thread();
         }
+        env = secure_getenv("MEMKIND_POSSIBLE_NODES");
+        if (env) {
+            struct bitmask *global_bm = numa_parse_nodestring(env);
+            if (!global_bm) {
+                exit(1);
+            } else {
+                numa_set_membind(global_bm);
+            }
+        }
     }
 }
 
