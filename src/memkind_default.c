@@ -77,6 +77,7 @@ MEMKIND_EXPORT void *memkind_default_malloc(struct memkind *kind, size_t size)
     if(MEMKIND_UNLIKELY(size_out_of_bounds(size))) {
         return NULL;
     }
+
     return jemk_malloc(size);
 }
 
@@ -201,7 +202,7 @@ MEMKIND_EXPORT int memkind_default_mbind(struct memkind *kind, void *ptr,
     }
     err = mbind(ptr, size, mode, nodemask.n, NUMA_NUM_NODES, 0);
     if (MEMKIND_UNLIKELY(err)) {
-        log_err("syscall mbind() returned: %d", err);
+        log_fatal("syscall mbind() returned: %d", err);
         return MEMKIND_ERROR_MBIND;
     }
     return err;

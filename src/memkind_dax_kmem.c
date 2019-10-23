@@ -168,6 +168,7 @@ int memkind_dax_kmem_get_mbind_nodemask(struct memkind *kind,
             return MEMKIND_ERROR_RUNTIME;
         }
     }
+
     return g->init_err;
 }
 
