@@ -29,12 +29,14 @@ extern "C" {
 
 #include <numa.h>
 
+#define NODE_NOT_PRESENT -1
+
 typedef int (*get_node_bitmask)(struct bitmask *);
 typedef int (*fill_bandwidth_values)(int *);
 
 int bandwidth_fill(int *bandwidth, get_node_bitmask get_bitmask);
 int set_closest_numanode(fill_bandwidth_values fill, const char *env,
-                         int *closest_numanode, int num_cpu);
+                         int **closest_numanode, int num_cpu, int num_nodes);
 
 #ifdef __cplusplus
 }

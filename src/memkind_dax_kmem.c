@@ -57,7 +57,7 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_DAX_KMEM_OPS = {
 struct dax_closest_numanode_t {
     int init_err;
     int num_cpu;
-    int *closest_numanode;
+    int **closest_numanode;
 };
 
 static struct dax_closest_numanode_t memkind_dax_kmem_closest_numanode_g;
@@ -140,7 +140,11 @@ int memkind_dax_kmem_get_mbind_nodemask(struct memkind *kind,
         numa_bitmask_clearall(&nodemask_bm);
         int cpu = sched_getcpu();
         if (MEMKIND_LIKELY(cpu < g->num_cpu)) {
-            numa_bitmask_setbit(&nodemask_bm, g->closest_numanode[cpu]);
+            int i = 0;
+            while (g->closest_numanode[cpu][i] != NODE_NOT_PRESENT) {
+                numa_bitmask_setbit(&nodemask_bm, g->closest_numanode[cpu][i]);
+                i++;
+            }
         } else {
             return MEMKIND_ERROR_RUNTIME;
         }
@@ -160,7 +164,11 @@ MEMKIND_EXPORT int memkind_dax_kmem_all_get_mbind_nodemask(struct memkind *kind,
         int cpu;
         numa_bitmask_clearall(&nodemask_bm);
         for (cpu = 0; cpu < g->num_cpu; ++cpu) {
-            numa_bitmask_setbit(&nodemask_bm, g->closest_numanode[cpu]);
+            int i = 0;
+            while (g->closest_numanode[cpu][i] != NODE_NOT_PRESENT) {
+                numa_bitmask_setbit(&nodemask_bm, g->closest_numanode[cpu][i]);
+                i++;
+            }
         }
     }
     return g->init_err;
@@ -170,7 +178,14 @@ static void memkind_dax_kmem_closest_numanode_init(void)
 {
     struct dax_closest_numanode_t *g = &memkind_dax_kmem_closest_numanode_g;
     g->num_cpu = numa_num_configured_cpus();
-    g->closest_numanode = (int *)malloc(sizeof(int) * g->num_cpu);
+    int i;
+    int num_nodes = numa_num_configured_nodes();
+    g->closest_numanode = (int **)malloc(sizeof(int *) * g->num_cpu +
+                                         (g->num_cpu * num_nodes * (sizeof(int))));
+    int *offset = (int *)&(g->closest_numanode[g->num_cpu]);
+    for(i = 0; i < g->num_cpu; i++, offset += num_nodes) {
+        g->closest_numanode[i] = offset;
+    }
 
     if (!g->closest_numanode) {
         g->init_err = MEMKIND_ERROR_MALLOC;
@@ -179,7 +194,7 @@ static void memkind_dax_kmem_closest_numanode_init(void)
     }
 
     g->init_err = set_closest_numanode(fill_dax_kmem_values_automatic,
-                                       "MEMKIND_DAX_KMEM_NODES", g->closest_numanode, g->num_cpu);
+                                       "MEMKIND_DAX_KMEM_NODES", g->closest_numanode, g->num_cpu, num_nodes);
 
     if (g->init_err) {
         free(g->closest_numanode);
