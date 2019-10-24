@@ -200,11 +200,31 @@ MEMKIND_EXPORT int memkind_default_mbind(struct memkind *kind, void *ptr,
     if (MEMKIND_UNLIKELY(err)) {
         return err;
     }
+
     err = mbind(ptr, size, mode, nodemask.n, NUMA_NUM_NODES, 0);
     if (MEMKIND_UNLIKELY(err)) {
         log_fatal("syscall mbind() returned: %d", err);
         return MEMKIND_ERROR_MBIND;
     }
+    {
+       //move page method
+        volatile char *ptr_to_check = ptr;
+        *ptr_to_check = *ptr_to_check;
+        int status[1];
+        int ret_code;
+        status[0] = -1;
+        ret_code = move_pages(0, 1, &ptr, NULL, status, 0);
+        log_fatal("\nmove page method 2 at %p is at %d node (retcode %d)", ptr, status[0], ret_code);
+    }
+    {
+        //mempolicy
+        int numa_node = -1;
+        int res = get_mempolicy(&numa_node, NULL, 0, (void*)ptr, MPOL_F_NODE | MPOL_F_ADDR);
+        if (!res) {
+            log_fatal("\nmempolicy method at %p is at %d node", ptr ,numa_node);
+        }
+    }
+
     return err;
 }
 
