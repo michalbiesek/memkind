@@ -254,8 +254,7 @@ static int bandwidth_set_closest_numanode(int num_unique,
             min_unique = 1;
             for (j = 0; j < match.num_numanodes; ++j) {
                 old_errno = errno;
-                distance = numa_distance(numa_node_of_cpu(i),
-                                         match.numanodes[j]);
+                distance = numa_distance(numa_node_of_cpu(i), match.numanodes[j]);
                 errno = old_errno;
                 if (distance < min_distance) {
                     min_distance = distance;
