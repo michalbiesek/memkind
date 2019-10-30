@@ -29,6 +29,7 @@
 #include <memkind/internal/memkind_arena.h>
 #include <memkind/internal/memkind_private.h>
 #include <memkind/internal/memkind_log.h>
+#include <memkind/internal/vec.h>
 #include <memkind/internal/heap_manager.h>
 
 #include <stdlib.h>
@@ -183,7 +184,7 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_HBW_INTERLEAVE_OPS = {
 struct hbw_closest_numanode_t {
     int init_err;
     int num_cpu;
-    int **closest_numanode;
+    struct vec_cpu_node* closest_numanode;
 };
 
 static struct hbw_closest_numanode_t memkind_hbw_closest_numanode_g;
@@ -233,8 +234,7 @@ MEMKIND_EXPORT int memkind_hbw_all_get_mbind_nodemask(struct memkind *kind,
                  memkind_hbw_closest_numanode_init);
 
     if (MEMKIND_LIKELY(!g->init_err)) {
-        set_bitmask_for_all_closest_numanodes(nodemask, maxnode, g->closest_numanode,
-                                              g->num_cpu);
+        set_bitmask_for_all_closest_numanodes(nodemask, maxnode, g->closest_numanode, g->num_cpu);
     }
     return g->init_err;
 }

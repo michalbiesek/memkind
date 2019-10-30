@@ -41,6 +41,8 @@ struct bandwidth_nodes_t {
     int *numanodes;
 };
 
+VEC(vec_cpu_node, int);
+
 #define NODE_NOT_PRESENT             -1
 
 #define BANDWIDTH_NODE_HIGH_VAL       2
@@ -217,28 +219,15 @@ static int bandwidth_create_nodes(const int *bandwidth, int *num_unique,
     return err;
 }
 
-static int **bandwidth_init_closest_numanode(int num_cpunode, int num_numanode)
+static struct vec_cpu_node * init_cpu_vector (int num_cpunode)
 {
-    int i, j;
-    int **ptr = (int **)malloc(sizeof(int *) * num_cpunode +
-                               (num_cpunode * num_numanode*sizeof (int)));
-    if (!*ptr) {
-        return NULL;
-    }
-    int *offset = (int *)&(ptr[num_cpunode]);
-    for(i = 0; i < num_cpunode; i++, offset += num_numanode) {
-        ptr[i] = offset;
-        for (j = 0; j < num_numanode; ++j) {
-            ptr[i][j] = NODE_NOT_PRESENT;
-        }
-    }
-
-    return ptr;
+    struct vec_cpu_node * vec = calloc(num_cpunode, sizeof(struct vec_cpu_node));
+    return vec;
 }
 
 static int bandwidth_set_closest_numanode(int num_unique,
                                           const struct bandwidth_nodes_t *bandwidth_nodes,
-                                          int num_cpunode, int ***closest_numanode, bool allow_multiple_nodes)
+                                          int num_cpunode, struct vec_cpu_node **closest_numanode, bool allow_multiple_nodes)
 {
     /***************************************************************************
     *   num_unique (IN):                                                       *
@@ -253,14 +242,12 @@ static int bandwidth_set_closest_numanode(int num_unique,
     *   RETURNS zero on success, error code on failure                         *
     ***************************************************************************/
     int err = MEMKIND_SUCCESS;
-    int min_distance, distance, i, j, k, old_errno, min_unique;
+    int min_distance, distance, i, j, old_errno, min_unique;
     struct bandwidth_nodes_t match;
     match.bandwidth = -1;
     int target_bandwidth = bandwidth_nodes[num_unique-1].bandwidth;
-    int num_numanode = numa_num_configured_nodes();
-    int **temp_arr = bandwidth_init_closest_numanode(num_cpunode, num_numanode);
-
-    if (!temp_arr) {
+    *closest_numanode = init_cpu_vector(num_cpunode);
+    if (!*closest_numanode) {
         log_err("malloc() failed.");
         return MEMKIND_ERROR_MALLOC;
     }
@@ -276,7 +263,7 @@ static int bandwidth_set_closest_numanode(int num_unique,
     } else {
         for (i = 0; i < num_cpunode; ++i) {
             min_distance = INT_MAX;
-            min_unique = 1;
+            min_unique = 0;
             for (j = 0; j < match.num_numanodes; ++j) {
                 old_errno = errno;
                 distance = numa_distance(numa_node_of_cpu(i), match.numanodes[j]);
@@ -284,13 +271,12 @@ static int bandwidth_set_closest_numanode(int num_unique,
                 if (distance < min_distance) {
                     min_distance = distance;
                     if (min_unique > 1) {
-                        temp_arr[i][j] = match.numanodes[j];
-                        for (k = 0; k < num_numanode; ++k) {
-                            temp_arr[i][k] = NODE_NOT_PRESENT;
-                        }
+                        VEC_PUSH_BACK(closest_numanode[i], match.numanodes[j]);
+                    } else {
+                        VEC_CLEAR(&vec[i]);
+                        VEC_PUSH_BACK(losest_numanode[i], match.numanodes[j]);
+                        min_unique = 1;
                     }
-                    temp_arr[i][0] = match.numanodes[j];
-                    min_unique = 1;
                 } else if (distance == min_distance) {
                     min_unique = 0;
                 }
@@ -302,17 +288,17 @@ static int bandwidth_set_closest_numanode(int num_unique,
     }
 
     if (err) {
-        free(temp_arr);
-        temp_arr = NULL;
+        free(vec);
+        vec = NULL;
     }
 
-    *closest_numanode = temp_arr;
+//    *closest_numanode = vec;
 
     return err;
 }
 
 int set_closest_numanode(fill_bandwidth_values fill_values, const char *env,
-                         int ***closest_numanode, int num_cpu, bool allow_multiple_nodes)
+                         struct vec_cpu_node** closest_numanode, int num_cpu, bool allow_multiple_nodes)
 {
     int status;
     int num_unique = 0;
@@ -344,34 +330,32 @@ exit:
 }
 
 void set_bitmask_for_all_closest_numanodes(unsigned long *nodemask,
-                                           unsigned long maxnode, int **closest_numanode, int num_cpu)
+                                           unsigned long maxnode, const struct vec_cpu_node *closest_numanode, int num_cpu)
 {
     if (MEMKIND_LIKELY(nodemask)) {
         struct bitmask nodemask_bm = {maxnode, nodemask};
         int cpu;
         numa_bitmask_clearall(&nodemask_bm);
         for (cpu = 0; cpu < num_cpu; ++cpu) {
-            int i = 0;
-            while (closest_numanode[cpu][i] != NODE_NOT_PRESENT) {
-                numa_bitmask_setbit(&nodemask_bm, closest_numanode[cpu][i]);
-                i++;
+            int element = 0;
+            VEC_FOREACH(element, &closest_numanode[cpu]) {
+                numa_bitmask_setbit(&nodemask_bm, element);
             }
         }
     }
 }
 
 int set_bitmask_for_current_closest_numanode(unsigned long *nodemask,
-                                             unsigned long maxnode, int **closest_numanode, int num_cpu)
+                                             unsigned long maxnode, const struct vec_cpu_node *closest_numanode, int num_cpu)
 {
     if (MEMKIND_LIKELY(nodemask)) {
         struct bitmask nodemask_bm = {maxnode, nodemask};
         numa_bitmask_clearall(&nodemask_bm);
         int cpu = sched_getcpu();
         if (MEMKIND_LIKELY(cpu < num_cpu)) {
-            int i = 0;
-            while (closest_numanode[cpu][i] != NODE_NOT_PRESENT) {
-                numa_bitmask_setbit(&nodemask_bm, closest_numanode[cpu][i]);
-                i++;
+            int element = 0;
+            VEC_FOREACH(element, &closest_numanode[cpu]) {
+                numa_bitmask_setbit(&nodemask_bm, element);
             }
         } else {
             return MEMKIND_ERROR_RUNTIME;
