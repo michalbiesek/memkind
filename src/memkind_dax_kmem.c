@@ -110,7 +110,7 @@ static int memkind_dax_kmem_check_available(struct memkind *kind)
     return kind->ops->get_mbind_nodemask(kind, NULL, 0);
 }
 
-static int memkind_dax_kmem_get_mbind_nodemask(struct memkind *kind,
+MEMKIND_EXPORT int memkind_dax_kmem_get_mbind_nodemask(struct memkind *kind,
                                                unsigned long *nodemask, unsigned long maxnode)
 {
     struct dax_closest_numanode_t *g = &memkind_dax_kmem_closest_numanode_g;

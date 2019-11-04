@@ -37,6 +37,9 @@ extern "C" {
  * API standards are described in memkind(3) man page.
  */
 
+int memkind_dax_kmem_get_mbind_nodemask(struct memkind *kind,
+                                            unsigned long *nodemask, unsigned long maxnode);
+
 int memkind_dax_kmem_all_get_mbind_nodemask(struct memkind *kind,
                                             unsigned long *nodemask, unsigned long maxnode);
 

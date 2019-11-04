@@ -69,7 +69,7 @@ static int print_dax_kmem_nodes()
     numa_bitmask_clearall(&nodemask_dax_kmem);
 
     //WARNING: code below is usage of memkind experimental API which may be changed in future
-    int status = memkind_dax_kmem_all_get_mbind_nodemask(NULL, nodemask.n,
+    int status = memkind_dax_kmem_get_mbind_nodemask(NULL, nodemask.n,
                                                          NUMA_NUM_NODES);
 
     if (status == MEMKIND_ERROR_OPERATION_FAILED ) {

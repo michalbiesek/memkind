@@ -31,7 +31,7 @@ extern "C" {
 #include <stddef.h>
 #include <stdlib.h>
 
-#define VEC_INIT_SIZE (8)
+#define VEC_INIT_SIZE (4)
 
 #define VEC(name, type)\
 struct name {\
