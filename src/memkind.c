@@ -535,6 +535,7 @@ static void memkind_construct(void)
     if (env && strcmp(env, "TBB") == 0) {
         load_tbb_symbols();
     } else {
+        memkind_arena_init_default_arena_registry();
         env = secure_getenv("MEMKIND_BACKGROUND_THREAD");
         if (env && strcmp(env, "1") == 0) {
             memkind_arena_background_thread();

@@ -475,10 +475,7 @@ MEMKIND_EXPORT struct memkind *memkind_arena_detect_kind(void *ptr)
         kind = get_kind_by_arena(arena);
     }
 
-    /* if no kind was associated with arena it means that allocation doesn't come from
-       jemk_*allocx API - it is jemk_*alloc API (MEMKIND_DEFAULT) */
-
-    return (kind) ? kind : MEMKIND_DEFAULT;
+    return kind;
 }
 
 static inline int get_tcache_flag(unsigned partition, size_t size)
@@ -869,6 +866,13 @@ int memkind_arena_get_global_stat(memkind_stat_type stat, size_t *value)
         return MEMKIND_ERROR_INVALID;
     }
     return err;
+}
+void memkind_arena_init_default_arena_registry(void)
+{
+    int i;
+    for(i = 0; i < ARENA_LIMIT_DEFAULT_KIND ; ++i) {
+        arena_registry_g[i] = MEMKIND_DEFAULT;
+    }
 }
 
 int memkind_arena_background_thread(void)
