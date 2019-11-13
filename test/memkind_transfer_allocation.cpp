@@ -40,31 +40,31 @@ protected:
     {}
 };
 
-//TEST_F(MemkindTransferAllocationTests, test_TC_MEMKIND_NULLTransfer)
-//{
-//    void *ptr = memkind_transfer_allocation(nullptr, nullptr);
-//    ASSERT_EQ(ptr, nullptr);
-//    ptr = memkind_transfer_allocation(MEMKIND_REGULAR, nullptr);
-//    ASSERT_EQ(ptr, nullptr);
-//}
-
-//TEST_F(MemkindTransferAllocationTests, test_TC_MEMKIND_TCACHE_test)
-//{
-//    void * ptr = memkind_malloc(MEMKIND_REGULAR, 512);
-//    ASSERT_NE(ptr, nullptr);
-//    void* new_ptr = memkind_transfer_allocation(MEMKIND_REGULAR, ptr);
-//    ASSERT_EQ(new_ptr, nullptr);
-//}
-
-//TEST_F(MemkindTransferAllocationTests, test_TC_MEMKIND_TCACHE_HugeClassTest)
-//{
-//    void * ptr = memkind_malloc(MEMKIND_REGULAR, 1 * MB);
-//    ASSERT_NE(ptr, nullptr);
-//    void* new_ptr = memkind_transfer_allocation(MEMKIND_REGULAR, ptr);
-//    ASSERT_EQ(new_ptr, nullptr);
-//}
+TEST_F(MemkindTransferAllocationTests, test_TC_MEMKIND_NULLTransfer)
+{
+    void *ptr = memkind_transfer_allocation(nullptr, nullptr);
+    ASSERT_EQ(ptr, nullptr);
+    ptr = memkind_transfer_allocation(MEMKIND_REGULAR, nullptr);
+    ASSERT_EQ(ptr, nullptr);
+}
 
 TEST_F(MemkindTransferAllocationTests, test_TC_MEMKIND_TCACHE_test)
+{
+    void * ptr = memkind_malloc(MEMKIND_DEFAULT, 512);
+    ASSERT_NE(ptr, nullptr);
+    void* new_ptr = memkind_transfer_allocation(MEMKIND_DEFAULT, ptr);
+    ASSERT_EQ(new_ptr, nullptr);
+}
+
+TEST_F(MemkindTransferAllocationTests, test_TC_MEMKIND_TCACHE_HugeClassTest)
+{
+    void * ptr = memkind_malloc(MEMKIND_REGULAR, 1 * MB);
+    ASSERT_NE(ptr, nullptr);
+    void* new_ptr = memkind_transfer_allocation(MEMKIND_REGULAR, ptr);
+    ASSERT_EQ(new_ptr, nullptr);
+}
+
+TEST_F(MemkindTransferAllocationTests, test_TC_MEMKIND_TCACHE_HugeClassTest2)
 {
     void * ptr = memkind_malloc(MEMKIND_DEFAULT, 4 *KB + 10);
     ASSERT_NE(ptr, nullptr);
@@ -72,41 +72,35 @@ TEST_F(MemkindTransferAllocationTests, test_TC_MEMKIND_TCACHE_test)
     ASSERT_EQ(new_ptr, nullptr);
 }
 
-//TEST_F(MemkindTransferAllocationTests, test_TC_MEMKIND_success)
-//{
-//    struct memkind *kind = nullptr;
-//    unsigned i;
-//    const unsigned alloc = 50000;
-//    void *ptr[alloc];
-//    void *nptr;
-////    std::vector<void *> pmem_vec;
-//    int err = memkind_create_pmem(PMEM_DIR, PMEM_MAX_SIZE, &kind);
-//    ASSERT_EQ(err, 0);
+TEST_F(MemkindTransferAllocationTests, test_TC_MEMKIND_success)
+{
+    struct memkind *kind = nullptr;
+    unsigned i;
+    const unsigned alloc = 50000;
+    void *ptr[alloc];
+    void *nptr;
+    int err = memkind_create_pmem(PMEM_DIR, PMEM_MAX_SIZE, &kind);
+    ASSERT_EQ(err, 0);
 
-//    for (i = 0; i < alloc; ++i) {
-//        ptr[i] = memkind_malloc(kind, 1 * KB);
-//        sprintf((char*)ptr[i], "memkind_malloc MEMKIND_PMEM\n");
-//        ASSERT_NE(ptr[i], nullptr);
-//    }
+    for (i = 0; i < alloc; ++i) {
+        ptr[i] = memkind_malloc(kind, 1 * KB);
+        sprintf((char*)ptr[i], "memkind_malloc MEMKIND_PMEM\n");
+        ASSERT_NE(ptr[i], nullptr);
+    }
 
-//    for (i = 1; i < alloc;) {
-//        memkind_free(kind, ptr[i]);
-//        ptr[i] = nullptr;
-//        // Free memory with irregular pattern
-//        if (i % 2 == 0)
-//            i += 3;
-//        else
-//            i += 5;
-//    }
+    for (i = 1; i < alloc;) {
+        memkind_free(kind, ptr[i]);
+        ptr[i] = nullptr;
+        // Free memory with irregular pattern
+        if (i % 2 == 0)
+            i += 3;
+        else
+            i += 5;
+    }
 
-//    nptr = memkind_transfer_allocation(kind, ptr[10]);
-//    ASSERT_NE(nptr, nullptr);
-////    pmem_vec.at(10) = ptr;
+    nptr = memkind_transfer_allocation(kind, ptr[10]);
+    ASSERT_NE(nptr, nullptr);
 
-////    for(auto const &val: pmem_vec) {
-////        memkind_free(kind, val);
-////    }
-
-//    err = memkind_destroy_kind(kind);
-//    ASSERT_EQ(err, 0);
-//}
+    err = memkind_destroy_kind(kind);
+    ASSERT_EQ(err, 0);
+}
