@@ -912,7 +912,7 @@ void *memkind_arena_transfer_allocation(struct memkind *kind, void *ptr)
     }
 
     size_t size = memkind_arena_malloc_usable_size(ptr);
-    if (is_size_fit_in_tcache(kind->partition, size) && (kind != MEMKIND_DEFAULT)) {
+    if (is_size_fit_in_tcache(kind->partition, size)) {
         return NULL;
     }
 
@@ -927,12 +927,13 @@ void *memkind_arena_transfer_allocation(struct memkind *kind, void *ptr)
     // Check if input pointer resides in the same slab of reallcoation
     // Check if occupied regions inside the slab are below average occupied regions inside bin
     // Check if there are some free regions in the destination slab
+//    if(out.destination_slab) {
     if(out.destination_slab &&
 //        (ptr >= out.destination_slab) &&
 //        ((char*)ptr < (char*)out.destination_slab + out.slab_size) &&
-//        (out.nfree * out.bin_nregs >= out.nregs * out.bin_nfree &&
-        out.nfree != 0) {
-            void *ptr_new = memkind_malloc(kind, size);
+        (out.nfree * out.bin_nregs >= out.nregs * out.bin_nfree &&
+        out.nfree != 0)) {
+            void *ptr_new = memkind_arena_malloc(kind, size);
             memcpy(ptr_new, ptr, size);
             memkind_arena_free(kind, ptr);
             return ptr_new;

@@ -72,7 +72,7 @@ TEST_F(MemkindTransferAllocationTests, test_TC_MEMKIND_TCACHE_HugeClassTest2)
     ASSERT_EQ(new_ptr, nullptr);
 }
 
-TEST_F(MemkindTransferAllocationTests, test_TC_MEMKIND_success)
+TEST_F(MemkindTransferAllocationTests, test_TC_MEMKINDPmemKind_success)
 {
     struct memkind *kind = nullptr;
     unsigned i;
