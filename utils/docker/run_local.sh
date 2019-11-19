@@ -45,7 +45,7 @@ if [[ -z "$MEMKIND_HOST_WORKDIR" ]]; then
 fi
 
 # need to be inline with Dockerfile WORKDIR
-MEMKIND_CONTAINTER_WORKDIR=/home/memkinduser/memkind/
+MEMKIND_CONTAINER_WORKDIR=/home/memkinduser/memkind/
 PMEM_CONTAINER_PATH=/home/memkinduser/mnt_pmem/
 
 docker build --tag memkind_cont \
@@ -62,6 +62,6 @@ docker run --rm \
            --env TBB_LIBRARY_VERSION="$TBB_LIBRARY_VERSION" \
            --env NDCTL_LIBRARY_VERSION="$NDCTL_LIBRARY_VERSION" \
            --env PMEM_CONTAINER_PATH="$PMEM_PATH" \
-           --mount type=bind,source="$MEMKIND_HOST_WORKDIR",target="$MEMKIND_CONTAINTER_WORKDIR" \
+           --mount type=bind,source="$MEMKIND_HOST_WORKDIR",target="$MEMKIND_CONTAINER_WORKDIR" \
            --mount type=bind,source="$PMEM_PATH",target="$PMEM_CONTAINER_PATH" \
            memkind_cont utils/docker/docker_run_build.sh
