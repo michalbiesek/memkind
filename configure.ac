@@ -199,7 +199,7 @@ fi
 [enable_daxctl="1"]
 )
 if test "x$enable_daxctl" = "x1" ; then
-    AC_CHECK_LIB(daxctl, daxctl_dev_get_memory, [daxctl_kmem=yes], [daxctl_kmem=no])
+    AC_CHECK_LIB(daxctl, daxctl_memory_is_movable, [daxctl_kmem=yes], [daxctl_kmem=no])
 fi
 if test $daxctl_kmem = "yes" ; then
     AC_DEFINE([MEMKIND_DAXCTL_KMEM], [1], [Automatic recognition of PMEM as system memory in MEMKIND_DAX_KMEM])
@@ -228,7 +228,7 @@ AC_MSG_RESULT([
 else
 AC_MSG_RESULT([
                Automatic recognition of PMEM NUMA in MEMKIND_DAX_KMEM is disabled
-               To enable this feature please install libdaxctl-devel v66 or later
+               To enable this feature please install libdaxctl-devel v67 or later
                and run configure again])
 fi
 AC_MSG_RESULT([=================================================================================])

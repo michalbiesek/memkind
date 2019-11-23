@@ -75,7 +75,7 @@ You will need to install required packages on the build system:
 
 For using automatic recognition of PMEM NUMA in MEMKIND_DAX_KMEM:
 
-* **libdaxctl-devel** (v66 or later)
+* **libdaxctl-devel** (v67 or later)
 
 ## Building and Installing
 
@@ -212,7 +212,7 @@ For more details about creating new namespace read [this](https://pmem.io/ndctl/
 
 Conversion from device dax to NUMA node can be performed using following commands:
 
-    daxctl reconfigure-device daxX.Y --mode=system-ram
+    daxctl reconfigure-device daxX.Y --mode=system-ram --no-movable
 
 Where daxX.Y is DAX device you want to reconfigure.
 
@@ -234,7 +234,8 @@ Example output after reconfigure dax2.0 as system-ram:
         "chardev":"dax2.0",
         "size":263182090240,
         "target_node":4,
-        "mode":"system-ram"
+        "mode":"system-ram",
+        "movable":false
       }
     ]
 

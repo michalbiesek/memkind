@@ -85,7 +85,7 @@ static int get_dax_kmem_nodes(struct bitmask *dax_kmem_node_mask)
     daxctl_region_foreach_safe(ctx, region, _region) {
         daxctl_dev_foreach_safe(region, dev, _dev) {
             struct daxctl_memory *mem = daxctl_dev_get_memory(dev);
-            if (mem) {
+            if ((mem) && daxctl_memory_is_movable(mem) != 1) {
                 numa_bitmask_setbit(dax_kmem_node_mask,
                                     (unsigned)daxctl_dev_get_target_node(dev));
             }
