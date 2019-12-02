@@ -24,8 +24,10 @@
 
 #include <memkind.h>
 
+#include <cstring>
 #include <climits>
 #include <numa.h>
+#include <numaif.h>
 #include <unistd.h>
 #include <vector>
 
@@ -42,71 +44,55 @@ protected:
     {}
 };
 
+static size_t get_used_swap() {
+    size_t VmSwap;
+    bool status = false;
+    FILE* fp = fopen("/proc/self/status", "r");
+    if (fp) {
+        char buffer[BUFSIZ];
+        while(fgets(buffer, sizeof (buffer), fp)) {
+            if (sscanf(buffer, "VmSwap: %zu kB", &VmSwap) == 1){
+                status = true;
+                break;
+            }
+        }
+        fclose(fp);
+    }
+    assert(!status && "Couldn't access swap space");
+    return VmSwap * KB;
+}
+
 TEST_F(MemkindDaxKmemTests,
-       test_TC_MEMKIND_MEMKIND_DAX_KMEM_free_with_NULL_kind_4096_bytes)
+       test_TC_MEMKIND_MEMKIND_DAX_KMEM_alloc_until_full_numa)
 {
-    void *ptr = memkind_malloc(MEMKIND_DAX_KMEM, 4096);
+    size_t numa_size;
+    int numa_id = -1;
+    const size_t alloc_size = 100 * MB;
+    std::vector<void *> allocations;
+    void *ptr = memkind_malloc(MEMKIND_DAX_KMEM, alloc_size);
     ASSERT_NE(nullptr, ptr);
-    memkind_free(nullptr, ptr);
-}
+    memset(ptr, 'a', alloc_size);
+    allocations.push_back(ptr);
 
+    get_mempolicy(&numa_id, nullptr, 0, ptr, MPOL_F_NODE | MPOL_F_ADDR);
+    numa_size = numa_node_size64(numa_id, nullptr);
 
-static size_t get_kmem_dax_nodes(std::vector<int>& dax_kmem_nodes) {
-    struct bitmask *cpu_mask = numa_allocate_cpumask();
-    long sum_of_kmem_dax_free_space = 0;
-    long long free_space;
-
-    const int MAXNODE_ID = numa_num_configured_nodes();
-    for (int id = 0; id < MAXNODE_ID; ++id) {
-        numa_node_to_cpus(id, cpu_mask);
-
-        // Check if numa node exists and if it is KMEM DAX NUMA
-        if (numa_node_size64(id, &free_space) > 0 && numa_bitmask_weight(cpu_mask) == 0) {
-            dax_kmem_nodes.push_back(id);
-            sum_of_kmem_dax_free_space += free_space;
-        }
-    }
-    numa_free_cpumask(cpu_mask);
-
-    return sum_of_kmem_dax_free_space;
-}
-
-static std::vector<int> get_closest_numa_node(std::vector<int> dax_kmem_nodes) {
-    int min_distance = INT_MAX;
-    int process_cpu = sched_getcpu();
-    int process_node = numa_node_of_cpu(process_cpu);
-    std::vector<int> closest_numa_ids;
-
-    for (unsigned i = 0; i < dax_kmem_nodes.size(); ++i) {
-        int distance_to_i_node = numa_distance(process_node, dax_kmem_nodes[i]);
-        if (distance_to_i_node < min_distance) {
-            min_distance = distance_to_i_node;
-            closest_numa_ids.clear();
-            closest_numa_ids.push_back(dax_kmem_nodes[i]);
-        } else if (distance_to_i_node == min_distance) {
-            closest_numa_ids.push_back(dax_kmem_nodes[i]);
-        }
+    while (numa_size > alloc_size * allocations.size()) {
+        ptr = memkind_malloc(MEMKIND_DAX_KMEM, alloc_size);
+        memset(ptr, 'a', alloc_size);
+        allocations.push_back(ptr);
     }
 
-    return closest_numa_ids;
-}
-
-static bool is_swap_used(size_t alloc_size_KB) {
-    char command[128];
-    char output[128];
-
-    sprintf(command, "awk '/VmSwap/{print $2}' /proc/%d/status", getpid());
-    FILE *pipe = popen(command, "r");
-    if (!pipe) {
-        std::cerr << "Could not start pipe command." << std::endl;
-        return false;
+    for(int i = 0; i < 20; ++i) {
+        ptr = memkind_malloc(MEMKIND_DAX_KMEM, alloc_size);
+        ASSERT_NE(nullptr, ptr);
+        memset(ptr, 'a', alloc_size);
     }
+    size_t ddd = get_used_swap();
+    (void)ddd;
+//    ASSERT_TRUE(is_swap_used(alloc_size / KB));
 
-    while (fgets(output, sizeof(output), pipe) != nullptr) {}
-    pclose(pipe);
-
-    size_t used_swap_KB = std::stoul(output);
-    if (used_swap_KB > alloc_size_KB) return true;
-
-    return false;
+    for (auto const &ptr: allocations) {
+        memkind_free(MEMKIND_DAX_KMEM, ptr);
+    }
 }
