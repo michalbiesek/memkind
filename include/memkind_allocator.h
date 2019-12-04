@@ -60,6 +60,7 @@ namespace libmemkind
         DAX_KMEM = 11,
         DAX_KMEM_ALL = 12,
         DAX_KMEM_PREFERRED = 13,
+        REGULAR_LOCAL = 14,
     };
 
     namespace static_kind
@@ -139,6 +140,9 @@ namespace libmemkind
                         break;
                     case libmemkind::kinds::DAX_KMEM_PREFERRED:
                         _kind = MEMKIND_DAX_KMEM_PREFERRED;
+                        break;
+                    case libmemkind::kinds::REGULAR_LOCAL:
+                        _kind = MEMKIND_REGULAR_LOCAL;
                         break;
                     default:
                         throw std::runtime_error("Unkown libmemkind::kinds");

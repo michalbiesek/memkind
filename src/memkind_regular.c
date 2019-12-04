@@ -25,11 +25,13 @@
 #include <memkind.h>
 #include <memkind/internal/memkind_arena.h>
 #include <memkind/internal/memkind_default.h>
+#include <memkind/internal/memkind_log.h>
 #include <memkind/internal/heap_manager.h>
 
 #include <numa.h>
 
 static struct bitmask *regular_nodes_mask = NULL;
+static int *memkind_regular_local_nodes_mask = NULL;
 
 static void regular_nodes_init(void)
 {
@@ -48,10 +50,30 @@ static void regular_nodes_init(void)
     numa_bitmask_free(node_cpus);
 }
 
+static void regular_local_nodes_init(void)
+{
+    int cpu;
+    int cpu_num = numa_num_configured_cpus();
+    memkind_regular_local_nodes_mask = malloc(sizeof(int) * cpu_num);
+    if (!memkind_regular_local_nodes_mask) {
+        log_fatal("memkind_regular_local_nodes_mask allocation failed");
+        abort();
+    }
+    for (cpu = 0; cpu < cpu_num; ++cpu) {
+        memkind_regular_local_nodes_mask[cpu] = numa_node_of_cpu(cpu);
+    }
+}
+
 static void memkind_regular_init_once(void)
 {
     regular_nodes_init();
     memkind_init(MEMKIND_REGULAR, true);
+}
+
+static void memkind_regular_local_init_once(void)
+{
+    regular_local_nodes_init();
+    memkind_init(MEMKIND_REGULAR_LOCAL, true);
 }
 
 static int memkind_regular_check_available(struct memkind *kind)
@@ -75,6 +97,30 @@ MEMKIND_EXPORT int memkind_regular_all_get_mbind_nodemask(struct memkind *kind,
     }
 
     copy_bitmask_to_bitmask(regular_nodes_mask, &nodemask_bm);
+    return MEMKIND_SUCCESS;
+}
+
+static int memkind_regular_local_check_available(struct memkind *kind)
+{
+    pthread_once(&kind->init_once, kind->ops->init_once);
+    return memkind_regular_local_nodes_mask != NULL ? MEMKIND_SUCCESS :
+           MEMKIND_ERROR_UNAVAILABLE;
+}
+
+static int memkind_regular_local_get_mbind_nodemask(struct memkind *kind,
+                                                    unsigned long *nodemask,
+                                                    unsigned long maxnode)
+{
+    int cpu;
+    struct bitmask nodemask_bm = {maxnode, nodemask};
+
+    if (!memkind_regular_local_nodes_mask) {
+        return MEMKIND_ERROR_UNAVAILABLE;
+    }
+    numa_bitmask_clearall(&nodemask_bm);
+    cpu = sched_getcpu();
+    numa_bitmask_setbit(&nodemask_bm, memkind_regular_local_nodes_mask[cpu]);
+
     return MEMKIND_SUCCESS;
 }
 
@@ -107,4 +153,23 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_REGULAR_OPS = {
     .defrag_reallocate = memkind_arena_defrag_reallocate
 };
 
-
+MEMKIND_EXPORT struct memkind_ops MEMKIND_REGULAR_LOCAL_OPS = {
+    .create = memkind_arena_create,
+    .destroy = memkind_default_destroy,
+    .malloc = memkind_arena_malloc,
+    .calloc = memkind_arena_calloc,
+    .posix_memalign = memkind_arena_posix_memalign,
+    .realloc = memkind_arena_realloc,
+    .free = memkind_arena_free,
+    .check_available = memkind_regular_local_check_available,
+    .mbind = memkind_default_mbind,
+    .get_mmap_flags = memkind_default_get_mmap_flags,
+    .get_mbind_mode = memkind_default_get_mbind_mode,
+    .get_mbind_nodemask = memkind_regular_local_get_mbind_nodemask,
+    .get_arena = memkind_thread_get_arena,
+    .init_once = memkind_regular_local_init_once,
+    .malloc_usable_size = memkind_default_malloc_usable_size,
+    .finalize = memkind_arena_finalize,
+    .get_stat = memkind_arena_get_kind_stat,
+    .defrag_reallocate = memkind_arena_defrag_reallocate
+};

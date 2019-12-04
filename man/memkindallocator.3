@@ -140,6 +140,15 @@ except that if there is not enough memory in the closest persistent memory NUMA 
 .BR Note:
 For specific CPU only one NUMA node could be marked as preferred one.
 .PP
+.B ibmemkind::kinds::MEMKIND_REGULAR_LOCAL
+Allocate from local memory using the default page size. Local means NUMA node of the CPU that triggered the allocation.
+If there is not enough memory in the local NUMA node to satisfy the request
+.I errno
+is set to
+.B ENOMEM
+and the allocated pointer is set to
+.IR "NULL" .
+.PP
 All public member types and functions correspond to standard library allocator concepts and definitions. The current implementation supports C++11 standard.
 .PP
 Template arguments:

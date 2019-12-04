@@ -463,6 +463,19 @@ TEST_F(BATest,
     hbw_free(ptr);
 }
 
+TEST_F(BATest, test_TC_MEMKIND_REGULAR_LOCAL_get_current_node)
+{
+    const size_t size = 32;
+    int current_node_id = numa_node_of_cpu(sched_getcpu());
+    void *ptr = memkind_malloc(MEMKIND_REGULAR_LOCAL, size);
+    ASSERT_NE(nullptr, ptr);
+    memset(ptr, 'a', size);
+    status = get_mempolicy(&returned_numa_id, nullptr, 0, ptr, MPOL_F_NODE | MPOL_F_ADDR);
+    ASSERT_NE(status, 0);
+    ASSERT_EQ(current_node_id, returned_numa_id);
+    memkind_free(MEMKIND_REGULAR_LOCAL, ptr);
+}
+
 TEST_F(BATest,
        test_TC_MEMKIND_memkind_malloc_usable_size_memkind_calloc_16bytes_16bytes_def_kind)
 {
@@ -529,4 +542,3 @@ TEST_F(BATest, test_TC_MEMKIND_REGULAR_nodemask)
     check_numa_nodes(kind_nodemask, MPOL_BIND, mem, 1234567);
     memkind_free(MEMKIND_REGULAR, mem);
 }
-

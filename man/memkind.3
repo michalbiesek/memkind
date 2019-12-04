@@ -813,6 +813,15 @@ persistent memory NUMA nodes that are in the same shortest distance to it.
 .B MEMKIND_REGULAR
 Allocate from regular memory using the default page size. Regular means general purpose memory
 from the NUMA nodes containing CPUs.
+.TP
+.B MEMKIND_REGULAR_LOCAL
+Allocate from local memory using the default page size. Local means NUMA node of the CPU that triggered the allocation.
+If there is not enough memory in the local NUMA node to satisfy the request
+.I errno
+is set to
+.B ENOMEM
+and the allocated pointer is set to
+.IR "NULL" .
 .SH "MEMORY TYPES"
 The available types of memory:
 .TP

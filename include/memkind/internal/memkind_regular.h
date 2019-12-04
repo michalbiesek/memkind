@@ -38,6 +38,8 @@ extern "C" {
  */
 
 extern struct memkind_ops MEMKIND_REGULAR_OPS;
+extern struct memkind_ops MEMKIND_REGULAR_LOCAL_OPS;
+
 int memkind_regular_all_get_mbind_nodemask(struct memkind *kind,
                                            unsigned long *nodemask,
                                            unsigned long maxnode);
