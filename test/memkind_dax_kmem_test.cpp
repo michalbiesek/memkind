@@ -375,3 +375,62 @@ TEST_P(MemkindDaxKmemTestsParam,
 
     memkind_free(nullptr, test);
 }
+
+TEST(MemkindDaxKmemPreferredNegativeTest, AllNode)
+{
+    bool can_run = false;
+    std::set<int> regular_nodes = get_regular_numa_nodes();
+
+    for (auto const &node: regular_nodes) {
+        auto closest_dax_kmem_nodes = get_closest_dax_kmem_numa_nodes(node);
+        if (closest_dax_kmem_nodes.size() > 1)
+            can_run = true;
+    }
+
+    if (!can_run)
+        GTEST_SKIP() <<
+                     "Skip test for MEMKIND_DAX_KMEM_PREFFERED checking prerequisities - "
+                     "none of the nodes have more than one closest PMEM NUMA nodes";
+    const size_t alloc_size = 1 * KB;
+    void *ptr = memkind_malloc(MEMKIND_DAX_KMEM_PREFERRED, alloc_size);
+    ASSERT_EQ(nullptr, ptr);
+}
+
+TEST(MemkindDaxKmemPreferredNegativeTest, AllowedNode)
+{
+    const size_t alloc_size = 1 * KB;
+    std::set<int> regular_nodes = get_regular_numa_nodes();
+    std::map<int,bool> map_is_regular_nodes_allowed;
+    for (auto const &node: regular_nodes) {
+        auto closest_dax_kmem_nodes = get_closest_dax_kmem_numa_nodes(node);
+        if (closest_dax_kmem_nodes.size() > 1) {
+            map_is_regular_nodes_allowed[node] = false;
+        } else {
+            map_is_regular_nodes_allowed[node] = true;
+        }
+    }
+
+    size_t count = map_is_regular_nodes_allowed.count(false);
+    size_t size = map_is_regular_nodes_allowed.size();
+    if(size - count  == 0) {
+        GTEST_SKIP() <<
+                     "Skip test for MEMKIND_DAX_KMEM_PREFFERED checking prerequisities - "
+                     "none of the nodes have more than one closest PMEM NUMA nodes";
+    }
+
+    struct bitmask *cpu_bitmask = numa_allocate_cpumask();
+
+    auto it = map_is_regular_nodes_allowed.begin();
+    while (it != map_is_regular_nodes_allowed.end()) {
+        if (it->second == true) {
+            numa_node_to_cpus(it->first, cpu_bitmask);
+        }
+        it++;
+    }
+
+    numa_sched_setaffinity(0, cpu_bitmask);
+    void *ptr = memkind_malloc(MEMKIND_DAX_KMEM_PREFERRED, alloc_size);
+    ASSERT_NE(nullptr, ptr);
+    memkind_free(MEMKIND_DAX_KMEM_PREFERRED, ptr);
+    numa_free_cpumask(cpu_bitmask);
+}
