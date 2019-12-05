@@ -40,6 +40,7 @@ noinst_PROGRAMS += examples/autohbw_candidates \
                    examples/pmem_multithreads \
                    examples/pmem_multithreads_onekind \
                    examples/pmem_usable_size \
+                   examples/malloc_test \
                    # end
 if HAVE_CXX11
 noinst_PROGRAMS += examples/memkind_allocated
@@ -52,6 +53,7 @@ examples_filter_memkind_LDADD = libmemkind.la
 examples_hello_hbw_LDADD = libmemkind.la
 examples_hello_memkind_LDADD = libmemkind.la
 examples_hello_memkind_debug_LDADD = libmemkind.la
+examples_malloc_test_LDADD = libmemkind.la
 examples_memkind_get_stat_LDADD = libmemkind.la
 examples_pmem_alignment_LDADD = libmemkind.la
 examples_pmem_and_dax_kmem_kind_LDADD = libmemkind.la
@@ -77,6 +79,7 @@ examples_filter_memkind_SOURCES = examples/filter_example.c
 examples_hello_hbw_SOURCES = examples/hello_hbw_example.c
 examples_hello_memkind_SOURCES = examples/hello_memkind_example.c
 examples_hello_memkind_debug_SOURCES = examples/hello_memkind_example.c examples/memkind_decorator_debug.c
+examples_malloc_test_SOURCES = examples/malloc_test.c
 examples_pmem_alignment_SOURCES = examples/pmem_alignment.c
 examples_pmem_and_dax_kmem_kind_SOURCES = examples/pmem_and_dax_kmem_kind.c
 examples_pmem_and_default_kind_SOURCES = examples/pmem_and_default_kind.c
