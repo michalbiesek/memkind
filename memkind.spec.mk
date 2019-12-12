@@ -53,6 +53,14 @@ BuildRequires: libnuma-devel
 BuildRequires: numactl-devel
 %endif
 
+%define ndctl_min_version 66
+%if %{defined suse_version}
+BuildRequires: libndctl-devel >= %{ndctl_min_version}
+%else
+BuildRequires: ndctl-devel >= %{ndctl_min_version}
+BuildRequires: daxctl-devel >= %{ndctl_min_version}
+%endif
+
 Prefix: %{_prefix}
 Prefix: %{_unitdir}
 %if %{undefined suse_version}
