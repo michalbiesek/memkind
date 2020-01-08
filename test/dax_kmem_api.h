@@ -33,9 +33,9 @@ public:
     DaxKmem();
     size_t get_free_dax_kmem_space(void);
     std::set<int> get_closest_dax_kmem_numa_nodes(int regular_node);
-
-    std::set<int> dax_kmem_nodes;
-
+    size_t size(void);
+    bool contains(int node);
 private:
+    std::set<int> dax_kmem_nodes;
     std::set<int> get_dax_kmem_nodes(void);
 }; // DaxKmem

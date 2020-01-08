@@ -27,16 +27,15 @@
 
 DaxKmem::DaxKmem()
 {
-    dax_kmem_nodes = get_dax_kmem_nodes();
+    DaxKmem::dax_kmem_nodes = get_dax_kmem_nodes();
 }
 
 size_t DaxKmem::get_free_dax_kmem_space(void)
 {
     size_t sum_of_dax_kmem_free_space = 0;
     long long free_space;
-    std::set<int> dax_kmem_nodes = get_dax_kmem_nodes();
 
-    for(auto const &node: dax_kmem_nodes) {
+    for(auto const &node: DaxKmem::dax_kmem_nodes) {
         numa_node_size64(node, &free_space);
         sum_of_dax_kmem_free_space += free_space;
     }
@@ -48,9 +47,9 @@ std::set<int> DaxKmem::get_closest_dax_kmem_numa_nodes(int regular_node)
 {
     int min_distance = INT_MAX;
     std::set<int> closest_numa_ids;
-    std::set<int> dax_kmem_nodes = get_dax_kmem_nodes();
+//    std::set<int> dax_kmem_nodes = get_dax_kmem_nodes();
 
-    for (auto const &node: dax_kmem_nodes) {
+    for (auto const &node: DaxKmem::dax_kmem_nodes) {
         int distance_to_i_node = numa_distance(regular_node, node);
 
         if (distance_to_i_node < min_distance) {
@@ -65,6 +64,18 @@ std::set<int> DaxKmem::get_closest_dax_kmem_numa_nodes(int regular_node)
     return closest_numa_ids;
 }
 
+size_t DaxKmem::size(void)
+{
+    return DaxKmem::dax_kmem_nodes.size();
+}
+
+bool DaxKmem::contains(int node){
+   if (DaxKmem::dax_kmem_nodes.find(node) == DaxKmem::dax_kmem_nodes.end()) {
+     return true;
+   }
+   return false;
+}
+
 std::set<int> DaxKmem::get_dax_kmem_nodes(void)
 {
     struct bitmask *cpu_mask = numa_allocate_cpumask();
@@ -75,7 +86,7 @@ std::set<int> DaxKmem::get_dax_kmem_nodes(void)
         numa_node_to_cpus(id, cpu_mask);
 
         // Check if numa node exists and if it is NUMA node created from persistent memory
-        if (numa_node_size64(id, NULL) > 0 &&
+        if (numa_node_size64(id, nullptr) > 0 &&
             numa_bitmask_weight(cpu_mask) == 0) {
             dax_kmem_nodes.insert(id);
         }
