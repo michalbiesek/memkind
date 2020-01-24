@@ -97,28 +97,6 @@ bool pmem_extent_dalloc(extent_hooks_t *extent_hooks,
                         bool committed,
                         unsigned arena_ind)
 {
-    // if madvise fail, it means that addr isn't mapped shared (doesn't come from pmem)
-    // and it should be unmapped to avoid space exhaustion when calling large number of
-    // operations like memkind_create_pmem and memkind_destroy_kind
-    errno = 0;
-    int status = madvise(addr, size, MADV_REMOVE);
-    if (!status) {
-        struct memkind *kind = get_kind_by_arena(arena_ind);
-        struct memkind_pmem *priv = kind->priv;
-        if (pthread_mutex_lock(&priv->pmem_lock) != 0)
-            assert(0 && "failed to acquire mutex");
-        priv->current_size -= size;
-        if (pthread_mutex_unlock(&priv->pmem_lock) != 0)
-            assert(0 && "failed to release mutex");
-    } else {
-        if (errno == EOPNOTSUPP) {
-            log_fatal("Filesystem doesn't support FALLOC_FL_PUNCH_HOLE.");
-            abort();
-        }
-        if (munmap(addr, size) == -1) {
-            log_err("munmap failed!");
-        }
-    }
     return true;
 }
 
@@ -145,6 +123,41 @@ bool pmem_extent_decommit(extent_hooks_t *extent_hooks,
 }
 
 bool pmem_extent_purge(extent_hooks_t *extent_hooks,
+                       void *addr,
+                       size_t size,
+                       size_t offset,
+                       size_t length,
+                       unsigned arena_ind)
+{
+	// if madvise fail, it means that addr isn't mapped shared (doesn't come from pmem)
+    // and it should be unmapped to avoid space exhaustion when calling large number of
+    // operations like memkind_create_pmem and memkind_destroy_kind
+    errno = 0;
+    int status = madvise(addr, size, MADV_REMOVE);
+    if (!status) {
+        struct memkind *kind = get_kind_by_arena(arena_ind);
+        struct memkind_pmem *priv = kind->priv;
+		assert(priv->current_size >= size);
+        if (pthread_mutex_lock(&priv->pmem_lock) != 0)
+            assert(0 && "failed to acquire mutex");
+        priv->current_size -= size;
+        if (pthread_mutex_unlock(&priv->pmem_lock) != 0)
+            assert(0 && "failed to release mutex");
+		return false;
+    } else {
+        if (errno == EOPNOTSUPP) {
+            log_fatal("Filesystem doesn't support FALLOC_FL_PUNCH_HOLE.");
+            abort();
+        }
+        if (munmap(addr, size) == -1) {
+            log_err("munmap failed!");
+        }
+    }
+    /* do nothing - report failure (opt-out) */
+    return true;
+}
+
+bool pmem_extent_purge_forced(extent_hooks_t *extent_hooks,
                        void *addr,
                        size_t size,
                        size_t offset,
@@ -196,6 +209,7 @@ static extent_hooks_t pmem_extent_hooks = {
     .commit = pmem_extent_commit,
     .decommit = pmem_extent_decommit,
     .purge_lazy = pmem_extent_purge,
+    .purge_forced = pmem_extent_purge_forced,
     .split = pmem_extent_split,
     .merge = pmem_extent_merge,
     .destroy = pmem_extent_destroy
