@@ -1,4 +1,5 @@
 #include "test/jemalloc_test.h"
+#include "jemalloc/internal/prof_log.h"
 
 #define N_PARAM 100
 #define N_THREADS 10
@@ -61,7 +62,7 @@ static void *f_thread(void *unused) {
 	int i;
 	for (i = 0; i < N_PARAM; i++) {
 		void *p = malloc(100);
-		memset(p, 100, sizeof(char));
+		memset(p, 100, 1);
 		free(p);
 	}
 

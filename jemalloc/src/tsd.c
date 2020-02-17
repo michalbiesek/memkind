@@ -115,8 +115,11 @@ tsd_force_recompute(tsdn_t *tsdn) {
 	ql_foreach(remote_tsd, &tsd_nominal_tsds, TSD_MANGLE(tcache).tsd_link) {
 		assert(tsd_atomic_load(&remote_tsd->state, ATOMIC_RELAXED)
 		    <= tsd_state_nominal_max);
-		tsd_atomic_store(&remote_tsd->state, tsd_state_nominal_recompute,
-		    ATOMIC_RELAXED);
+		tsd_atomic_store(&remote_tsd->state,
+		    tsd_state_nominal_recompute, ATOMIC_RELAXED);
+		/* See comments in te_recompute_fast_threshold(). */
+		atomic_fence(ATOMIC_SEQ_CST);
+		te_next_event_fast_set_non_nominal(remote_tsd);
 	}
 	malloc_mutex_unlock(tsdn, &tsd_nominal_tsds_lock);
 }
@@ -175,6 +178,8 @@ tsd_slow_update(tsd_t *tsd) {
 		old_state = tsd_atomic_exchange(&tsd->state, new_state,
 		    ATOMIC_ACQUIRE);
 	} while (old_state == tsd_state_nominal_recompute);
+
+	te_recompute_fast_threshold(tsd);
 }
 
 void
@@ -213,6 +218,7 @@ tsd_state_set(tsd_t *tsd, uint8_t new_state) {
 			tsd_slow_update(tsd);
 		}
 	}
+	te_recompute_fast_threshold(tsd);
 }
 
 static bool
@@ -230,8 +236,11 @@ tsd_data_init(tsd_t *tsd) {
 	 * cost of test repeatability.  For debug builds, instead use a
 	 * deterministic seed.
 	 */
-	*tsd_offset_statep_get(tsd) = config_debug ? 0 :
+	*tsd_prng_statep_get(tsd) = config_debug ? 0 :
 	    (uint64_t)(uintptr_t)tsd;
+
+	/* event_init may use the prng state above. */
+	tsd_te_init(tsd);
 
 	return tsd_tcache_enabled_data_init(tsd);
 }
@@ -367,6 +376,7 @@ tsd_do_data_cleanup(tsd_t *tsd) {
 	arenas_tdata_cleanup(tsd);
 	tcache_cleanup(tsd);
 	witnesses_cleanup(tsd_witness_tsdp_get_unsafe(tsd));
+	*tsd_reentrancy_levelp_get(tsd) = 1;
 }
 
 void
@@ -387,7 +397,7 @@ tsd_cleanup(void *arg) {
 		 * is still called for testing and completeness.
 		 */
 		assert_tsd_data_cleanup_done(tsd);
-		/* Fall through. */
+		JEMALLOC_FALLTHROUGH;
 	case tsd_state_nominal:
 	case tsd_state_nominal_slow:
 		tsd_do_data_cleanup(tsd);

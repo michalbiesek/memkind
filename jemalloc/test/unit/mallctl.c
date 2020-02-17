@@ -170,6 +170,9 @@ TEST_BEGIN(test_mallctl_opt) {
 	TEST_MALLCTL_OPT(ssize_t, dirty_decay_ms, always);
 	TEST_MALLCTL_OPT(ssize_t, muzzy_decay_ms, always);
 	TEST_MALLCTL_OPT(bool, stats_print, always);
+	TEST_MALLCTL_OPT(const char *, stats_print_opts, always);
+	TEST_MALLCTL_OPT(int64_t, stats_interval, always);
+	TEST_MALLCTL_OPT(const char *, stats_interval_opts, always);
 	TEST_MALLCTL_OPT(const char *, junk, fill);
 	TEST_MALLCTL_OPT(bool, zero, fill);
 	TEST_MALLCTL_OPT(bool, utrace, utrace);
@@ -178,6 +181,7 @@ TEST_BEGIN(test_mallctl_opt) {
 	TEST_MALLCTL_OPT(size_t, lg_extent_max_active_fit, always);
 	TEST_MALLCTL_OPT(size_t, lg_tcache_max, always);
 	TEST_MALLCTL_OPT(const char *, thp, always);
+	TEST_MALLCTL_OPT(const char *, zero_realloc, always);
 	TEST_MALLCTL_OPT(bool, prof, prof);
 	TEST_MALLCTL_OPT(const char *, prof_prefix, prof);
 	TEST_MALLCTL_OPT(bool, prof_active, prof);
@@ -187,6 +191,7 @@ TEST_BEGIN(test_mallctl_opt) {
 	TEST_MALLCTL_OPT(bool, prof_gdump, prof);
 	TEST_MALLCTL_OPT(bool, prof_final, prof);
 	TEST_MALLCTL_OPT(bool, prof_leak, prof);
+	TEST_MALLCTL_OPT(ssize_t, prof_recent_alloc_max, prof);
 
 #undef TEST_MALLCTL_OPT
 }
@@ -762,6 +767,32 @@ TEST_BEGIN(test_arenas_lookup) {
 }
 TEST_END
 
+TEST_BEGIN(test_prof_active) {
+	/*
+	 * If config_prof is off, then the test for prof_active in
+	 * test_mallctl_opt was already enough.
+	 */
+	test_skip_if(!config_prof);
+
+	bool active, old;
+	size_t len = sizeof(bool);
+
+	active = true;
+	assert_d_eq(mallctl("prof.active", NULL, NULL, &active, len), ENOENT,
+	    "Setting prof_active to true should fail when opt_prof is off");
+	old = true;
+	assert_d_eq(mallctl("prof.active", &old, &len, &active, len), ENOENT,
+	    "Setting prof_active to true should fail when opt_prof is off");
+	assert_true(old, "old valud should not be touched when mallctl fails");
+	active = false;
+	assert_d_eq(mallctl("prof.active", NULL, NULL, &active, len), 0,
+	    "Setting prof_active to false should succeed when opt_prof is off");
+	assert_d_eq(mallctl("prof.active", &old, &len, &active, len), 0,
+	    "Setting prof_active to false should succeed when opt_prof is off");
+	assert_false(old, "prof_active should be false when opt_prof is off");
+}
+TEST_END
+
 TEST_BEGIN(test_stats_arenas) {
 #define TEST_STATS_ARENAS(t, name) do {					\
 	t name;								\
@@ -854,6 +885,75 @@ TEST_BEGIN(test_hooks_exhaustion) {
 }
 TEST_END
 
+TEST_BEGIN(test_thread_idle) {
+	/*
+	 * We're cheating a little bit in this test, and inferring things about
+	 * implementation internals (like tcache details).  We have to;
+	 * thread.idle has no guaranteed effects.  We need stats to make these
+	 * inferences.
+	 */
+	test_skip_if(!config_stats);
+
+	int err;
+	size_t sz;
+	size_t miblen;
+
+	bool tcache_enabled = false;
+	sz = sizeof(tcache_enabled);
+	err = mallctl("thread.tcache.enabled", &tcache_enabled, &sz, NULL, 0);
+	assert_d_eq(err, 0, "");
+	test_skip_if(!tcache_enabled);
+
+	size_t tcache_max;
+	sz = sizeof(tcache_max);
+	err = mallctl("arenas.tcache_max", &tcache_max, &sz, NULL, 0);
+	assert_d_eq(err, 0, "");
+	test_skip_if(tcache_max == 0);
+
+	unsigned arena_ind;
+	sz = sizeof(arena_ind);
+	err = mallctl("thread.arena", &arena_ind, &sz, NULL, 0);
+	assert_d_eq(err, 0, "");
+
+	/* We're going to do an allocation of size 1, which we know is small. */
+	size_t mib[5];
+	miblen = sizeof(mib)/sizeof(mib[0]);
+	err = mallctlnametomib("stats.arenas.0.small.ndalloc", mib, &miblen);
+	assert_d_eq(err, 0, "");
+	mib[2] = arena_ind;
+
+	/*
+	 * This alloc and dalloc should leave something in the tcache, in a
+	 * small size's cache bin.
+	 */
+	void *ptr = mallocx(1, 0);
+	dallocx(ptr, 0);
+
+	uint64_t epoch;
+	err = mallctl("epoch", NULL, NULL, &epoch, sizeof(epoch));
+	assert_d_eq(err, 0, "");
+
+	uint64_t small_dalloc_pre_idle;
+	sz = sizeof(small_dalloc_pre_idle);
+	err = mallctlbymib(mib, miblen, &small_dalloc_pre_idle, &sz, NULL, 0);
+	assert_d_eq(err, 0, "");
+
+	err = mallctl("thread.idle", NULL, NULL, NULL, 0);
+	assert_d_eq(err, 0, "");
+
+	err = mallctl("epoch", NULL, NULL, &epoch, sizeof(epoch));
+	assert_d_eq(err, 0, "");
+
+	uint64_t small_dalloc_post_idle;
+	sz = sizeof(small_dalloc_post_idle);
+	err = mallctlbymib(mib, miblen, &small_dalloc_post_idle, &sz, NULL, 0);
+	assert_d_eq(err, 0, "");
+
+	assert_u64_lt(small_dalloc_pre_idle, small_dalloc_post_idle,
+	    "Purge didn't flush the tcache");
+}
+TEST_END
+
 int
 main(void) {
 	return test(
@@ -882,7 +982,9 @@ main(void) {
 	    test_arenas_lextent_constants,
 	    test_arenas_create,
 	    test_arenas_lookup,
+	    test_prof_active,
 	    test_stats_arenas,
 	    test_hooks,
-	    test_hooks_exhaustion);
+	    test_hooks_exhaustion,
+	    test_thread_idle);
 }

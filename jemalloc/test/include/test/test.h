@@ -1,8 +1,8 @@
 #define ASSERT_BUFSIZE	256
 
 #define assert_cmp(t, a, b, cmp, neg_cmp, pri, ...) do {		\
-	t a_ = (a);							\
-	t b_ = (b);							\
+	const t a_ = (a);						\
+	const t b_ = (b);						\
 	if (!(a_ cmp b_)) {						\
 		char prefix[ASSERT_BUFSIZE];				\
 		char message[ASSERT_BUFSIZE];				\
@@ -336,3 +336,5 @@ test_status_t	p_test_no_malloc_init(test_t *t, ...);
 void	p_test_init(const char *name);
 void	p_test_fini(void);
 void	p_test_fail(const char *prefix, const char *message);
+
+void strncpy_cond(void *dst, const char *src, bool cond);

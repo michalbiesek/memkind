@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.63)
+AC_PREREQ(2.68)
 AC_INIT([Makefile.in])
 
 AC_CONFIG_AUX_DIR([build-aux])
@@ -250,6 +250,11 @@ if test "x$GCC" = "xyes" ; then
   JE_CFLAGS_ADD([-Wsign-compare])
   JE_CFLAGS_ADD([-Wundef])
   JE_CFLAGS_ADD([-Wno-format-zero-length])
+  dnl This warning triggers on the use of the universal zero initializer, which
+  dnl is a very handy idiom for things like the tcache static initializer (which
+  dnl has lots of nested structs).  See the discussion at.
+  dnl https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53119
+  JE_CFLAGS_ADD([-Wno-missing-braces])
   JE_CFLAGS_ADD([-pipe])
   JE_CFLAGS_ADD([-g3])
 elif test "x$je_cv_msvc" = "xyes" ; then
@@ -290,8 +295,11 @@ if test "x$enable_cxx" = "x1" ; then
   dnl Require at least c++14, which is the first version to support sized
   dnl deallocation.  C++ support is not compiled otherwise.
   m4_include([m4/ax_cxx_compile_stdcxx.m4])
-  AX_CXX_COMPILE_STDCXX([14], [noext], [optional])
-  if test "x${HAVE_CXX14}" = "x1" ; then
+  AX_CXX_COMPILE_STDCXX([17], [noext], [optional])
+  if test "x${HAVE_CXX17}" != "x1"; then
+    AX_CXX_COMPILE_STDCXX([14], [noext], [optional])
+  fi
+  if test "x${HAVE_CXX14}" = "x1" -o "x${HAVE_CXX17}" = "x1"; then
     JE_CXXFLAGS_ADD([-Wall])
     JE_CXXFLAGS_ADD([-Wextra])
     JE_CXXFLAGS_ADD([-g3])
@@ -583,7 +591,7 @@ if test ! -e "${objroot}VERSION" ; then
   if test ! -e "${srcroot}VERSION" ; then
     AC_MSG_RESULT(
       [Missing VERSION file, and unable to generate it; creating bogus VERSION])
-    echo "0.0.0-0-g0000000000000000000000000000000000000000" > "${objroot}VERSION"
+    echo "0.0.0-0-g000000missing_version_try_git_fetch_tags" > "${objroot}VERSION"
   else
     cp ${srcroot}VERSION ${objroot}VERSION
   fi
@@ -864,6 +872,26 @@ JE_COMPILABLE([format(printf, ...) attribute], [#include <stdlib.h>],
 JE_CFLAGS_RESTORE()
 if test "x${je_cv_format_arg}" = "xyes" ; then
   AC_DEFINE([JEMALLOC_HAVE_ATTR_FORMAT_ARG], [ ])
+fi
+
+dnl Check for fallthrough attribute support.
+JE_CFLAGS_SAVE()
+JE_CFLAGS_ADD([-Wimplicit-fallthrough])
+JE_COMPILABLE([fallthrough attribute],
+              [#if !__has_attribute(fallthrough)
+               #error "foo"
+               #endif],
+              [int x = 0;
+               switch (x) {
+               case 0: __attribute__((__fallthrough__));
+               case 1: return 1;
+               }],
+              [je_cv_fallthrough])
+JE_CFLAGS_RESTORE()
+if test "x${je_cv_fallthrough}" = "xyes" ; then
+  AC_DEFINE([JEMALLOC_HAVE_ATTR_FALLTHROUGH], [ ])
+  JE_CFLAGS_ADD([-Wimplicit-fallthrough])
+  JE_CXXFLAGS_ADD([-Wimplicit-fallthrough])
 fi
 
 dnl Support optional additions to rpath.
@@ -1650,14 +1678,10 @@ if test "x$abi" != "xpecoff" ; then
 dnl Check if we have dlsym support.
   if test "x$enable_libdl" = "x1" ; then
     have_dlsym="1"
-    AC_CHECK_HEADERS([dlfcn.h], , [have_dlsym="0"])
-    check_dlsym_in_libdl="0"
-    if test "x$have_dlsym" = "x1" ; then
-      AC_CHECK_FUNC([dlsym], [], [check_dlsym_in_libdl="1"])
-    fi
-    if test "x$check_dlsym_in_libdl" = "x1" ; then
-      AC_CHECK_LIB([dl], [dlsym], [LIBS="$LIBS -ldl"], [have_dlsym="0"])
-    fi
+    AC_CHECK_HEADERS([dlfcn.h],
+      AC_CHECK_FUNC([dlsym], [],
+        [AC_CHECK_LIB([dl], [dlsym], [LIBS="$LIBS -ldl"], [have_dlsym="0"])]),
+      [have_dlsym="0"])
     if test "x$have_dlsym" = "x1" ; then
       AC_DEFINE([JEMALLOC_HAVE_DLSYM], [ ])
     fi
