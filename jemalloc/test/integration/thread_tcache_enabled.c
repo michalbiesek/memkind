@@ -60,6 +60,8 @@ thd_start(void *arg) {
 
 	free(malloc(1));
 	return NULL;
+	test_skip("\"thread.tcache.enabled\" mallctl not available");
+	return NULL;
 }
 
 TEST_BEGIN(test_main_thread) {

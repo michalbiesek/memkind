@@ -27,41 +27,37 @@ static extent_hooks_t hooks_not_null = {
 };
 
 TEST_BEGIN(test_base_hooks_default) {
+	tsdn_t *tsdn;
 	base_t *base;
-	size_t allocated0, allocated1, resident, mapped, n_thp;
+	size_t allocated0, allocated1, resident, mapped;
 
-	tsdn_t *tsdn = tsd_tsdn(tsd_fetch());
+	tsdn = tsdn_fetch();
 	base = base_new(tsdn, 0, (extent_hooks_t *)&extent_hooks_default);
 
 	if (config_stats) {
-		base_stats_get(tsdn, base, &allocated0, &resident, &mapped,
-		    &n_thp);
+		base_stats_get(tsdn, base, &allocated0, &resident, &mapped);
 		assert_zu_ge(allocated0, sizeof(base_t),
 		    "Base header should count as allocated");
-		if (opt_metadata_thp == metadata_thp_always) {
-			assert_zu_gt(n_thp, 0,
-			    "Base should have 1 THP at least.");
-		}
 	}
 
 	assert_ptr_not_null(base_alloc(tsdn, base, 42, 1),
 	    "Unexpected base_alloc() failure");
 
 	if (config_stats) {
-		base_stats_get(tsdn, base, &allocated1, &resident, &mapped,
-		    &n_thp);
+		base_stats_get(tsdn, base, &allocated1, &resident, &mapped);
 		assert_zu_ge(allocated1 - allocated0, 42,
 		    "At least 42 bytes were allocated by base_alloc()");
 	}
 
-	base_delete(tsdn, base);
+	base_delete(base);
 }
 TEST_END
 
 TEST_BEGIN(test_base_hooks_null) {
 	extent_hooks_t hooks_orig;
+	tsdn_t *tsdn;
 	base_t *base;
-	size_t allocated0, allocated1, resident, mapped, n_thp;
+	size_t allocated0, allocated1, resident, mapped;
 
 	extent_hooks_prep();
 	try_dalloc = false;
@@ -72,32 +68,26 @@ TEST_BEGIN(test_base_hooks_null) {
 	memcpy(&hooks_orig, &hooks, sizeof(extent_hooks_t));
 	memcpy(&hooks, &hooks_null, sizeof(extent_hooks_t));
 
-	tsdn_t *tsdn = tsd_tsdn(tsd_fetch());
+	tsdn = tsdn_fetch();
 	base = base_new(tsdn, 0, &hooks);
 	assert_ptr_not_null(base, "Unexpected base_new() failure");
 
 	if (config_stats) {
-		base_stats_get(tsdn, base, &allocated0, &resident, &mapped,
-		    &n_thp);
+		base_stats_get(tsdn, base, &allocated0, &resident, &mapped);
 		assert_zu_ge(allocated0, sizeof(base_t),
 		    "Base header should count as allocated");
-		if (opt_metadata_thp == metadata_thp_always) {
-			assert_zu_gt(n_thp, 0,
-			    "Base should have 1 THP at least.");
-		}
 	}
 
 	assert_ptr_not_null(base_alloc(tsdn, base, 42, 1),
 	    "Unexpected base_alloc() failure");
 
 	if (config_stats) {
-		base_stats_get(tsdn, base, &allocated1, &resident, &mapped,
-		    &n_thp);
+		base_stats_get(tsdn, base, &allocated1, &resident, &mapped);
 		assert_zu_ge(allocated1 - allocated0, 42,
 		    "At least 42 bytes were allocated by base_alloc()");
 	}
 
-	base_delete(tsdn, base);
+	base_delete(base);
 
 	memcpy(&hooks, &hooks_orig, sizeof(extent_hooks_t));
 }
@@ -105,6 +95,7 @@ TEST_END
 
 TEST_BEGIN(test_base_hooks_not_null) {
 	extent_hooks_t hooks_orig;
+	tsdn_t *tsdn;
 	base_t *base;
 	void *p, *q, *r, *r_exp;
 
@@ -117,7 +108,7 @@ TEST_BEGIN(test_base_hooks_not_null) {
 	memcpy(&hooks_orig, &hooks, sizeof(extent_hooks_t));
 	memcpy(&hooks, &hooks_not_null, sizeof(extent_hooks_t));
 
-	tsdn_t *tsdn = tsd_tsdn(tsd_fetch());
+	tsdn = tsdn_fetch();
 	did_alloc = false;
 	base = base_new(tsdn, 0, &hooks);
 	assert_ptr_not_null(base, "Unexpected base_new() failure");
@@ -209,7 +200,7 @@ TEST_BEGIN(test_base_hooks_not_null) {
 
 	called_dalloc = called_destroy = called_decommit = called_purge_lazy =
 	    called_purge_forced = false;
-	base_delete(tsdn, base);
+	base_delete(base);
 	assert_true(called_dalloc, "Expected dalloc call");
 	assert_true(!called_destroy, "Unexpected destroy call");
 	assert_true(called_decommit, "Expected decommit call");
