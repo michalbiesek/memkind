@@ -1,167 +1,79 @@
-/*
- * Copyright (c) 2018 - 2019 Intel Corporation
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in
- *       the documentation and/or other materials provided with the
- *       distribution.
- *
- *     * Neither the name of Intel Corporation nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY LOG OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+#include <memkind.h>
 
-
-#include "pmem_allocator.h"
-
-#include <sys/stat.h>
+#include <memory>
+#include <cstring>
+#include <stdio.h>
+#include <random>
 #include <iostream>
+#include <malloc.h>
 #include <vector>
-#include <list>
-#include <map>
-#include <string>
-#include <scoped_allocator>
-#include <cassert>
+#include <stdlib.h>
+#include <stdlib.h>
 
-#define STL_VECTOR_TEST
-#define STL_LIST_TEST
-#if _GLIBCXX_USE_CXX11_ABI
-#define STL_VEC_STRING_TEST
-#define STL_MAP_INT_STRING_TEST
-#endif
 
-void cpp_allocator_test(const char *pmem_directory)
+#define BUFFER_SIZE 1024
+#define PMEM_MAX_SIZE ((size_t)1024ULL * 1024 * 1024 * 4)
+
+int main(int argc, char * argv[])
 {
-    std::cout << "TEST SCOPE: HELLO" << std::endl;
+	std::random_device rd;
+	std::mt19937 mt(rd());
+	std::uniform_int_distribution<> m_size(0, 9);
+	//std::uniform_int_distribution<> m_index(0, 10);
 
-    size_t pmem_max_size = 1024*1024*1024;
+	double block_size[] = {8519680, 4325376, 8519680, 4325376, 8519680, 4325376, 8519680, 4325376, 432517, 608478};
 
-#ifdef STL_VECTOR_TEST
-    {
-        std::cout << "VECTOR OPEN" << std::endl;
-        libmemkind::pmem::allocator<int> alc{ pmem_directory, pmem_max_size };
-        std::vector<int, libmemkind::pmem::allocator<int>> vector{ alc };
+        struct memkind *pmem_kind;
+        int err = 0;
 
-        for (int i = 0; i < 20; ++i) {
-            vector.push_back(0xDEAD + i);
-            assert(vector.back() == 0xDEAD + i);
+        err = memkind_create_pmem("/mnt/memkind/pmem3p2", PMEM_MAX_SIZE, &pmem_kind);
+        if (err)
+        {
+                printf("%s\n", "Unable to create pmem partition\n");
+                return -1;
         }
 
-        std::cout << "VECTOR CLOSE" << std::endl;
-    }
-#endif
+        char *pmem_str = NULL;
 
-#ifdef STL_LIST_TEST
-    {
-        std::cout << "LIST OPEN" << std::endl;
-        libmemkind::pmem::allocator<int> alc{ pmem_directory, pmem_max_size };
-        std::list<int, libmemkind::pmem::allocator<int>> list{ alc };
+//        bool full = false;
+//	int evict = 0;
+//        long long malloc_sum = 0;
 
-        const int nx2 = 4;
-        for (int i = 0; i < nx2; ++i) {
-            list.emplace_back(0xBEAC011 + i);
-            assert(list.back() == 0xBEAC011 + i);
+	std::vector<char*> pmem_strs;
+	long long total = PMEM_MAX_SIZE;
+        size_t total_allocated = 0;
+        long long n = 0;
+
+        while (true)
+        {
+                n++;
+		int index = m_size(mt);
+		size_t size = block_size[index];
+                int length = pmem_strs.size() / 2;
+                std::uniform_int_distribution<> m_index(0, length-1);
+                while ((pmem_str = (char *)memkind_malloc(pmem_kind, size)) == NULL) {
+                        int to_evict = m_index(mt);
+                        char *str_to_evict = pmem_strs[to_evict];
+                        long long evict_size = memkind_malloc_usable_size(pmem_kind, str_to_evict);
+                        total_allocated -= evict_size;
+                        if (total_allocated < total * 0.1) {
+                                printf("allocated less than 10 percent\n");
+                                exit(0);
+                        }
+                        memkind_free(pmem_kind, str_to_evict);
+                        pmem_strs.erase(pmem_strs.begin() + to_evict);
+                }
+                pmem_strs.push_back(pmem_str);
+                total_allocated += memkind_malloc_usable_size(pmem_kind, pmem_str);
+                if (n % 10000 == 0) {
+                        printf("%f\n", (float)total_allocated/total );
+			fflush(stdout);
+                }
+
+		//system("df -k | grep pmem0");
         }
+        //printf("%d\t\t%d\n", PMEM_MAX_SIZE / 1024 / 1024 / 1024, malloc_sum / 1024 / 1024 / 1024);
 
-        for (int i = 0; i < nx2; ++i) {
-            list.pop_back();
-        }
-
-        std::cout << "LIST CLOSE" << std::endl;
-    }
-#endif
-
-#ifdef STL_VEC_STRING_TEST
-    {
-        std::cout << "STRINGED VECTOR OPEN" << std::endl;
-        typedef libmemkind::pmem::allocator<char> str_alloc_t;
-        typedef std::basic_string<char, std::char_traits<char>, str_alloc_t>
-        pmem_string;
-        typedef libmemkind::pmem::allocator<pmem_string> vec_alloc_t;
-
-        vec_alloc_t vec_alloc{ pmem_directory, pmem_max_size };
-        str_alloc_t str_alloc{ pmem_directory, pmem_max_size };
-
-        std::vector<pmem_string, std::scoped_allocator_adaptor<vec_alloc_t> >
-        vec{ std::scoped_allocator_adaptor<vec_alloc_t>(vec_alloc) };
-
-        pmem_string arg{ "Very very loooong striiiing", str_alloc };
-
-        vec.push_back(arg);
-        assert(vec.back() == arg);
-
-        std::cout << "STRINGED VECTOR CLOSE" << std::endl;
-    }
-
-#endif
-
-#ifdef STL_MAP_INT_STRING_TEST
-    {
-        std::cout << "INT_STRING MAP OPEN" << std::endl;
-        typedef std::basic_string<char, std::char_traits<char>, libmemkind::pmem::allocator<char>>
-                pmem_string;
-        typedef int key_t;
-        typedef pmem_string value_t;
-        typedef libmemkind::pmem::allocator<std::pair<const key_t, value_t>>
-                                                                          allocator_t;
-        typedef std::map<key_t, value_t, std::less<key_t>, std::scoped_allocator_adaptor<allocator_t>>
-                map_t;
-
-        allocator_t allocator( pmem_directory, pmem_max_size );
-
-        value_t source_str1("Lorem ipsum dolor ", allocator);
-        value_t source_str2("sit amet consectetuer adipiscing elit", allocator );
-
-        map_t target_map{ std::scoped_allocator_adaptor<allocator_t>(allocator) };
-
-        target_map[key_t(165)] = source_str1;
-        assert(target_map[key_t(165)] == source_str1);
-        target_map[key_t(165)] = source_str2;
-        assert(target_map[key_t(165)] == source_str2);
-
-        std::cout << "INT_STRING MAP CLOSE" << std::endl;
-    }
-#endif
-    std::cout << "TEST SCOPE: GOODBYE" << std::endl;
-}
-
-int main(int argc, char *argv[])
-{
-    const char *pmem_directory = "/tmp/";
-
-    if (argc > 2) {
-        std::cerr << "Usage: pmem_cpp_allocator [directory path]\n"
-                  << "\t[directory path] - directory where temporary file is created (default = \"/tmp/\")"
-                  << std::endl;
+	printf("Out of memory");
         return 0;
-    } else if (argc == 2) {
-        struct stat st;
-        if (stat(argv[1], &st) != 0 || !S_ISDIR(st.st_mode)) {
-            fprintf(stderr,"%s : Invalid path to pmem kind directory\n", argv[1]);
-            return 1;
-        }
-        pmem_directory = argv[1];
-    }
-
-    cpp_allocator_test(pmem_directory);
-    return 0;
 }
