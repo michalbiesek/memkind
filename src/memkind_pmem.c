@@ -112,17 +112,19 @@ bool pmem_extent_dalloc(extent_hooks_t *extent_hooks,
         priv->current_size -= size;
         if (pthread_mutex_unlock(&priv->pmem_lock) != 0)
             assert(0 && "failed to release mutex");
+        result = false;
     } else {
         if (errno == EOPNOTSUPP) {
             log_fatal("Filesystem doesn't support FALLOC_FL_PUNCH_HOLE.");
             abort();
         }
+        if (munmap(addr, size) == -1) {
+            log_err("munmap failed!");
+        } else {
+            result = false;
+        }
     }
-    if (munmap(addr, size) == -1) {
-        log_err("munmap failed!");
-    } else {
-        result = false;
-    }
+
     return result;
 }
 
