@@ -102,16 +102,14 @@ bool pmem_extent_dalloc(extent_hooks_t *extent_hooks,
     // and it should be unmapped to avoid space exhaustion when calling large number of
     // operations like memkind_create_pmem and memkind_destroy_kind
     errno = 0;
+    struct memkind *kind = get_kind_by_arena(arena_ind);
+    struct memkind_pmem *priv = kind->priv;
+    if (pthread_mutex_lock(&priv->pmem_lock) != 0)
+        assert(0 && "failed to acquire mutex");
     int status = madvise(addr, size, MADV_REMOVE);
     if (!status) {
-        struct memkind *kind = get_kind_by_arena(arena_ind);
-        struct memkind_pmem *priv = kind->priv;
         assert(priv->current_size >= size);
-        if (pthread_mutex_lock(&priv->pmem_lock) != 0)
-            assert(0 && "failed to acquire mutex");
         priv->current_size -= size;
-        if (pthread_mutex_unlock(&priv->pmem_lock) != 0)
-            assert(0 && "failed to release mutex");
     } else {
         if (errno == EOPNOTSUPP) {
             log_fatal("Filesystem doesn't support FALLOC_FL_PUNCH_HOLE.");
@@ -123,6 +121,8 @@ bool pmem_extent_dalloc(extent_hooks_t *extent_hooks,
     } else {
         result = false;
     }
+    if (pthread_mutex_unlock(&priv->pmem_lock) != 0)
+        assert(0 && "failed to release mutex");
     return result;
 }
 
