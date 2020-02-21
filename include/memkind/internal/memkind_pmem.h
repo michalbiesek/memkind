@@ -55,8 +55,9 @@ struct memkind_pmem {
     size_t max_size;
     pthread_mutex_t pmem_lock;
     size_t current_size;
+    char* dir;
 };
-
+int memkind_tmpfile(const char *dir, int *fd);
 extern struct memkind_ops MEMKIND_PMEM_OPS;
 
 #ifdef __cplusplus
