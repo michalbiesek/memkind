@@ -104,16 +104,6 @@ bool pmem_extent_dalloc(extent_hooks_t *extent_hooks,
     // and it should be unmapped to avoid space exhaustion when calling large number of
     // operations like memkind_create_pmem and memkind_destroy_kind
     errno = 0;
-    if (madvise(addr, size, MADV_REMOVE) != 0) {
-        if (errno == EOPNOTSUPP) {
-            log_fatal("Filesystem doesn't support FALLOC_FL_PUNCH_HOLE.");
-            abort();
-        }
-        if (munmap(addr, size) == -1) {
-            log_err("munmap failed!");
-        }
-        return false;
-    }
     return true;
 }
 
