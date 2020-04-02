@@ -428,6 +428,14 @@ void memkind_free(memkind_t kind, void *ptr);
 ///
 void *memkind_defrag_reallocate(memkind_t kind, void *ptr);
 
+///
+/// \brief Print memkind stats
+/// \note STANDARD API
+/// \param write_cb callback function pointer
+/// \param cbopaque data passed to write_cb
+///
+void memkind_stats_print(void (*write_cb) (void *, const char *), void *cbopaque);
+
 #ifdef __cplusplus
 }
 #endif

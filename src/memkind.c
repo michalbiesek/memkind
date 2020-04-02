@@ -871,6 +871,11 @@ MEMKIND_EXPORT void *memkind_defrag_reallocate(memkind_t kind, void *ptr)
     }
 }
 
+MEMKIND_EXPORT void memkind_stats_print(void (*write_cb) (void *, const char *), void *cbopaque)
+{
+    heap_manager_stats_print(write_cb, cbopaque);
+}
+
 MEMKIND_EXPORT int memkind_get_stat(memkind_t kind, memkind_stat_type stat,
                                     size_t *value)
 {

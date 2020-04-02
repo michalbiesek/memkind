@@ -871,6 +871,10 @@ int memkind_arena_get_global_stat(memkind_stat_type stat, size_t *value)
     return err;
 }
 
+void memkind_arena_stats_print(void (*write_cb) (void *, const char *), void *cbopaque) {
+    jemk_malloc_stats_print(write_cb, cbopaque, NULL);
+}
+
 int memkind_arena_enable_background_threads(size_t threads_limit)
 {
     bool background_thread_val = true;
