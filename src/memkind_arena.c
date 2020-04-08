@@ -590,7 +590,8 @@ MEMKIND_EXPORT void *memkind_arena_realloc(struct memkind *kind, void *ptr,
 int memkind_arena_update_cached_stats(void)
 {
     uint64_t epoch = 1;
-    return jemk_mallctl("epoch", NULL, NULL, &epoch, sizeof(epoch));
+    size_t sz = sizeof(epoch);
+    return jemk_mallctl("epoch", &epoch, &sz, &epoch, sz);
 }
 
 MEMKIND_EXPORT void *memkind_arena_realloc_with_kind_detect(void *ptr,
