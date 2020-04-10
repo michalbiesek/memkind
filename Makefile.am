@@ -501,8 +501,8 @@ static_lib: libmemkind.la
 	rm libmemkind.a
 
 JEMALLOC_CONFIG = --enable-autogen @min_lg_align_opt@ --without-export --with-version=5.2.1-0-gea6b3e973b477b8061e0076bb257dbd7f3faa756 \
-			--disable-fill --disable-initial-exec-tls --with-jemalloc-prefix=@memkind_prefix@ \
-			--with-malloc-conf="narenas:@auto_arenas@,lg_tcache_max:@tcache_max_size_class@" \
+			--enable-fill --enable-debug --disable-initial-exec-tls --with-jemalloc-prefix=@memkind_prefix@ \
+			--with-malloc-conf="dirty_decay_ms:0,muzzy_decay_ms:0,narenas:@auto_arenas@,lg_tcache_max:@tcache_max_size_class@" \
 			#end
 
 jemalloc_deps:
