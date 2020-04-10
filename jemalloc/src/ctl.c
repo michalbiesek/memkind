@@ -2613,7 +2613,6 @@ arenas_lookup_ctl(tsd_t *tsd, const size_t *mib,
 
 	ptr = NULL;
 	ret = EINVAL;
-	malloc_mutex_lock(tsd_tsdn(tsd), &ctl_mtx);
 	WRITE(ptr, void *);
 	extent = iealloc(tsd_tsdn(tsd), ptr);
 	if (extent == NULL)
@@ -2628,7 +2627,6 @@ arenas_lookup_ctl(tsd_t *tsd, const size_t *mib,
 
 	ret = 0;
 label_return:
-	malloc_mutex_unlock(tsd_tsdn(tsd), &ctl_mtx);
 	return ret;
 }
 
