@@ -27,7 +27,7 @@
 
 int main()
 {
-    const size_t size = 1024;
+//    const size_t size = 1024;
 
     size_t stats_active;
     size_t stats_resident;
@@ -36,13 +36,13 @@ int main()
     size_t stats_kind_regular_resident;
     size_t stats_kind_regular_allocated;
 
-    char *ptr_regular = (char *)memkind_malloc(MEMKIND_REGULAR, size);
+//    char *ptr_regular = (char *)memkind_malloc(MEMKIND_REGULAR, size);
 
     fprintf(stdout,
             "This example shows how to use memkind API to retrieve information about allocation stats.\n");
 
-    snprintf(ptr_regular, size,
-             "Hello world from regular kind memory - ptr_regular.\n");
+//    snprintf(ptr_regular, size,
+//             "Hello world from regular kind memory - ptr_regular.\n");
 
     memkind_update_cached_stats();
     memkind_get_stat(NULL, MEMKIND_STAT_TYPE_RESIDENT, &stats_resident);
@@ -63,7 +63,7 @@ int main()
             stats_kind_regular_resident, stats_kind_regular_active,
             stats_kind_regular_allocated);
 
-    memkind_free(NULL, ptr_regular);
+//    memkind_free(NULL, ptr_regular);
 
     return 0;
 }

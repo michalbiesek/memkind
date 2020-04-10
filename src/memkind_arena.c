@@ -69,6 +69,10 @@ static const struct stats_arena arena_stats [MEMKIND_STAT_TYPE_MAX_VALUE] = {
     { .stats = {"stats.arenas.%u.small.allocated", "stats.arenas.%u.large.allocated"}, .stats_no = 2},
 };
 
+static size_t g_resident = 0;
+static size_t g_active = 0;
+static size_t g_allocated = 0;
+
 static void *jemk_mallocx_check(size_t size, int flags);
 static void *jemk_rallocx_check(void *ptr, size_t size, int flags);
 static void tcache_finalize(void *args);
@@ -868,7 +872,24 @@ int memkind_arena_get_global_stat(memkind_stat_type stat, size_t *value)
         log_err("Error on getting global statistic.");
         return MEMKIND_ERROR_INVALID;
     }
+    if (stat == MEMKIND_STAT_TYPE_RESIDENT) {
+        *value -= g_resident;
+    }
+    if (stat == MEMKIND_STAT_TYPE_ACTIVE) {
+        *value -= g_active;
+    }
+    if (stat == MEMKIND_STAT_TYPE_ALLOCATED) {
+        *value -= g_allocated;
+    }
     return err;
+}
+
+void memkind_arena_set_global_stats(void)
+{
+    size_t sz = sizeof(size_t);
+    jemk_mallctl("stats.resident", &g_resident, &sz, NULL, 0);
+    jemk_mallctl("stats.active", &g_active, &sz, NULL, 0);
+    jemk_mallctl("stats.allocated", &g_allocated, &sz, NULL, 0);
 }
 
 int memkind_arena_enable_background_threads(size_t threads_limit)

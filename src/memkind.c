@@ -567,6 +567,7 @@ static void memkind_construct(void)
             memkind_arena_enable_background_threads(thread_limit);
         }
     }
+    memkind_arena_set_global_stats();
 }
 
 #ifdef __GNUC__
