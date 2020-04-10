@@ -942,7 +942,8 @@ void *memkind_arena_defrag_reallocate(struct memkind *kind, void *ptr)
         void *ptr_new = memkind_arena_malloc_no_tcache(kind, size);
         if (MEMKIND_UNLIKELY(!ptr_new)) return NULL;
         memcpy(ptr_new, ptr, size);
-        memkind_free(kind, ptr);
+        jemk_dallocx(ptr, MALLOCX_TCACHE_NONE);
+//        memkind_free(kind, ptr);
         return ptr_new;
     }
     return NULL;
