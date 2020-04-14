@@ -932,6 +932,7 @@ void *memkind_arena_defrag_reallocate(struct memkind *kind, void *ptr)
          (uintptr_t)ptr > DEST_SLAB_END(out.target_slab, out.slab_size)) &&
         out.nfree * out.bin_nregs >= out.nregs * out.bin_nfree &&
         out.nfree != 0) {
+//        jemk_mallctl
         size_t size = memkind_malloc_usable_size(kind, ptr);
         void *ptr_new = memkind_arena_malloc_no_tcache(kind, size);
         if (MEMKIND_UNLIKELY(!ptr_new)) return NULL;
