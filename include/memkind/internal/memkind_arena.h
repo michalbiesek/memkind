@@ -33,7 +33,7 @@ extern "C" {
 
 /*
  * Header file for the jemalloc arena allocation memkind operations.
- * More details in memkind_arena(3) man page. test comment
+ * More details in memkind_arena(3) man page. test comment 2
  *
  * Functionality defined in this header is considered as EXPERIMENTAL API.
  * API standards are described in memkind(3) man page.
