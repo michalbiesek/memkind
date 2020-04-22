@@ -56,6 +56,17 @@ static const ctl_named_node_t	*n##_index(tsdn_t *tsdn,		\
 
 CTL_PROTO(version)
 CTL_PROTO(epoch)
+CTL_PROTO(arenas_lookup)
+CTL_PROTO(arenas_narenas)
+CTL_PROTO(arenas_dirty_decay_ms)
+CTL_PROTO(arenas_muzzy_decay_ms)
+CTL_PROTO(arenas_quantum)
+CTL_PROTO(arenas_page)
+CTL_PROTO(arenas_tcache_max)
+CTL_PROTO(arenas_nbins)
+CTL_PROTO(arenas_nhbins)
+CTL_PROTO(arenas_nlextents)
+CTL_PROTO(arenas_create)
 CTL_PROTO(background_thread)
 CTL_PROTO(max_background_threads)
 CTL_PROTO(thread_tcache_enabled)
@@ -133,17 +144,6 @@ CTL_PROTO(arenas_bin_i_nshards)
 INDEX_PROTO(arenas_bin_i)
 CTL_PROTO(arenas_lextent_i_size)
 INDEX_PROTO(arenas_lextent_i)
-CTL_PROTO(arenas_narenas)
-CTL_PROTO(arenas_dirty_decay_ms)
-CTL_PROTO(arenas_muzzy_decay_ms)
-CTL_PROTO(arenas_quantum)
-CTL_PROTO(arenas_page)
-CTL_PROTO(arenas_tcache_max)
-CTL_PROTO(arenas_nbins)
-CTL_PROTO(arenas_nhbins)
-CTL_PROTO(arenas_nlextents)
-CTL_PROTO(arenas_create)
-CTL_PROTO(arenas_lookup)
 CTL_PROTO(prof_thread_active_init)
 CTL_PROTO(prof_active)
 CTL_PROTO(prof_dump)
@@ -393,6 +393,7 @@ static const ctl_indexed_node_t arenas_lextent_node[] = {
 };
 
 static const ctl_named_node_t arenas_node[] = {
+	{NAME("lookup"),	CTL(arenas_lookup)},
 	{NAME("narenas"),	CTL(arenas_narenas)},
 	{NAME("dirty_decay_ms"), CTL(arenas_dirty_decay_ms)},
 	{NAME("muzzy_decay_ms"), CTL(arenas_muzzy_decay_ms)},
@@ -404,8 +405,7 @@ static const ctl_named_node_t arenas_node[] = {
 	{NAME("bin"),		CHILD(indexed, arenas_bin)},
 	{NAME("nlextents"),	CTL(arenas_nlextents)},
 	{NAME("lextent"),	CHILD(indexed, arenas_lextent)},
-	{NAME("create"),	CTL(arenas_create)},
-	{NAME("lookup"),	CTL(arenas_lookup)}
+	{NAME("create"),	CTL(arenas_create)}
 };
 
 static const ctl_named_node_t	prof_node[] = {
@@ -622,6 +622,7 @@ static const ctl_named_node_t experimental_node[] = {
 static const ctl_named_node_t	root_node[] = {
 	{NAME("version"),	CTL(version)},
 	{NAME("epoch"),		CTL(epoch)},
+	{NAME("arenas"),	CHILD(named, arenas)},
 	{NAME("background_thread"),	CTL(background_thread)},
 	{NAME("max_background_threads"),	CTL(max_background_threads)},
 	{NAME("thread"),	CHILD(named, thread)},
@@ -629,7 +630,6 @@ static const ctl_named_node_t	root_node[] = {
 	{NAME("opt"),		CHILD(named, opt)},
 	{NAME("tcache"),	CHILD(named, tcache)},
 	{NAME("arena"),		CHILD(indexed, arena)},
-	{NAME("arenas"),	CHILD(named, arenas)},
 	{NAME("prof"),		CHILD(named, prof)},
 	{NAME("stats"),		CHILD(named, stats)},
 	{NAME("experimental"),	CHILD(named, experimental)}
