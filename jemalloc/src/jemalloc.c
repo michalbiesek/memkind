@@ -3746,6 +3746,38 @@ je_malloc_usable_size(JEMALLOC_USABLE_SIZE_CONST void *ptr) {
 	return ret;
 }
 
+JEMALLOC_EXPORT int JEMALLOC_NOTHROW
+je_arenalookupx(JEMALLOC_USABLE_SIZE_CONST void *ptr) {
+	int ret;
+	tsdn_t *tsdn;
+	extent_t *extent;
+	arena_t *arena;
+	
+	LOG("core.arena_lookupx.entry", "ptr: %p", ptr);
+	
+	tsdn = tsdn_fetch();
+	check_entry_exit_locking(tsdn);
+
+	extent = iealloc(tsdn, ptr);
+	if (extent == NULL) {
+		ret = -1;
+		goto label_return;
+	}
+
+	arena = extent_arena_get(extent);
+	if (arena == NULL) {
+		ret = -1;
+		goto label_return;
+	}
+
+	ret = arena_ind_get(arena);
+
+label_return:
+	check_entry_exit_locking(tsdn);
+	LOG("core.arena_lookupx.exit", "result: %d", ret);
+	return ret;
+}
+
 /*
  * End non-standard functions.
  */

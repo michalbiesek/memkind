@@ -455,16 +455,12 @@ static void tcache_finalize(void *args)
 
 static inline int memkind_lookup_arena(void *ptr, unsigned int *arena)
 {
-    size_t sz = sizeof(unsigned);
-    unsigned temp_arena;
-    int err = jemk_mallctl("arenas.lookup", &temp_arena, &sz, &ptr, sizeof(ptr));
-
-    if (err) {
-        log_err("Could not found arena, err=%d", err);
+    int temp_arena = jemk_arenalookupx(ptr);
+    if (temp_arena < 0) {
+        log_err("Could not found arena");
         return 1;
     }
-
-    *arena = temp_arena;
+    *arena = (unsigned) temp_arena;
     return 0;
 }
 
