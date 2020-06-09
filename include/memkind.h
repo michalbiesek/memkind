@@ -407,6 +407,8 @@ void memkind_free(memkind_t kind, void *ptr);
 ///
 void *memkind_defrag_reallocate(memkind_t kind, void *ptr);
 
+int memkind_mallctl(const char *name, void *oldp, size_t *oldlenp, void *newp, size_t newlen);
+
 #ifdef __cplusplus
 }
 #endif

@@ -871,6 +871,11 @@ MEMKIND_EXPORT int memkind_update_cached_stats(void)
     return m_update_cached_stats();
 }
 
+MEMKIND_EXPORT int memkind_mallctl(const char *name, void *oldp, size_t *oldlenp, void *newp, size_t newlen){
+
+return jemk_mallctl(name, oldp, oldlenp, newp, newlen);
+}
+
 MEMKIND_EXPORT void *memkind_defrag_reallocate(memkind_t kind, void *ptr)
 {
     if (!kind) {
