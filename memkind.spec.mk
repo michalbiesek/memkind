@@ -111,7 +111,9 @@ memkind functional tests
 
 cd %{_builddir}/%{buildsubdir}
 echo %{version} > %{_builddir}/%{buildsubdir}/VERSION
-./build.sh --prefix=%{_prefix} --includedir=%{_includedir} --libdir=%{_libdir} \
+ARENA_LIMIT=1 MIN_LG_ALIGN=3 ./build.sh \
+           --disable-heap-manager \
+           --prefix=%{_prefix} --includedir=%{_includedir} --libdir=%{_libdir} \
            --bindir=%{_bindir} --docdir=%{_docdir}/%{namespace} --mandir=%{_mandir} --sbindir=%{_sbindir}
 
 %install
