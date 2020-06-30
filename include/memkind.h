@@ -356,6 +356,15 @@ void *memkind_malloc(memkind_t kind, size_t size);
 size_t memkind_malloc_usable_size(memkind_t kind, void *ptr);
 
 ///
+/// \brief Obtain size of block of memory allocated with the memkind API
+/// \note STANDARD API
+/// \param kind specified memory kind
+/// \param size number of bytes to allocate
+/// \return Number of usable bytes
+///
+size_t memkind_usable_size(memkind_t kind, size_t size);
+
+///
 /// \brief Allocates memory of the specified kind for an array of num elements
 ///        of size bytes each and initializes all bytes in the allocated storage to zero
 /// \note STANDARD API

@@ -28,7 +28,8 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_PMEM_OPS = {
     .finalize = memkind_pmem_destroy,
     .update_memory_usage_policy = memkind_arena_update_memory_usage_policy,
     .get_stat = memkind_arena_get_kind_stat,
-    .defrag_reallocate = memkind_arena_defrag_reallocate
+    .defrag_reallocate = memkind_arena_defrag_reallocate,
+    .usable_size = memkind_arena_usable_size
 };
 
 void *pmem_extent_alloc(extent_hooks_t *extent_hooks,

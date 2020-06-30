@@ -190,7 +190,8 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_DAX_KMEM_OPS = {
     .malloc_usable_size = memkind_default_malloc_usable_size,
     .finalize = memkind_arena_finalize,
     .get_stat = memkind_arena_get_kind_stat,
-    .defrag_reallocate = memkind_arena_defrag_reallocate
+    .defrag_reallocate = memkind_arena_defrag_reallocate,
+    .usable_size = memkind_arena_usable_size
 };
 
 MEMKIND_EXPORT struct memkind_ops MEMKIND_DAX_KMEM_ALL_OPS = {
@@ -211,7 +212,8 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_DAX_KMEM_ALL_OPS = {
     .malloc_usable_size = memkind_default_malloc_usable_size,
     .finalize = memkind_arena_finalize,
     .get_stat = memkind_arena_get_kind_stat,
-    .defrag_reallocate = memkind_arena_defrag_reallocate
+    .defrag_reallocate = memkind_arena_defrag_reallocate,
+    .usable_size = memkind_arena_usable_size
 };
 
 MEMKIND_EXPORT struct memkind_ops MEMKIND_DAX_KMEM_PREFERRED_OPS = {
@@ -232,5 +234,6 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_DAX_KMEM_PREFERRED_OPS = {
     .malloc_usable_size = memkind_default_malloc_usable_size,
     .finalize = memkind_arena_finalize,
     .get_stat = memkind_arena_get_kind_stat,
-    .defrag_reallocate = memkind_arena_defrag_reallocate
+    .defrag_reallocate = memkind_arena_defrag_reallocate,
+    .usable_size = memkind_arena_usable_size
 };

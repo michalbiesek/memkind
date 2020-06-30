@@ -27,6 +27,12 @@ static int memkind_default_get_kind_stat(struct memkind *kind,
     return memkind_arena_get_stat_with_check_init(kind, stat, true, value);
 }
 
+size_t memkind_default_usable_size(struct memkind *kind, size_t size)
+{
+    if (size == 0) return 0;
+    return jemk_nallocx(size, 0);
+}
+
 MEMKIND_EXPORT struct memkind_ops MEMKIND_DEFAULT_OPS = {
     .create = memkind_default_create,
     .destroy = memkind_default_destroy,
@@ -39,7 +45,8 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_DEFAULT_OPS = {
     .malloc_usable_size = memkind_default_malloc_usable_size,
     .finalize = memkind_default_destroy,
     .get_stat = memkind_default_get_kind_stat,
-    .defrag_reallocate = memkind_arena_defrag_reallocate
+    .defrag_reallocate = memkind_arena_defrag_reallocate,
+    .usable_size = memkind_default_usable_size
 };
 
 MEMKIND_EXPORT int memkind_default_create(struct memkind *kind,

@@ -44,6 +44,7 @@ extern "C" {
 #define jemk_malloc_usable_size     JE_SYMBOL(malloc_usable_size)
 #define jemk_arenalookupx           JE_SYMBOL(arenalookupx)
 #define jemk_check_reallocatex      JE_SYMBOL(check_reallocatex)
+#define jemk_nallocx                JE_SYMBOL(nallocx)
 
 enum memkind_const_private {
     MEMKIND_NAME_LENGTH_PRIV = 64
@@ -74,6 +75,7 @@ struct memkind_ops {
                                        memkind_mem_usage_policy policy);
     int (* get_stat)(memkind_t kind, memkind_stat_type stat, size_t *value);
     void *(* defrag_reallocate)(struct memkind *kind, void *ptr);
+    size_t (* usable_size)(struct memkind *kind, size_t size);
 };
 
 struct memkind {

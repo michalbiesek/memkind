@@ -52,6 +52,7 @@ int memkind_arena_get_global_stat(memkind_stat_type stat_type, size_t *stat);
 void *memkind_arena_defrag_reallocate(struct memkind *kind, void *ptr);
 void *memkind_arena_defrag_reallocate_with_kind_detect(void *ptr);
 bool memkind_get_hog_memory(void);
+size_t memkind_arena_usable_size(struct memkind *kind, size_t size);
 #ifdef __cplusplus
 }
 #endif

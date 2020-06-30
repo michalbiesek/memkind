@@ -492,6 +492,18 @@ MEMKIND_EXPORT void *memkind_arena_malloc(struct memkind *kind, size_t size)
     return result;
 }
 
+MEMKIND_EXPORT size_t memkind_arena_usable_size(struct memkind *kind, size_t size)
+{
+    size_t result = 0;
+    unsigned arena;
+    if (size == 0) return result;
+    int err = kind->ops->get_arena(kind, &arena, size);
+    if (MEMKIND_LIKELY(!err)) {
+        result = jemk_nallocx(size, MALLOCX_ARENA(arena) | get_tcache_flag(kind->partition, size));
+    }
+    return result;
+}
+
 static void *memkind_arena_malloc_no_tcache(struct memkind *kind, size_t size)
 {
     void *result = NULL;

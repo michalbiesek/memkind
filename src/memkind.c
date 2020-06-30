@@ -629,6 +629,11 @@ MEMKIND_EXPORT size_t memkind_malloc_usable_size(struct memkind *kind,
     }
 }
 
+MEMKIND_EXPORT size_t memkind_usable_size(struct memkind *kind,  size_t size)
+{
+    return kind->ops->usable_size(kind, size);
+}
+
 MEMKIND_EXPORT void *memkind_malloc(struct memkind *kind, size_t size)
 {
     void *result;

@@ -82,7 +82,8 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_REGULAR_OPS = {
     .malloc_usable_size = memkind_default_malloc_usable_size,
     .finalize = memkind_regular_finalize,
     .get_stat = memkind_arena_get_kind_stat,
-    .defrag_reallocate = memkind_arena_defrag_reallocate
+    .defrag_reallocate = memkind_arena_defrag_reallocate,
+    .usable_size = memkind_arena_usable_size
 };
 
 
