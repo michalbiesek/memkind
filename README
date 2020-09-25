@@ -69,6 +69,7 @@ You will need to install required packages on the build system:
 * **autoconf**
 * **automake**
 * **gcc-c++**
+* **hwloc-devel**
 * **libnuma-devel**
 * **libtool**
 * **numactl-devel**
