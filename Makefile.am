@@ -16,6 +16,7 @@ libmemkind_la_SOURCES = src/hbwmalloc.c \
                         src/memkind_default.c \
                         src/memkind_gbtlb.c \
                         src/memkind_hbw.c \
+                        src/memkind_hwloc.c \
                         src/memkind_hugetlb.c \
                         src/memkind_interleave.c \
                         src/memkind_log.c \
@@ -43,6 +44,7 @@ noinst_HEADERS =  include/memkind/internal/heap_manager.h \
                   include/memkind/internal/memkind_gbtlb.h \
                   include/memkind/internal/memkind_hbw.h \
                   include/memkind/internal/memkind_hugetlb.h \
+                  include/memkind/internal/memkind_hwloc.h \
                   include/memkind/internal/memkind_interleave.h \
                   include/memkind/internal/memkind_log.h \
                   include/memkind/internal/memkind_pmem.h \
