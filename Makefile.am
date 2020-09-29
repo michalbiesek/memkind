@@ -500,6 +500,7 @@ unit_tests_dax_kmem: checkprogs
 	test/test_dax_kmem.sh
 
 include autohbw/Makefile.mk
+include autodax/Makefile.mk
 include test/Makefile.mk
 include examples/Makefile.mk
 include src/Makefile.mk
