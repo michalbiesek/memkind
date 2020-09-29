@@ -843,6 +843,43 @@ MEMKIND_EXPORT int memkind_create_pmem_with_config(struct memkind_config *cfg,
     return status;
 }
 
+MEMKIND_EXPORT int memkind_kind_from_cfg(struct memkind **kind)
+{
+    int status = memkind_user_create(kind);
+    return status;
+}
+
+MEMKIND_EXPORT struct memkind_config *memkind_config_new(void)
+{
+    struct memkind_config *cfg = (struct memkind_config *)malloc(sizeof(
+                                                                     struct memkind_config));
+    return cfg;
+}
+
+MEMKIND_EXPORT void memkind_config_delete(struct memkind_config *cfg)
+{
+    free(cfg);
+}
+
+MEMKIND_EXPORT struct memkind_user_cfg *memkind_user_config_new(void)
+{
+    struct memkind_user_cfg *cfg = (struct memkind_user_cfg *)malloc(sizeof(
+                                                                     struct memkind_user_cfg));
+    return cfg;
+}
+
+MEMKIND_EXPORT void memkind_user_config_delete(struct memkind_user_cfg *cfg)
+{
+    free(cfg);
+}
+
+MEMKIND_EXPORT void memkind_user_config_set_node(struct memkind_user_cfg *cfg, int init_numa_id)
+{
+}
+
+MEMKIND_EXPORT void memkind_user_config_set_policy(struct memkind_user_cfg *cfg, int init_numa_id)
+{
+}
 
 static int memkind_get_kind_by_partition_internal(int partition,
                                                   struct memkind **kind)

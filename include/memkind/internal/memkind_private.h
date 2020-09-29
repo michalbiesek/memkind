@@ -96,6 +96,10 @@ struct memkind_config {
     memkind_mem_usage_policy policy; //kind memory usage policy
 };
 
+struct memkind_user_cfg {
+    int test;                   ///test
+};
+
 void memkind_init(memkind_t kind, bool check_numa);
 
 void *kind_mmap(struct memkind *kind, void *addr, size_t size);
