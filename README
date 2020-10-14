@@ -37,7 +37,7 @@ features.  Memkind interface allows to create and control file-backed memory
 11. [Testing](#testing)
 12. [Simulating High Bandwidth Memory](#simulating-high-bandwidth-memory)
 13. [Notes](#notes)
-14. [Status](#status)
+14. [Projects](#projects)
 15. [Disclaimer](#disclaimer)
 
 ## Interfaces
@@ -316,11 +316,14 @@ bandwidth allocations will be local to the process CPU.
 * Using memkind with Transparent Huge Pages enabled may result in
  undesirably high memory footprint. To avoid that disable THP using following
  [instruction](https://www.kernel.org/doc/Documentation/vm/transhuge.txt)
+* Different interfaces can represent different maturity level
+ (as described in corresponding man pages).
+* Feedback on design and implementation is greatly appreciated.
 
-## Status
-Different interfaces can represent different maturity level
-(as described in corresponding man pages).
-Feedback on design and implementation is greatly appreciated.
+## Projects
+The following software use memkind library:
+
+* [Example-project](https://example-project)
 
 ## Disclaimer
 SEE [COPYING](COPYING) FILE FOR LICENSE INFORMATION.
