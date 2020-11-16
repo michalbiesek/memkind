@@ -1,0 +1,29 @@
+<domain type='qemu'>
+  <name>foo</name>
+  <os>
+    <type arch='x86_64' machine='pc'>hvm</type>
+    <boot dev='hd'/>
+  </os>
+  <cpu>
+    <numa>
+      <cell id='0' cpus='0-271' memory='96549' unit='MiB'>
+        <distances>
+          <sibling id='0' value='10'/>
+          <sibling id='1' value='31'/>
+        </distances>
+      </cell>
+      <cell id='1' memory='16093' unit='MiB'>
+        <distances>
+          <sibling id='0' value='31'/>
+          <sibling id='1' value='10'/>
+        </distances>
+      </cell>
+      <interconnects>
+        <latency initiator='0' target='0' type='access' value='10'/>
+        <latency initiator='0' target='1' type='access' value='50'/>
+        <bandwidth initiator='0' target='0' type='access' value='1000' unit='KiB'/>
+        <bandwidth initiator='0' target='1' type='access' value='5000' unit='KiB'/>
+      </interconnects>
+    </numa>
+  </cpu>
+</domain>

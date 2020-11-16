@@ -1,0 +1,33 @@
+#!/usr/bin/expect -f
+
+# Wait enough (forever) until a long-time boot
+set timeout -1
+
+# Start the guest VM
+spawn ./setup-hmat.sh linux-ubuntu.img /home/michalbiesek/Git/memkind
+
+expect "login: "
+send "test\n"
+
+expect "Password: "
+send "test\n"
+
+sleep 5
+send "setterm --resize\n"
+
+#Mount memkind host_workdir
+
+send "mkdir $HOME/memkind\n"
+
+send "sudo mount memkind_host $HOME/memkind -t 9p -o trans=virtio\n"
+
+# TODO replace this with docker build
+
+#build memkind
+
+send "cd $HOME/memkind\n"
+send "./autogen.sh\n"
+send "./configure --prefix=/usr\n"
+send "make\n"
+
+# send ctrl a then x
