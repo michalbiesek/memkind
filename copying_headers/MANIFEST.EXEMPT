@@ -345,3 +345,6 @@ test/memkind-perf.ts
 test/memkind-pytests.ts
 test/memkind-slts.ts
 utils/docker/README.md
+utils/qemu/README.md
+utils/qemu/topology/single_hbw_node.xml
+utils/qemu/topology/single_memory_node.xml
