@@ -168,9 +168,15 @@ namespace libmemkind
             }
 
             pointer allocate(size_type n) const
-            {
-                pointer result = static_cast<pointer>(memkind_malloc(kind_wrapper_ptr->get(),
-                                                                     n*sizeof(T)));
+            { 
+                pointer result;
+                if (n*sizeof(T) > 64) {
+                    result = static_cast<pointer>(memkind_malloc(kind_wrapper_ptr->get(),n*sizeof(T)));
+                }
+                else {
+                    result = static_cast<pointer>(memkind_malloc(MEMKIND_DEFAULT,n*sizeof(T)));
+                }
+
                 if (!result) {
                     throw std::bad_alloc();
                 }
@@ -179,7 +185,7 @@ namespace libmemkind
 
             void deallocate(pointer p, size_type n) const
             {
-                memkind_free(kind_wrapper_ptr->get(), static_cast<void *>(p));
+                memkind_free(nullptr, static_cast<void *>(p));
             }
 
             template <class U, class... Args>
