@@ -16,17 +16,20 @@ RUN dnf update -y && dnf install -y \
     devscripts \
     g++ \
     git \
+    glib2-devel \
     json-c-devel \
     keyutils-libs-devel \
     kmod-devel \
     libtool \
     libudev-devel \
     libuuid-devel \
+    libxslt \
     mkpasswd \
     numactl \
     numactl-devel \
     pkgconfig \
     python-pip \
+    rpcgen \
     rpmdevtools \
     sudo \
     systemd \
@@ -37,6 +40,8 @@ RUN dnf update -y && dnf install -y \
 # Install pytest
 RUN pip install wheel
 RUN pip install pytest==3.9.2
+RUN pip3 install meson
+RUN pip3 install rst2html5-tools
 
 # Add user
 ENV USER memkinduser
