@@ -276,6 +276,9 @@ extern memkind_t MEMKIND_DAX_KMEM_PREFERRED;
 /// \note STANDARD API
 extern memkind_t MEMKIND_DAX_KMEM_INTERLEAVE;
 
+/// \note STANDARD API
+extern memkind_t MEMKIND_HIGHEST_CAPACITY;
+
 ///
 /// \brief Get Memkind API version
 /// \note STANDARD API
