@@ -68,7 +68,10 @@ fused_gtest = test/gtest_fused/gtest/gtest-all.cc \
               test/main.cpp \
               # end
 
+test_prereq = test/TestPreReq.hpp
+
 test_all_tests_SOURCES = $(fused_gtest) \
+                         $(test_prereq) \
                          test/Allocator.hpp \
                          test/TestPolicy.hpp \
                          test/bat_tests.cpp \
@@ -110,7 +113,7 @@ test_locality_test_CXXFLAGS = $(OPENMP_CFLAGS) -O0 -Wno-error $(AM_CPPFLAGS)
 
 test_autohbw_test_helper_SOURCES = test/autohbw_test_helper.c
 test_decorator_test_SOURCES = $(fused_gtest) test/decorator_test.cpp test/decorator_test.h
-test_dax_kmem_test_SOURCES = $(fused_gtest) test/dax_kmem_nodes.h test/dax_kmem_nodes.cpp test/memkind_dax_kmem_test.cpp
+test_dax_kmem_test_SOURCES = $(fused_gtest) $(test_prereq) test/memkind_dax_kmem_test.cpp
 test_environ_err_hbw_malloc_test_SOURCES = test/environ_err_hbw_malloc_test.cpp
 test_environ_err_dax_kmem_malloc_test_SOURCES = test/environ_err_dax_kmem_malloc_test.cpp
 test_environ_err_dax_kmem_malloc_positive_test_SOURCES = test/environ_err_dax_kmem_malloc_positive_test.cpp

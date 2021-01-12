@@ -1,6 +1,6 @@
 #!/bin/bash
 # SPDX-License-Identifier: BSD-2-Clause
-# Copyright (C) 2014 - 2020 Intel Corporation.
+# Copyright (C) 2014 - 2021 Intel Corporation.
 
 basedir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROGNAME=`basename $0`
@@ -8,12 +8,11 @@ PROGNAME=`basename $0`
 # Default path (to installation dir of memkind-tests RPM)
 TEST_PATH="$basedir/"
 
-# Gtest binaries executed by Berta
-# TODO add allocator_perf_tool_tests binary to independent sh script
-GTEST_BINARIES=(all_tests decorator_test gb_page_tests_bind_policy memkind_stat_test defrag_reallocate)
+# Gtest binaries
+GTEST_BINARIES=(all_tests allocator_perf_tool_tests dax_kmem_test decorator_test gb_page_tests_bind_policy memkind_stat_test defrag_reallocate)
 
-# Pytest files executed by Berta
-PYTEST_FILES=(hbw_detection_test.py autohbw_test.py trace_mechanism_test.py)
+# Pytest files
+PYTEST_FILES=(hbw_detection_test.py autohbw_test.py trace_mechanism_test.py dax_kmem_env_var_test.py)
 
 red=`tput setaf 1`
 green=`tput setaf 2`
@@ -196,59 +195,7 @@ function execute_pytest()
     return $ret
 }
 
-#Check support for numa nodes (at least two)
-function check_numa()
-{
-    numactl --hardware | grep "^node 1" > /dev/null
-    if [ $? -ne 0 ]; then
-        echo "ERROR: $0 requires a NUMA enabled system with more than one node."
-        exit 1
-    fi
-}
-
-#Check support for High Bandwidth Memory - simulate one if no one was found
-function check_hbw_nodes()
-{
-    if [ ! -f /usr/bin/memkind-hbw-nodes ]; then
-        if [ -x ./memkind-hbw-nodes ]; then
-            export PATH=$PATH:$PWD
-        else
-            echo "Cannot find 'memkind-hbw-nodes' in $PWD. Did you run 'make'?"
-            exit 1
-        fi
-    fi
-
-    ret=$(memkind-hbw-nodes)
-    if [[ $ret == "" ]]; then
-        export MEMKIND_HBW_NODES=1
-        TEST_PREFIX="numactl --membind=0 --cpunodebind=$MEMKIND_HBW_NODES %s"
-    fi
-}
-
-#Check automatic support for persistent memory NUMA node - simulate one if no one was found
-function check_auto_dax_kmem_nodes()
-{
-    if [ ! -f /usr/bin/memkind-auto-dax-kmem-nodes ]; then
-        if [ -x ./memkind-auto-dax-kmem-nodes ]; then
-            export PATH=$PATH:$PWD
-        else
-            echo "Cannot find 'memkind-auto-dax-kmem-nodes' in $PWD. Did you run 'make'?"
-            exit 1
-        fi
-    fi
-
-    ret=$(memkind-auto-dax-kmem-nodes)
-    if [[ $ret == "" ]]; then
-        export MEMKIND_DAX_KMEM_NODES=1
-    fi
-}
-
 #begin of main script
-
-check_numa
-
-check_hbw_nodes
-check_auto_dax_kmem_nodes
 
 OPTIND=1
 

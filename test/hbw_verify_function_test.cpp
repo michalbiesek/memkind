@@ -5,6 +5,7 @@
 #include "allocator_perf_tool/HugePageOrganizer.hpp"
 #include "hbwmalloc.h"
 #include "common.h"
+#include "TestPrereq.hpp"
 
 #include <sys/mman.h>
 #include <numaif.h>
@@ -25,6 +26,13 @@ protected:
     const size_t BLOCK_SIZE = 64;
     const size_t page_size = sysconf(_SC_PAGESIZE);
     const int flags = MAP_ANONYMOUS | MAP_PRIVATE;
+
+    void SetUp()
+    {
+        if (!TestPrereq::is_HighBandWidthSupported()) {
+            GTEST_SKIP() <<  "High Bandwidth Memory is required." << std::endl;
+        }
+    }
 };
 
 /*
