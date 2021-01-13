@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-2-Clause
-/* Copyright (C) 2019 - 2020 Intel Corporation. */
+/* Copyright (C) 2019 - 2021 Intel Corporation. */
 
 #include <memkind.h>
 
@@ -9,42 +9,39 @@
 #include <unistd.h>
 
 #include "common.h"
-#include "dax_kmem_nodes.h"
 #include "proc_stat.h"
 #include "sys/types.h"
 #include "sys/sysinfo.h"
-#include "TestPolicy.hpp"
+#include "TestPrereq.hpp"
 
 class MemkindDaxKmemFunctionalTests: public ::testing::Test
 {
 protected:
-    DaxKmem dax_kmem_nodes;
-
+    TestPrereq req;
+    std::unordered_set<int> mem_only_nodes = req.get_memory_only_numa_nodes();
     void SetUp()
     {
-        if (dax_kmem_nodes.size() < 1) {
-            GTEST_SKIP() << "Minimum 1 PMEM NUMA required." << std::endl;
+        if (!req.is_DAX_KMEM_supported()) {
+            GTEST_SKIP() << "PMEM NUMA Node is required." << std::endl;
         }
     }
 };
 
-class MemkindDaxKmemTestsParam: public ::testing::Test,
+class MemkindDaxKmemTestsParam: public MemkindDaxKmemFunctionalTests,
     public ::testing::WithParamInterface<memkind_t>
 {
 protected:
-    DaxKmem dax_kmem_nodes;
     memkind_t kind;
+    TestPrereq req;
     void SetUp()
     {
+        if (!req.is_DAX_KMEM_supported() {
+        GTEST_SKIP() << "PMEM NUMA Node is required." << std::endl;
+        }
         kind = GetParam();
         if (kind == MEMKIND_DAX_KMEM_PREFERRED) {
-            std::set<int> regular_nodes = TestPolicy::get_regular_numa_nodes();
-            for (auto const &node: regular_nodes) {
-                auto closest_dax_kmem_nodes = dax_kmem_nodes.get_closest_numa_nodes(node);
-                if (closest_dax_kmem_nodes.size() > 1)
-                    GTEST_SKIP() << "Skip test for MEMKIND_DAX_KMEM_PREFFERED - "
-                                 "more than one PMEM NUMA node is closest to node: "
-                                 << node << std::endl;
+        if (!req.is)) {
+                GTEST_SKIP() << "Skip test for MEMKIND_DAX_KMEM_PREFFERED." << std::endl;
             }
         }
     }
@@ -312,14 +309,14 @@ TEST_F(MemkindDaxKmemFunctionalTests,
 TEST_F(MemkindDaxKmemFunctionalTests,
        test_TC_MEMKIND_MEMKIND_DAX_KMEM_ALL_alloc_until_full_numa)
 {
-    if (dax_kmem_nodes.size() < 2)
+    if (mem_only_nodes.size() < 2)
         GTEST_SKIP() << "This test requires minimum 2 kmem dax nodes";
 
     ProcStat stat;
     void *ptr;
     const size_t alloc_size = 100 * MB;
     std::set<void *> allocations;
-    size_t sum_of_dax_kmem_free_space = dax_kmem_nodes.get_free_space();
+    size_t sum_of_dax_kmem_free_space = req.get_free_space(mem_only_nodes);
     int numa_id = -1;
     const int n_swap_alloc = 20;
 
@@ -330,7 +327,7 @@ TEST_F(MemkindDaxKmemFunctionalTests,
         allocations.insert(ptr);
 
         get_mempolicy(&numa_id, nullptr, 0, ptr, MPOL_F_NODE | MPOL_F_ADDR);
-        ASSERT_TRUE(dax_kmem_nodes.contains(numa_id));
+        ASSERT_GT(mem_only_nodes.count(numa_id), 0U);
     }
 
     size_t init_swap = stat.get_used_swap_space_size_bytes();
@@ -351,13 +348,8 @@ TEST_F(MemkindDaxKmemFunctionalTests,
 TEST_F(MemkindDaxKmemFunctionalTests,
        test_TC_MEMKIND_MEMKIND_DAX_KMEM_PREFFERED_alloc_until_full_numa)
 {
-    std::set<int> regular_nodes = TestPolicy::get_regular_numa_nodes();
-    for (auto const &node: regular_nodes) {
-        auto closest_dax_kmem_nodes = dax_kmem_nodes.get_closest_numa_nodes(node);
-        if (closest_dax_kmem_nodes.size() > 1)
-            GTEST_SKIP() << "Skip test for MEMKIND_DAX_KMEM_PREFFERED - "
-                         "more than one PMEM NUMA node is closest to node: "
-                         << node << std::endl;
+    if (!req.is_preferred_supported()) {
+        GTEST_SKIP() << "Skip test for MEMKIND_DAX_KMEM_PREFFERED." << std::endl;
     }
 
     ProcStat stat;
@@ -375,8 +367,8 @@ TEST_F(MemkindDaxKmemFunctionalTests,
     get_mempolicy(&numa_id, nullptr, 0, ptr, MPOL_F_NODE | MPOL_F_ADDR);
     int process_cpu = sched_getcpu();
     int process_node = numa_node_of_cpu(process_cpu);
-    std::set<int> closest_numa_ids = dax_kmem_nodes.get_closest_numa_nodes(
-                                         process_node);
+    std::unordered_set<int> closest_numa_ids = req.get_closest_numa_nodes(
+                                                   process_node, mem_only_nodes);
     numa_size = numa_node_size64(numa_id, nullptr);
 
     while (0.99 * numa_size > alloc_size * allocations.size()) {
@@ -406,19 +398,9 @@ TEST_F(MemkindDaxKmemFunctionalTests,
 TEST_F(MemkindDaxKmemFunctionalTests,
        test_TC_MEMKIND_MEMKIND_DAX_KMEM_PREFFERED_check_prerequisities)
 {
-    bool can_run = false;
-    std::set<int> regular_nodes = TestPolicy::get_regular_numa_nodes();
-
-    for (auto const &node: regular_nodes) {
-        auto closest_dax_kmem_nodes = dax_kmem_nodes.get_closest_numa_nodes(node);
-        if (closest_dax_kmem_nodes.size() > 1)
-            can_run = true;
+    if (req.is_preferred_supported()) {
+        GTEST_SKIP() << "Skip test for MEMKIND_DAX_KMEM_PREFFERED." << std::endl;
     }
-
-    if (!can_run)
-        GTEST_SKIP() <<
-                     "Skip test for MEMKIND_DAX_KMEM_PREFFERED checking prerequisities - "
-                     "none of the nodes have more than one closest PMEM NUMA nodes";
 
     const size_t alloc_size = 100 * MB;
     void *ptr = memkind_malloc(MEMKIND_DAX_KMEM_PREFERRED, alloc_size);

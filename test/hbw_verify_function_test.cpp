@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: BSD-2-Clause
-/* Copyright (C) 2016 - 2020 Intel Corporation. */
+/* Copyright (C) 2016 - 2021 Intel Corporation. */
 #include "memkind.h"
 #include "memkind/internal/memkind_hbw.h"
 #include "allocator_perf_tool/HugePageOrganizer.hpp"
 #include "hbwmalloc.h"
 #include "common.h"
+#include "TestPrereq.hpp"
 
 #include <sys/mman.h>
 #include <numaif.h>
@@ -22,9 +23,17 @@
 class HbwVerifyFunctionTest: public :: testing::Test
 {
 protected:
+    TestPrereq req;
     const size_t BLOCK_SIZE = 64;
     const size_t page_size = sysconf(_SC_PAGESIZE);
     const int flags = MAP_ANONYMOUS | MAP_PRIVATE;
+
+    void SetUp()
+    {
+        if (!req.is_MCDRAM_supported()) {
+            GTEST_SKIP() <<  "High Bandwidth Memory is required." << std::endl;
+        }
+    }
 };
 
 /*

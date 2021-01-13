@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-2-Clause
-# Copyright (C) 2014 - 2020 Intel Corporation.
+# Copyright (C) 2014 - 2021 Intel Corporation.
 
 AM_CPPFLAGS += -Itest/gtest_fused -DMEMKIND_DEPRECATED\(x\)=x
 
@@ -68,6 +68,8 @@ fused_gtest = test/gtest_fused/gtest/gtest-all.cc \
               test/main.cpp \
               # end
 
+prereq_header = test/TestPreReq.hpp
+
 test_all_tests_SOURCES = $(fused_gtest) \
                          test/Allocator.hpp \
                          test/TestPolicy.hpp \
@@ -110,7 +112,7 @@ test_locality_test_CXXFLAGS = $(OPENMP_CFLAGS) -O0 -Wno-error $(AM_CPPFLAGS)
 
 test_autohbw_test_helper_SOURCES = test/autohbw_test_helper.c
 test_decorator_test_SOURCES = $(fused_gtest) test/decorator_test.cpp test/decorator_test.h
-test_dax_kmem_test_SOURCES = $(fused_gtest) test/dax_kmem_nodes.h test/dax_kmem_nodes.cpp test/memkind_dax_kmem_test.cpp
+test_dax_kmem_test_SOURCES = $(fused_gtest) $(prereq_header) test/memkind_dax_kmem_test.cpp
 test_environ_err_hbw_malloc_test_SOURCES = test/environ_err_hbw_malloc_test.cpp
 test_environ_err_dax_kmem_malloc_test_SOURCES = test/environ_err_dax_kmem_malloc_test.cpp
 test_environ_err_dax_kmem_malloc_positive_test_SOURCES = test/environ_err_dax_kmem_malloc_positive_test.cpp
@@ -163,8 +165,7 @@ allocator_perf_tool_library_sources = test/allocator_perf_tool/AllocationSizes.h
                                       # end
 
 
-test_allocator_perf_tool_tests_SOURCES = $(allocator_perf_tool_library_sources) \
-                                         $(fused_gtest) \
+test_allocator_perf_tool_tests_SOURCES = $(fused_gtest) \
                                          test/alloc_performance_tests.cpp \
                                          test/allocate_to_max_stress_test.cpp \
                                          test/dax_kmem_alloc_performance_tests.cpp \

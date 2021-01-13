@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: BSD-2-Clause
-/* Copyright (C) 2017 - 2020 Intel Corporation. */
+/* Copyright (C) 2017 - 2021 Intel Corporation. */
+
+
 #include <memkind/internal/memkind_hbw.h>
 
 #include "common.h"
@@ -21,7 +23,6 @@ namespace TestPolicy
     unique_bitmask_ptr make_cpumask_ptr()
     {
         return unique_bitmask_ptr(numa_allocate_cpumask(), numa_free_nodemask);
-
     }
 
     int get_num_of_pages(const size_t size, const size_t page_size)
@@ -134,23 +135,5 @@ namespace TestPolicy
         }
 
         check_numa_nodes(expected_bitmask, policy, ptr, size);
-    }
-
-    std::set<int> get_regular_numa_nodes(void)
-    {
-        struct bitmask *cpu_mask = numa_allocate_cpumask();
-        std::set<int> regular_nodes;
-
-        const int MAXNODE_ID = numa_max_node();
-        for (int id = 0; id <= MAXNODE_ID; ++id) {
-            numa_node_to_cpus(id, cpu_mask);
-
-            if (numa_bitmask_weight(cpu_mask) != 0) {
-                regular_nodes.insert(id);
-            }
-        }
-        numa_free_cpumask(cpu_mask);
-
-        return regular_nodes;
     }
 }
