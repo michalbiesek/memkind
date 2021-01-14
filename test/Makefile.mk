@@ -25,11 +25,11 @@ endif
 
 TESTS += test/test.sh
 
-EXTRA_DIST += test/TestPreReq.hpp \
-              test/autohbw_test.py \
+EXTRA_DIST += test/autohbw_test.py \
               test/draw_plots.py \
               test/gtest_fused/gtest/gtest-all.cc \
               test/gtest_fused/gtest/gtest.h \
+              test/TestPreReq.hpp \
               test/hbw_detection_test.py \
               test/dax_kmem_env_var_test.py \
               test/memkind-afts-ext.ts \
