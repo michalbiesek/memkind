@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-2-Clause
-# Copyright (C) 2014 - 2020 Intel Corporation.
+# Copyright (C) 2014 - 2021 Intel Corporation.
 
 AM_CPPFLAGS += -Itest/gtest_fused -DMEMKIND_DEPRECATED\(x\)=x
 
@@ -25,7 +25,8 @@ endif
 
 TESTS += test/test.sh
 
-EXTRA_DIST += test/autohbw_test.py \
+EXTRA_DIST += test/TestPreReq.hpp \
+              test/autohbw_test.py \
               test/draw_plots.py \
               test/gtest_fused/gtest/gtest-all.cc \
               test/gtest_fused/gtest/gtest.h \
@@ -66,6 +67,7 @@ endif
 
 fused_gtest = test/gtest_fused/gtest/gtest-all.cc \
               test/main.cpp \
+              test/TestPreReq.hpp \
               # end
 
 test_all_tests_SOURCES = $(fused_gtest) \
