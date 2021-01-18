@@ -174,6 +174,13 @@ int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
             goto error;
         }
 
+        //check if this could be empty?? only loc without bandwidth
+        if (numa_bitmask_weight(attr_loc_mask) == 0) {
+            ret = MEMKIND_ERROR_MEMTYPE_NOT_AVAILABLE;
+            log_err("None NUMA Nodes have memory attribute for init node %d.", init_node->os_index);
+            goto error;
+        }
+
         // populate memory attribute nodemask to all CPU's from initiator NUMA node
         for (i = 0; i < num_cpus; ++i) {
             if (numa_bitmask_isbitset(node_cpus, i)) {
