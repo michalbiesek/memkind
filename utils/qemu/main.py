@@ -391,6 +391,7 @@ def parse_topology_xml(tpg_file_name: str) -> TopologyCfg:
         result = subprocess.run(['virsh', 'domxml-to-native', 'qemu-argv', tpg_file_name], stdout=subprocess.PIPE)
         result.check_returncode()
         libvirt_args = result.stdout.decode('utf-8').strip()
+        print(libvirt_args)
         tpg_cfg = {'name': re.search(r'guest=(\w+)', libvirt_args).group(1),
                    'hmat': 'hmat=on' in libvirt_args,
                    'cpu_model': re.search(r'cpu (\S+)', libvirt_args).group(1),
