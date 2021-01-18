@@ -33,12 +33,19 @@ private:
         return {};
     }
 
+    virtual MapNodeSet Latency_local_nodes() const
+    {
+        return {};
+    }
+
     int get_kind_mem_policy_flag(memkind_t memory_kind) const
     {
         if (memory_kind == MEMKIND_HBW ||
-            memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL)
+            memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL ||
+            memory_kind == MEMKIND_LOWEST_LATENCY_LOCAL)
             return MPOL_BIND;
-        else if (memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL_PREFERRED)
+        else if (memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL_PREFERRED ||
+            memory_kind == MEMKIND_LOWEST_LATENCY_LOCAL_PREFERRED)
             return MPOL_PREFERRED;
         return -1;
     }
@@ -76,9 +83,12 @@ public:
     {
         if (memory_kind == MEMKIND_HBW)
             return (HBW_nodes().size() > 0);
-        else if ((memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL) ||
-                 (memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL_PREFERRED))
+        else if (memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL ||
+                 memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL_PREFERRED)
             return (Capacity_local_nodes().size() > 0);
+        else if (memory_kind == MEMKIND_LOWEST_LATENCY_LOCAL ||
+                 memory_kind == MEMKIND_LOWEST_LATENCY_LOCAL)
+            return (Latency_local_nodes().size() > 0);
         return false;
     }
 
@@ -86,9 +96,12 @@ public:
     {
         if (memory_kind == MEMKIND_HBW)
             return test_node_set(nodes, HBW_nodes());
-        else if ((memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL) ||
-                 (memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL_PREFERRED))
+        else if (memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL ||
+                 memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL_PREFERRED)
             return test_node_set(nodes, Capacity_local_nodes());
+        else if (memory_kind == MEMKIND_LOWEST_LATENCY_LOCAL ||
+                 memory_kind == MEMKIND_LOWEST_LATENCY_LOCAL)
+            return test_node_set(nodes, Latency_local_nodes());
         return false;
     }
 
@@ -106,9 +119,12 @@ public:
     {
         if (memory_kind == MEMKIND_HBW)
             return get_target_nodes(init, HBW_nodes());
-        else if ((memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL) ||
-                 (memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL_PREFERRED))
+        else if (memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL ||
+                 memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL_PREFERRED)
             return get_target_nodes(init, Capacity_local_nodes());
+        else if (memory_kind == MEMKIND_LOWEST_LATENCY_LOCAL ||
+                 memory_kind == MEMKIND_LOWEST_LATENCY_LOCAL_PREFERRED)
+            return get_target_nodes(init, Latency_local_nodes());
         return {};
     }
 

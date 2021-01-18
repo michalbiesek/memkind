@@ -52,6 +52,10 @@ protected:
 
             std::cout << "MEMKIND_TEST_TOPOLOGY is: " << memory_tpg << std::endl;
         }
+        if (memory_kind == MEMKIND_LOWEST_LATENCY_LOCAL)
+        std::cout << "MEMKIND_LOWEST_LATENCY_LOCAL" << std::endl;
+         else if (memory_kind == MEMKIND_LOWEST_LATENCY_LOCAL_PREFERRED)
+        std::cout << "MEMKIND_LOWEST_LATENCY_LOCAL_PREFERRED" << std::endl;
     }
 
     void TearDown()
@@ -62,7 +66,9 @@ INSTANTIATE_TEST_CASE_P(
     KindParam, MemkindHMATFunctionalTestsParam,
     ::testing::Values(MEMKIND_HBW,
                       MEMKIND_HIGHEST_CAPACITY_LOCAL,
-                      MEMKIND_HIGHEST_CAPACITY_LOCAL_PREFERRED));
+                      MEMKIND_HIGHEST_CAPACITY_LOCAL_PREFERRED,
+                      MEMKIND_LOWEST_LATENCY_LOCAL,
+                      MEMKIND_LOWEST_LATENCY_LOCAL_PREFERRED));
 
 TEST_P(MemkindHMATFunctionalTestsParam,
        test_tc_memkind_HMAT_verify_InitTargetNode)
