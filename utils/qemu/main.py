@@ -298,7 +298,16 @@ class QEMU:
         """
         Memory topology string
         """
-        return tpg.mem_options
+        mem_tpg = tpg.mem_options
+        if tpg.hmat:
+            mem_tpg_parsed= re.sub(r'cpus=(\d+\-\d+,)', '', tpg.mem_options)
+            mem_tpg_list = list(mem_tpg_parsed.partition('-numa dist'))
+            numa_cpu_list = re.findall(r'nodeid=(\d+),cpus=', tpg.mem_options)
+            for numa_id in numa_cpu_list:
+                cpu_tpg = f'-numa cpu,node-id={numa_id},socket-id={numa_id} '
+                mem_tpg_list.insert(1, cpu_tpg)
+            mem_tpg = ''.join(mem_tpg_list)
+        return mem_tpg
 
     @property
     def _mount_option(self) -> str:
