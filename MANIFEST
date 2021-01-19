@@ -499,6 +499,7 @@ test/gtest_fused/gtest/gtest.h
 test/hbw_allocator_performance_tests.cpp
 test/hbw_allocator_tests.cpp
 test/hbw_detection_test.py
+test/hbw_threshold_env_var_test.py
 test/hbw_verify_function_test.cpp
 test/heap_manager_init_perf_test.cpp
 test/huge_page_test.cpp
