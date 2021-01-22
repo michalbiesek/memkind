@@ -309,13 +309,13 @@ int set_closest_numanode_mem_attr(void **closest_numanode, int num_cpu, memkind_
                 }
             }
         }
-        if (VEC_SIZE(&current_dest_nodes)) {
+        if (!VEC_SIZE(&current_dest_nodes)) {
             status = MEMKIND_ERROR_MEMTYPE_NOT_AVAILABLE;
             for (i = 0; i < num_cpu; ++i) {
                 if (VEC_CAPACITY(&node_arr[i]))
                     VEC_DELETE(&node_arr[i]);
             }
-            log_err("No HBW Nodes for init node %d.", init_node->os_index);
+            log_fatal("No HBW Nodes for init node %d.", init_node->os_index);
             goto free_node_arr;
         }
 

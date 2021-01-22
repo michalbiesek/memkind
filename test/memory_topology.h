@@ -100,7 +100,7 @@ private:
         if (init_node_tpg != map_nodes.end()) {
             return init_node_tpg->second;
         }
-        std::cout << "Failed for, Init: " << init << std::endl;
+        std::cout << "No target nodes for, Init: " << init << std::endl;
         return {};
     }
 
@@ -111,9 +111,12 @@ private:
     }
 
 public:
-    bool is_kind_supported(memkind_t memory_kind) const
+    bool is_kind_supported(memkind_t memory_kind, int init_node) const
     {
-        return get_memory_kind_Nodes(memory_kind).size() > 0;
+        // NOTE that even if given kind is supported "globally" in the system,
+        // it could be not availabled to use by every initiator node
+        auto memory_kind_nodes = get_memory_kind_Nodes(memory_kind);
+        return get_target_nodes(init_node, memory_kind_nodes).size() > 0;
     }
 
     bool verify_kind(memkind_t memory_kind, int init_node, void *ptr) const
@@ -289,6 +292,13 @@ private:
 class CLX_2_var1_HBW : public AbstractTopology
 {
 private:
+    MapNodeSet HBW_nodes() const final
+    {
+        MapNodeSet nodeset_map;
+        nodeset_map.emplace(NodeSet(0, {2}));
+        return nodeset_map;
+    }
+
     MapNodeSet Capacity_local_nodes() const final
     {
         MapNodeSet nodeset_map;
@@ -349,6 +359,13 @@ private:
 class CLX_2_var2_HBW : public AbstractTopology
 {
 private:
+    MapNodeSet HBW_nodes() const final
+    {
+        MapNodeSet nodeset_map;
+        nodeset_map.emplace(NodeSet(1, {2}));
+        return nodeset_map;
+    }
+
     MapNodeSet Capacity_local_nodes() const final
     {
         MapNodeSet nodeset_map;
@@ -409,6 +426,14 @@ private:
 class CLX_2_var3_HBW : public AbstractTopology
 {
 private:
+    MapNodeSet HBW_nodes() const final
+    {
+        MapNodeSet nodeset_map;
+        nodeset_map.emplace(NodeSet(0, {2}));
+        nodeset_map.emplace(NodeSet(1, {3}));
+        return nodeset_map;
+    }
+
     MapNodeSet Capacity_local_nodes() const final
     {
         MapNodeSet nodeset_map;
@@ -475,6 +500,16 @@ private:
 class CLX_4_var1_HBW : public AbstractTopology
 {
 private:
+    MapNodeSet HBW_nodes() const final
+    {
+        MapNodeSet nodeset_map;
+        nodeset_map.emplace(NodeSet(0, {4}));
+        nodeset_map.emplace(NodeSet(1, {5}));
+        nodeset_map.emplace(NodeSet(2, {6}));
+        nodeset_map.emplace(NodeSet(3, {7}));
+        return nodeset_map;
+    }
+
     MapNodeSet Capacity_local_nodes() const final
     {
         MapNodeSet nodeset_map;
@@ -547,6 +582,13 @@ private:
 class CLX_4_var2_HBW : public AbstractTopology
 {
 private:
+    MapNodeSet HBW_nodes() const final
+    {
+        MapNodeSet nodeset_map;
+        nodeset_map.emplace(NodeSet(1, {4}));
+        return nodeset_map;
+    }
+
     MapNodeSet Capacity_local_nodes() const final
     {
         MapNodeSet nodeset_map;
@@ -619,6 +661,15 @@ private:
 class CLX_4_var3_HBW : public AbstractTopology
 {
 private:
+    MapNodeSet HBW_nodes() const final
+    {
+        MapNodeSet nodeset_map;
+        nodeset_map.emplace(NodeSet(0, {4}));
+        nodeset_map.emplace(NodeSet(1, {5}));
+        nodeset_map.emplace(NodeSet(3, {6}));
+        return nodeset_map;
+    }
+
     MapNodeSet Capacity_local_nodes() const final
     {
         MapNodeSet nodeset_map;
@@ -691,6 +742,14 @@ private:
 class CLX_4_var4_HBW : public AbstractTopology
 {
 private:
+    MapNodeSet HBW_nodes() const final
+    {
+        MapNodeSet nodeset_map;
+        nodeset_map.emplace(NodeSet(0, {4}));
+        nodeset_map.emplace(NodeSet(3, {5}));
+        return nodeset_map;
+    }
+
     MapNodeSet Capacity_local_nodes() const final
     {
         MapNodeSet nodeset_map;
