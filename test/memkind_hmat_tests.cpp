@@ -110,11 +110,11 @@ TEST_P(MemkindHMATFunctionalTestsParam,
         status = sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set);
         int cpu = sched_getcpu();
         EXPECT_EQ(thread_id, cpu);
+        int init_node = numa_node_of_cpu(cpu);
         void *ptr = memkind_malloc(memory_kind, size);
-        if (topology->is_kind_supported(memory_kind)) {
+        if (topology->is_kind_supported(memory_kind, init_node)) {
             EXPECT_TRUE(ptr != nullptr);
             memset(ptr, 0, size);
-            int init_node = numa_node_of_cpu(cpu);
             auto res = topology->verify_kind(memory_kind, init_node, ptr);
             EXPECT_EQ(true, res);
             memkind_free(memory_kind, ptr);

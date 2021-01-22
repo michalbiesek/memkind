@@ -26,6 +26,7 @@ int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
     hwloc_nodeset_t attr_loc_mask = NULL;
     hwloc_uint64_t mem_attr, best_mem_attr;
     unsigned int mem_attr_nodes;
+    bool test = false;
 
     hwloc_topology_t topology;
     int i;
@@ -210,11 +211,16 @@ int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
             log_err("hwloc_nodeset_to_linux_libnuma_bitmask() failed.");
             goto error;
         }
+        test = true;
         hwloc_bitmap_foreach_end();
     }
 
-    ret = MEMKIND_SUCCESS;
-    goto success;
+    //if none Node was populate signal error
+    if (test == true) {
+        ret = MEMKIND_SUCCESS;
+        goto success;
+    }
+    ret = MEMKIND_ERROR_MEMTYPE_NOT_AVAILABLE;
 
 error:
     for(i = 0; i < num_cpus; ++i) {
