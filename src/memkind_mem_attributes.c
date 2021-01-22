@@ -9,11 +9,13 @@
 
 #ifdef MEMKIND_HWLOC
 #include <hwloc.h>
+#include <hwloc/linux.h>
 #define MEMKIND_HBW_THRESHOLD_DEFAULT (200 * 1024) // Default threshold is 200 GB/s
 
 int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
                                  memkind_node_variant_t node_variant, memory_attribute_t attr)
 {
+    log_fatal("get_per_cpu_local_nodes_mask");
     int num_nodes = numa_num_configured_nodes();
     int max_node_id = numa_max_node();
     int num_cpus = numa_num_configured_cpus();
@@ -23,7 +25,7 @@ int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
     struct bitmask *node_cpus = NULL;
     hwloc_uint64_t mem_attr, best_mem_attr;
     unsigned int mem_attr_nodes;
-
+    hwloc_cpuset_t affinity_cpus = NULL;
     hwloc_topology_t topology;
     int i;
     int ret;
@@ -62,6 +64,22 @@ int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
         goto error;
     }
 
+    affinity_cpus = hwloc_bitmap_alloc();
+    if (MEMKIND_UNLIKELY(affinity_cpus == NULL)) {
+        ret = MEMKIND_ERROR_MALLOC;
+        log_err("hwloc_bitmap_alloc() failed.");
+        goto error;
+    }
+
+    err = hwloc_linux_get_tid_cpubind(topology, 0, affinity_cpus);
+    if (MEMKIND_UNLIKELY(err)) {
+        ret = MEMKIND_ERROR_RUNTIME;
+        log_fatal("hwloc_linux_get_tid_cpubind");
+        goto error;
+    }
+
+    // proc_cpus = hwloc_bitmap_weight(affinity_cpus);
+
     struct bitmask *attr_loc_mask = numa_bitmask_alloc(max_node_id + 1);
     if (MEMKIND_UNLIKELY(attr_loc_mask == NULL)) {
         ret = MEMKIND_ERROR_MALLOC;
@@ -75,11 +93,23 @@ int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
 
         // skip this node if it doesn't contain any CPU
         numa_node_to_cpus(init_node->os_index, node_cpus);
-        if (numa_bitmask_weight(node_cpus) == 0) {
-            log_info("Node %d skipped - no CPU detected in initiator Node.",
+        unsigned cpu_n = numa_bitmask_weight(node_cpus);
+        if (cpu_n == 0) {
+            log_fatal("Node %d skipped - no CPU detected in initiator Node.",
                      init_node->os_index);
             continue;
         }
+
+        //skip node if all cpu's from init node are excluded from process
+        for (i = 0; i < num_cpus; ++i) {
+            if (numa_bitmask_isbitset(node_cpus, i)) {
+                log_fatal("Node %d cpu set %d",init_node->os_index, i);
+            }
+        }
+        unsigned id;
+        hwloc_bitmap_foreach_begin(id, affinity_cpus)
+                log_fatal("Process mask id %d", id);
+        hwloc_bitmap_foreach_end();
 
         // extract local nodes
         struct hwloc_location initiator;
@@ -212,6 +242,7 @@ error:
 success:
     numa_free_nodemask(attr_loc_mask);
     numa_bitmask_free(node_cpus);
+    hwloc_bitmap_free(affinity_cpus);
     free(local_nodes);
     hwloc_topology_destroy(topology);
 
