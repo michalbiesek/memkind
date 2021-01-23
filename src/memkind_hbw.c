@@ -385,8 +385,7 @@ static void memkind_hbw_closest_preferred_numanode_init(void)
     g->num_cpu = numa_num_configured_cpus();
     g->closest_numanode = NULL;
     g->init_err = set_closest_numanode(memkind_hbw_get_nodemask,
-                                       &g->closest_numanode,
-                                       g->num_cpu, NODE_VARIANT_SINGLE);
+                                       &g->closest_numanode, g->num_cpu, NODE_VARIANT_SINGLE);
 }
 
 MEMKIND_EXPORT void memkind_hbw_init_once(void)
