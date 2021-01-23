@@ -10,6 +10,7 @@
 #ifdef MEMKIND_HWLOC
 #include <hwloc.h>
 #include <hwloc/linux-libnuma.h>
+#include <hwloc/linux.h>
 #define MEMKIND_HBW_THRESHOLD_DEFAULT (200 * 1024) // Default threshold is 200 GB/s
 
 int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
@@ -21,6 +22,7 @@ int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
     hwloc_obj_t init_node = NULL;
     hwloc_obj_t *local_nodes = NULL;
     hwloc_cpuset_t node_cpus = NULL;
+    hwloc_cpuset_t affinity_cpus = NULL;
     hwloc_nodeset_t attr_loc_mask = NULL;
     hwloc_uint64_t mem_attr, best_mem_attr;
     unsigned int mem_attr_nodes;
@@ -63,6 +65,20 @@ int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
         goto error;
     }
 
+    affinity_cpus = hwloc_bitmap_alloc();
+    if (MEMKIND_UNLIKELY(affinity_cpus == NULL)) {
+        ret = MEMKIND_ERROR_MALLOC;
+        log_err("hwloc_bitmap_alloc() failed.");
+        goto error;
+    }
+
+    err = hwloc_linux_get_tid_cpubind(topology, 0, affinity_cpus);
+    if (MEMKIND_UNLIKELY(err)) {
+        ret = MEMKIND_ERROR_RUNTIME;
+        log_fatal("hwloc_linux_get_tid_cpubind");
+        goto error;
+    }
+
     attr_loc_mask = hwloc_bitmap_alloc();
     if (MEMKIND_UNLIKELY(attr_loc_mask == NULL)) {
         ret = MEMKIND_ERROR_MALLOC;
@@ -81,6 +97,13 @@ int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
             continue;
         }
         hwloc_bitmap_or(node_cpus, node_cpus, init_node->cpuset);
+
+        //skip Node operation if it is not in affinity_cpus
+        if (!hwloc_bitmap_isincluded(init_node->cpuset, affinity_cpus))
+        {
+            log_fatal("Node %d skippped is not included in affinity_cpus", init_node->os_index);
+            continue;
+        }
 
         // extract local nodes
         struct hwloc_location initiator;
@@ -203,6 +226,7 @@ error:
 
 success:
     hwloc_bitmap_free(attr_loc_mask);
+    hwloc_bitmap_free(affinity_cpus);
     hwloc_bitmap_free(node_cpus);
     free(local_nodes);
     hwloc_topology_destroy(topology);
