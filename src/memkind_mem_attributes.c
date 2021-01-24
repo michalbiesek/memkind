@@ -219,25 +219,24 @@ int get_mem_attributes_hbw_nodes_mask(struct bitmask **hbw_node_mask)
     hwloc_obj_t init_node = NULL;
     hwloc_cpuset_t node_cpus = NULL;
 
+    if (hbw_threshold_env) {
+        log_info("Environment variable MEMKIND_HBW_THRESHOLD detected: %s.",
+                 hbw_threshold_env);
+        err = sscanf(hbw_threshold_env, "%zud", &hbw_threshold);
+        if (err == 0) {
+            log_err("Environment variable MEMKIND_HBW_THRESHOLD is invalid value.");
+            return MEMKIND_ERROR_ENVIRON;
+        }
+    } else {
+        hbw_threshold = MEMKIND_HBW_THRESHOLD_DEFAULT;
+    }
+
     // NUMA Nodes could be not in arithmetic progression
     int nodes_num = numa_max_node() + 1;
     *hbw_node_mask = numa_bitmask_alloc(nodes_num);
     if (MEMKIND_UNLIKELY(*hbw_node_mask == NULL)) {
         log_err("numa_bitmask_alloc() failed.");
         return MEMKIND_ERROR_UNAVAILABLE;
-    }
-
-    if (hbw_threshold_env) {
-        log_info("Environment variable MEMKIND_HBW_THRESHOLD detected: %s.",
-                 hbw_threshold_env);
-        int ret = sscanf(hbw_threshold_env, "%zud", &hbw_threshold);
-        if (ret == 0) {
-            log_err("Environment variable MEMKIND_HBW_THRESHOLD is invalid value.");
-            numa_bitmask_free(*hbw_node_mask);
-            return MEMKIND_ERROR_ENVIRON;
-        }
-    } else {
-        hbw_threshold = MEMKIND_HBW_THRESHOLD_DEFAULT;
     }
 
     err = hwloc_topology_init(&topology);
