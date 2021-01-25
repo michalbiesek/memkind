@@ -442,6 +442,34 @@ private:
     }
 };
 
+class CLX_2_var4_HBW : public AbstractTopology
+{
+private:
+    MapNodeSet HBW_nodes() const final
+    {
+        MapNodeSet nodeset_map;
+        nodeset_map.emplace(NodeSet(0, {0}));
+        nodeset_map.emplace(NodeSet(1, {1}));
+        return nodeset_map;
+    }
+
+    MapNodeSet Capacity_local_nodes() const final
+    {
+        MapNodeSet nodeset_map;
+        nodeset_map.emplace(NodeSet(0, {0}));
+        nodeset_map.emplace(NodeSet(1, {1}));
+        return nodeset_map;
+    }
+
+    MapNodeSet Bandwidth_local_nodes() const final
+    {
+        MapNodeSet nodeset_map;
+        nodeset_map.emplace(NodeSet(0, {2}));
+        nodeset_map.emplace(NodeSet(1, {3}));
+        return nodeset_map;
+    }
+};
+
 class CLX_4_var1 : public AbstractTopology
 {
 private:
