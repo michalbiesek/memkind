@@ -13,6 +13,7 @@
 
 #include <hwloc.h>
 #include <hwloc/linux-libnuma.h>
+#include <hwloc/linux.h>
 #define MEMKIND_HBW_THRESHOLD_DEFAULT (200 * 1024) // Default threshold is 200 GB/s
 
 int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
@@ -24,6 +25,7 @@ int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
     hwloc_obj_t init_node = NULL;
     hwloc_obj_t *local_nodes = NULL;
     hwloc_cpuset_t node_cpus = NULL;
+    hwloc_cpuset_t affinity_cpus = NULL;
     hwloc_nodeset_t attr_loc_mask = NULL;
     hwloc_uint64_t mem_attr, best_mem_attr;
     unsigned int mem_attr_nodes;
@@ -66,6 +68,20 @@ int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
         goto error;
     }
 
+    affinity_cpus = hwloc_bitmap_alloc();
+    if (MEMKIND_UNLIKELY(affinity_cpus == NULL)) {
+        ret = MEMKIND_ERROR_MALLOC;
+        log_err("hwloc_bitmap_alloc() failed.");
+        goto error;
+    }
+
+    err = hwloc_linux_get_tid_cpubind(topology, 0, affinity_cpus);
+    if (MEMKIND_UNLIKELY(err)) {
+        ret = MEMKIND_ERROR_RUNTIME;
+        log_fatal("hwloc_linux_get_tid_cpubind");
+        goto error;
+    }
+
     attr_loc_mask = hwloc_bitmap_alloc();
     if (MEMKIND_UNLIKELY(attr_loc_mask == NULL)) {
         ret = MEMKIND_ERROR_MALLOC;
@@ -84,6 +100,13 @@ int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
             continue;
         }
         hwloc_bitmap_or(node_cpus, node_cpus, init_node->cpuset);
+
+        //skip Node operation if it is not in affinity_cpus
+        if (!hwloc_bitmap_isincluded(init_node->cpuset, affinity_cpus)) {
+            log_info("Node %d skippped - all CPu's are excluded from process.",
+                     init_node->os_index);
+            continue;
+        }
 
         // extract local nodes
         struct hwloc_location initiator;
@@ -206,6 +229,7 @@ error:
 
 success:
     hwloc_bitmap_free(attr_loc_mask);
+    hwloc_bitmap_free(affinity_cpus);
     hwloc_bitmap_free(node_cpus);
     free(local_nodes);
     hwloc_topology_destroy(topology);
@@ -225,6 +249,7 @@ int set_closest_numanode_mem_attr(void **closest_numanode, int num_cpu,
     hwloc_topology_t topology;
     hwloc_obj_t init_node = NULL;
     hwloc_cpuset_t node_cpus = NULL;
+    hwloc_cpuset_t affinity_cpus = NULL;
 
     if (hbw_threshold_env) {
         log_info("Environment variable MEMKIND_HBW_THRESHOLD detected: %s.",
@@ -259,7 +284,13 @@ int set_closest_numanode_mem_attr(void **closest_numanode, int num_cpu,
         goto hwloc_destroy;
     }
 
-    VEC(vec_temp, int) current_dest_nodes = VEC_INITIALIZER;
+    affinity_cpus = hwloc_bitmap_alloc();
+    if (MEMKIND_UNLIKELY(affinity_cpus == NULL)) {
+        log_err("hwloc_bitmap_alloc failed");
+        goto node_cpu_free;
+    }
+
+    VEC(vec_temp, int) current_hbw_nodes = VEC_INITIALIZER;
 
     struct vec_cpu_node *node_arr = (struct vec_cpu_node *) calloc(num_cpu,
                                                                    sizeof(struct vec_cpu_node));
@@ -267,7 +298,7 @@ int set_closest_numanode_mem_attr(void **closest_numanode, int num_cpu,
     if (MEMKIND_UNLIKELY(node_arr == NULL)) {
         log_err("calloc failed");
         status = MEMKIND_ERROR_MALLOC;
-        goto node_cpu_free;
+        goto affinity_cpu_free;
     }
 
     while ((init_node = hwloc_get_next_obj_by_type(topology, HWLOC_OBJ_NUMANODE,
@@ -276,7 +307,7 @@ int set_closest_numanode_mem_attr(void **closest_numanode, int num_cpu,
         hwloc_obj_t target = NULL;
         int min_distance = INT_MAX;
 
-        //skip node which could not be a initiator
+        // skip this node if it doesn't contain any CPU
         if (hwloc_bitmap_isincluded(init_node->cpuset, node_cpus)) {
             log_info("Node %d skipped - no CPU detected in initiator Node.",
                      init_node->os_index);
@@ -285,10 +316,17 @@ int set_closest_numanode_mem_attr(void **closest_numanode, int num_cpu,
 
         hwloc_bitmap_or(node_cpus, node_cpus, init_node->cpuset);
 
+        //skip Node operation if it is not in affinity_cpus
+        if (!hwloc_bitmap_isincluded(init_node->cpuset, affinity_cpus)) {
+            log_info("Node %d skippped - all CPu's are excluded from process.",
+                     init_node->os_index);
+            continue;
+        }
+
         initiator.type = HWLOC_LOCATION_TYPE_CPUSET;
         initiator.location.cpuset = init_node->cpuset;
 
-        VEC_CLEAR(&current_dest_nodes);
+        VEC_CLEAR(&current_hbw_nodes);
 
         while ((target = hwloc_get_next_obj_by_type(topology, HWLOC_OBJ_NUMANODE,
                                                     target)) != NULL) {
@@ -305,15 +343,15 @@ int set_closest_numanode_mem_attr(void **closest_numanode, int num_cpu,
                 int dist = numa_distance(init_node->os_index, target->os_index);
                 if (dist < min_distance) {
                     min_distance = dist;
-                    VEC_CLEAR(&current_dest_nodes);
-                    VEC_PUSH_BACK(&current_dest_nodes, target->os_index);
+                    VEC_CLEAR(&current_hbw_nodes);
+                    VEC_PUSH_BACK(&current_hbw_nodes, target->os_index);
                 } else if (dist == min_distance) {
-                    VEC_PUSH_BACK(&current_dest_nodes, target->os_index);
+                    VEC_PUSH_BACK(&current_hbw_nodes, target->os_index);
                 }
             }
         }
 
-        vec_size = VEC_SIZE(&current_dest_nodes);
+        vec_size = VEC_SIZE(&current_hbw_nodes);
 
         if (vec_size == 0) {
             status = MEMKIND_ERROR_MEMTYPE_NOT_AVAILABLE;
@@ -340,7 +378,7 @@ int set_closest_numanode_mem_attr(void **closest_numanode, int num_cpu,
         // populate memory attribute nodemask to all CPU's from initiator NUMA node
         hwloc_bitmap_foreach_begin(i, init_node->cpuset)
         int node = -1;
-        VEC_FOREACH(node, &current_dest_nodes) {
+        VEC_FOREACH(node, &current_hbw_nodes) {
             VEC_PUSH_BACK(&node_arr[i], node);
         }
         hwloc_bitmap_foreach_end();
@@ -354,7 +392,10 @@ free_node_arr:
     free(node_arr);
 
 free_current_dest_nodes:
-    VEC_DELETE(&current_dest_nodes);
+    VEC_DELETE(&current_hbw_nodes);
+
+affinity_cpu_free:
+    hwloc_bitmap_free(affinity_cpus);
 
 node_cpu_free:
     hwloc_bitmap_free(node_cpus);
