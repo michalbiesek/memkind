@@ -365,8 +365,7 @@ int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
     return MEMKIND_ERROR_OPERATION_FAILED;
 }
 
-int set_closest_numanode_mem_attr(void **closest_numanode, int num_cpu,
-                                  memkind_node_variant_t node_variant)
+int set_closest_numanode_mem_attr(void **closest_numanode, memkind_node_variant_t node_variant)
 {
     log_err("High Bandwidth NUMA nodes cannot be automatically detected.");
     return MEMKIND_ERROR_OPERATION_FAILED;

@@ -22,10 +22,10 @@ int memkind_env_get_nodemask(char *nodes_env, struct bitmask **bm)
     return MEMKIND_SUCCESS;
 }
 
-int set_closest_numanode(get_node_bitmask get_bitmask, void **closest_numanode,
-                         int num_cpu, memkind_node_variant_t node_variant)
+int set_closest_numanode(get_node_bitmask get_bitmask, void **closest_numanode, memkind_node_variant_t node_variant)
 {
     struct bitmask *dest_nodes_mask = NULL;
+    int num_cpu = numa_num_configured_cpus();
     int status = get_bitmask(&dest_nodes_mask);
     if (status)
         return status;
@@ -118,41 +118,18 @@ free_dest_nodemask:
     return status;
 }
 
-void set_bitmask_for_all_closest_numanodes(unsigned long *nodemask,
-                                           unsigned long maxnode, const void *closest_numanode, int num_cpu)
-{
-    if (MEMKIND_LIKELY(nodemask)) {
-        struct bitmask nodemask_bm = {maxnode, nodemask};
-        int cpu;
-        int node = -1;
-        const struct vec_cpu_node *closest_numanode_vec = (const struct vec_cpu_node *)
-                                                          closest_numanode;
-        numa_bitmask_clearall(&nodemask_bm);
-        for (cpu = 0; cpu < num_cpu; ++cpu) {
-            VEC_FOREACH(node, &closest_numanode_vec[cpu]) {
-                numa_bitmask_setbit(&nodemask_bm, node);
-            }
-        }
-    }
-}
-
-int set_bitmask_for_current_closest_numanode(unsigned long *nodemask,
-                                             unsigned long maxnode, const void *closest_numanode, int num_cpu)
+int set_bitmask_for_current_numanode(unsigned long *nodemask, unsigned long maxnode, const void *closest_numanode)
 {
     if (MEMKIND_LIKELY(nodemask)) {
         struct bitmask nodemask_bm = {maxnode, nodemask};
         numa_bitmask_clearall(&nodemask_bm);
         int cpu = sched_getcpu();
-        if (MEMKIND_LIKELY(cpu < num_cpu)) {
-            int node = -1;
-            const struct vec_cpu_node *closest_numanode_vec = (const struct vec_cpu_node *)
-                                                              closest_numanode;
-            VEC_FOREACH(node, &closest_numanode_vec[cpu]) {
-                numa_bitmask_setbit(&nodemask_bm, node);
-            }
-        } else {
-            return MEMKIND_ERROR_RUNTIME;
+        int node = -1;
+        const struct vec_cpu_node *closest_numanode_vec = (const struct vec_cpu_node *) closest_numanode;
+        VEC_FOREACH(node, &closest_numanode_vec[cpu]) {
+            numa_bitmask_setbit(&nodemask_bm, node);
         }
+        return MEMKIND_SUCCESS;
     }
-    return MEMKIND_SUCCESS;
+    return MEMKIND_ERROR_RUNTIME;
 }
