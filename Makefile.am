@@ -4,6 +4,7 @@
 ACLOCAL_AMFLAGS = -I m4
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/jemalloc/include
 MAN2HTML = groff -mandoc -Thtml
+PYTHON = python3
 
 lib_LTLIBRARIES = libmemkind.la
 
@@ -436,6 +437,7 @@ EXTRA_DIST = CONTRIBUTING \
              utils/qemu/topology/knm_snc4.xml \
              utils/qemu/ubuntu-packer.json \
              utils/qemu/update-kernel.sh \
+             test.py \
              # end
 
 dist_doc_DATA = COPYING README VERSION
@@ -539,7 +541,8 @@ unit_tests_pmem: checkprogs
 	test/pmem_test -d $(PMEM_PATH)
 
 unit_tests_hmat: checkprogs
-	test/hmat_test
+	test/decorator_test
+	${PYTHON} test.py
 
 unit_tests_dax_kmem: checkprogs
 	test/test_dax_kmem.sh
