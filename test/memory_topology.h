@@ -31,9 +31,14 @@ private:
         return {};
     }
 
+    virtual MapNodeSet HBW_preferred_nodes() const
+    {
+        return HBW_nodes();
+    }
+
     virtual MapNodeSet HBW_all_nodes() const
     {
-        return {};
+        return HBW_nodes();
     }
 
     virtual MapNodeSet Capacity_local_nodes() const
@@ -59,7 +64,8 @@ private:
             memory_kind == MEMKIND_LOWEST_LATENCY_LOCAL ||
             memory_kind == MEMKIND_HIGHEST_BANDWIDTH_LOCAL)
             return MPOL_BIND;
-        else if (memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL_PREFERRED ||
+        else if (memory_kind == MEMKIND_HBW_PREFERRED ||
+                 memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL_PREFERRED ||
                  memory_kind == MEMKIND_LOWEST_LATENCY_LOCAL_PREFERRED ||
                  memory_kind == MEMKIND_HIGHEST_BANDWIDTH_LOCAL_PREFERRED)
             return MPOL_PREFERRED;
@@ -70,6 +76,8 @@ private:
     {
         if (memory_kind == MEMKIND_HBW)
             return HBW_nodes();
+        else if (memory_kind == MEMKIND_HBW_PREFERRED)
+            return HBW_preferred_nodes();
         else if (memory_kind == MEMKIND_HBW_ALL)
             return HBW_all_nodes();
         else if (memory_kind == MEMKIND_HIGHEST_CAPACITY_LOCAL ||
@@ -185,12 +193,6 @@ private:
         return nodeset_map;
     }
 
-    MapNodeSet HBW_all_nodes() const final
-    {
-        MapNodeSet nodeset_map;
-        nodeset_map.emplace(NodeSet(0, {1}));
-        return nodeset_map;
-    }
 
     MapNodeSet Bandwidth_local_nodes() const final
     {
@@ -450,13 +452,6 @@ private:
         return nodeset_map;
     }
 
-    MapNodeSet HBW_all_nodes() const final
-    {
-        MapNodeSet nodeset_map;
-        nodeset_map.emplace(NodeSet(0, {2}));
-        nodeset_map.emplace(NodeSet(1, {3}));
-        return nodeset_map;
-    }
 
     MapNodeSet Capacity_local_nodes() const final
     {
@@ -492,6 +487,11 @@ private:
         nodeset_map.emplace(NodeSet(0, {0}));
         nodeset_map.emplace(NodeSet(1, {1}));
         return nodeset_map;
+    }
+
+    MapNodeSet HBW_preferred_nodes() const final
+    {
+        return HBW_nodes();
     }
 
     MapNodeSet HBW_all_nodes() const final
@@ -570,15 +570,6 @@ private:
         return nodeset_map;
     }
 
-    MapNodeSet HBW_all_nodes() const final
-    {
-        MapNodeSet nodeset_map;
-        nodeset_map.emplace(NodeSet(0, {4}));
-        nodeset_map.emplace(NodeSet(1, {5}));
-        nodeset_map.emplace(NodeSet(2, {6}));
-        nodeset_map.emplace(NodeSet(3, {7}));
-        return nodeset_map;
-    }
 
     MapNodeSet Capacity_local_nodes() const final
     {
