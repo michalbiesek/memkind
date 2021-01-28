@@ -345,6 +345,7 @@ static int get_legacy_hbw_nodes_mask(struct bitmask **hbw_node_mask)
 static int memkind_hbw_get_nodemask(struct bitmask **bm)
 {
     char *nodes_env = memkind_get_env("MEMKIND_HBW_NODES");
+    log_fatal("NEXT TEST");
     if (nodes_env) {
         return memkind_env_get_nodemask(nodes_env, bm);
     } else {
