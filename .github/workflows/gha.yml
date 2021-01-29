@@ -50,13 +50,14 @@ jobs:
         restore-keys: ccache-${{ env.CC_BUILD_ID }}-static-build-
 
     - name: Install basic dependencies
-      run: sudo apt install autoconf ccache libnuma-dev
+      run: sudo apt install autoconf ccache libnuma-dev numactl
 
     - name: Install daxctl dependency
       run: |
           if [ "${{ matrix.daxctl }}" == true ]; then
               sudo apt install libdaxctl-dev
           else
+            numactl -H
             echo "Skipping daxctl installation"
           fi
 
