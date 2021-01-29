@@ -18,6 +18,8 @@ int set_bitmask_for_current_numanode(unsigned long *nodemask,
                                      unsigned long maxnode, const void *numanode);
 int memkind_env_get_nodemask(char *nodes_env, struct bitmask **bm);
 
+void free_bitmask_numanode(void **numanode);
+
 #ifdef __cplusplus
 }
 #endif

@@ -139,3 +139,17 @@ int set_bitmask_for_current_numanode(unsigned long *nodemask,
     }
     return MEMKIND_SUCCESS;
 }
+
+void free_bitmask_numanode(void **numanode)
+{
+    int cpu_id;
+    int num_cpu = numa_num_configured_cpus();
+
+    struct vec_cpu_node *node_arr = *numanode;
+
+    for (cpu_id = 0; cpu_id < num_cpu; ++cpu_id) {
+        if (VEC_CAPACITY(&node_arr[cpu_id]))
+            VEC_DELETE(&node_arr[cpu_id]);
+    }
+    free(node_arr);
+}

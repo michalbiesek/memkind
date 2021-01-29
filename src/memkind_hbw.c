@@ -25,6 +25,38 @@
 #include <stdint.h>
 #include <assert.h>
 
+struct hbw_numanode_t {
+    int init_err;
+    void *numanode;
+};
+
+static struct hbw_numanode_t memkind_hbw_numanode_g[NODE_VARIANT_MAX_EXT];
+static pthread_once_t memkind_hbw_numanode_once_g[NODE_VARIANT_MAX_EXT] = {PTHREAD_ONCE_INIT};
+
+static int memkind_hbw_finalize(memkind_t kind)
+{
+    struct hbw_numanode_t *g = &memkind_hbw_numanode_g[NODE_VARIANT_MULTIPLE];
+    if (g->numanode)
+        free_bitmask_numanode(&g->numanode);
+    return memkind_arena_finalize(kind);
+}
+
+static int memkind_hbw_preferred_finalize(memkind_t kind)
+{
+    struct hbw_numanode_t *g = &memkind_hbw_numanode_g[NODE_VARIANT_SINGLE];
+    if (g->numanode)
+        free_bitmask_numanode(&g->numanode);
+    return memkind_arena_finalize(kind);
+}
+
+static int memkind_hbw_all_finalize(memkind_t kind)
+{
+    struct hbw_numanode_t *g = &memkind_hbw_numanode_g[NODE_VARIANT_ALL];
+    if (g->numanode)
+        free_bitmask_numanode(&g->numanode);
+    return memkind_arena_finalize(kind);
+}
+
 MEMKIND_EXPORT struct memkind_ops MEMKIND_HBW_OPS = {
     .create = memkind_arena_create,
     .destroy = memkind_default_destroy,
@@ -41,7 +73,7 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_HBW_OPS = {
     .get_arena = memkind_thread_get_arena,
     .init_once = memkind_hbw_init_once,
     .malloc_usable_size = memkind_default_malloc_usable_size,
-    .finalize = memkind_arena_finalize,
+    .finalize = memkind_hbw_finalize,
     .get_stat = memkind_arena_get_kind_stat,
     .defrag_reallocate = memkind_arena_defrag_reallocate
 };
@@ -62,7 +94,7 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_HBW_ALL_OPS = {
     .get_arena = memkind_thread_get_arena,
     .init_once = memkind_hbw_all_init_once,
     .malloc_usable_size = memkind_default_malloc_usable_size,
-    .finalize = memkind_arena_finalize,
+    .finalize = memkind_hbw_all_finalize,
     .get_stat = memkind_arena_get_kind_stat,
     .defrag_reallocate = memkind_arena_defrag_reallocate
 };
@@ -83,7 +115,7 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_HBW_HUGETLB_OPS = {
     .get_arena = memkind_thread_get_arena,
     .init_once = memkind_hbw_hugetlb_init_once,
     .malloc_usable_size = memkind_default_malloc_usable_size,
-    .finalize = memkind_arena_finalize,
+    .finalize = memkind_hbw_finalize,
     .get_stat = memkind_arena_get_kind_stat,
     .defrag_reallocate = memkind_arena_defrag_reallocate
 };
@@ -104,7 +136,7 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_HBW_ALL_HUGETLB_OPS = {
     .get_arena = memkind_thread_get_arena,
     .init_once = memkind_hbw_all_hugetlb_init_once,
     .malloc_usable_size = memkind_default_malloc_usable_size,
-    .finalize = memkind_arena_finalize,
+    .finalize = memkind_hbw_all_finalize,
     .get_stat = memkind_arena_get_kind_stat,
     .defrag_reallocate = memkind_arena_defrag_reallocate
 };
@@ -125,7 +157,7 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_HBW_PREFERRED_OPS = {
     .get_arena = memkind_thread_get_arena,
     .init_once = memkind_hbw_preferred_init_once,
     .malloc_usable_size = memkind_default_malloc_usable_size,
-    .finalize = memkind_arena_finalize,
+    .finalize = memkind_hbw_preferred_finalize,
     .get_stat = memkind_arena_get_kind_stat,
     .defrag_reallocate = memkind_arena_defrag_reallocate
 };
@@ -146,7 +178,7 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_HBW_PREFERRED_HUGETLB_OPS = {
     .get_arena = memkind_thread_get_arena,
     .init_once = memkind_hbw_preferred_hugetlb_init_once,
     .malloc_usable_size = memkind_default_malloc_usable_size,
-    .finalize = memkind_arena_finalize,
+    .finalize = memkind_hbw_preferred_finalize,
     .get_stat = memkind_arena_get_kind_stat,
     .defrag_reallocate = memkind_arena_defrag_reallocate
 };
@@ -168,18 +200,10 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_HBW_INTERLEAVE_OPS = {
     .get_arena = memkind_thread_get_arena,
     .init_once = memkind_hbw_interleave_init_once,
     .malloc_usable_size = memkind_default_malloc_usable_size,
-    .finalize = memkind_arena_finalize,
+    .finalize = memkind_hbw_all_finalize,
     .get_stat = memkind_arena_get_kind_stat,
     .defrag_reallocate = memkind_arena_defrag_reallocate
 };
-
-struct hbw_numanode_t {
-    int init_err;
-    void *numanode;
-};
-
-static struct hbw_numanode_t memkind_hbw_numanode_g[NODE_VARIANT_MAX_EXT];
-static pthread_once_t memkind_hbw_numanode_once_g[NODE_VARIANT_MAX_EXT] = {PTHREAD_ONCE_INIT};
 
 static void memkind_hbw_closest_numanode_init(void);
 static void memkind_hbw_closest_preferred_numanode_init(void);
