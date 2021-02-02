@@ -34,6 +34,7 @@ void memkind_hbw_all_hugetlb_init_once(void);
 void memkind_hbw_preferred_init_once(void);
 void memkind_hbw_preferred_hugetlb_init_once(void);
 void memkind_hbw_interleave_init_once(void);
+int memkind_hbw_get_all_nodes_nodemask(int*nodes, int *nodes_no);
 
 extern struct memkind_ops MEMKIND_HBW_OPS;
 extern struct memkind_ops MEMKIND_HBW_ALL_OPS;

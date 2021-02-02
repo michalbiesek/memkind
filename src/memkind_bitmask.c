@@ -139,3 +139,19 @@ int set_bitmask_for_current_numanode(unsigned long *nodemask,
     }
     return MEMKIND_SUCCESS;
 }
+
+int set_all_bitmask(const void *numanode)
+{
+    int cpu_id;
+    int num_cpu = numa_num_configured_cpus();
+    struct bitmask nodemask_bm = {maxnode, nodemask};
+
+    numa_bitmask_clearall(&nodemask_bm);
+    const struct vec_cpu_node *closest_numanode_vec = (const struct vec_cpu_node *) numanode;
+    for (cpu_id = 0; cpu_id < num_cpu; ++cpu_id) {
+        int node = -1;
+        VEC_FOREACH(node, &closest_numanode_vec[cpu_id]) {
+            numa_bitmask_setbit(&nodemask_bm, node);
+        }
+    }
+}

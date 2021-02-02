@@ -430,3 +430,29 @@ MEMKIND_EXPORT void memkind_hbw_interleave_init_once(void)
 {
     memkind_init(MEMKIND_HBW_INTERLEAVE, true);
 }
+
+MEMKIND_EXPORT int memkind_hbw_get_all_nodes_nodemask(int*nodes, int *nodes_no)
+{
+    void* numanodes;
+    int err;
+    err = numa_available();
+    if (err) {
+        return -1;
+    }
+    if (!is_hmat_supported()) {
+        err = set_closest_numanode(memkind_hbw_get_nodemask, &numanodes, NODE_VARIANT_ALL);
+    } else {
+        err = set_closest_numanode_mem_attr(&numanodes, NODE_VARIANT_ALL);
+    if (err){
+        return -1;
+    } else {
+        //iterate over CPU(s)
+        // void set_all_bitmask(unsigned long *nodemask, unsigned long maxnode, const void *numanode)
+
+        // struct bitmask nodemask_bm = {maxnode, nodemask};
+        // copy_bitmask_to_bitmask(numa_all_nodes_ptr, &nodemask_bm);
+        //create bitmask?
+        //parse nodemask
+        return err;
+    }
+}
