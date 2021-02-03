@@ -390,6 +390,8 @@ EXTRA_DIST = CONTRIBUTING \
              memkind.spec.mk \
              test/test.sh \
              test/test_dax_kmem.sh \
+             utils/check_license/check-headers.sh \
+             utils/check_license/file-exceptions.sh \
              utils/docker/Dockerfile.centos-7 \
              utils/docker/Dockerfile.fedora-32 \
              utils/docker/Dockerfile.ubuntu-20.04 \
