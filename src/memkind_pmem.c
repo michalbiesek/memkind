@@ -271,7 +271,7 @@ MEMKIND_EXPORT int memkind_pmem_create(struct memkind *kind,
     return 0;
 
 exit:
-    /* err is set, please don't overwrite it with result of pthread_mutex_destroy */
+    /* err is set, please don't overwrite it's with result of pthread_mutex_destroy */
     pthread_mutex_destroy(&priv->pmem_lock);
     jemk_free(priv);
     return err;
