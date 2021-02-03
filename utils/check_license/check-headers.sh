@@ -1,8 +1,10 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright 2021, Intel Corporation
 
 # check-headers.sh - check copyright and license in source files
+
+set -e
 
 SELF=$0
 
@@ -180,8 +182,6 @@ s/.*Copyright \([0-9]\+\),.*/\1-\1/' $src_path`
 	fi
 done
 rm -f $TMP $TMP2 $TEMPFILE
-
-$(dirname "$0")/check-ms-license.pl $FILES
 
 # check if error found
 if [ $RV -eq 0 ]; then

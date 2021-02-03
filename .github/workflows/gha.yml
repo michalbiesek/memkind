@@ -5,7 +5,9 @@ jobs:
 
   linting:
     runs-on: ubuntu-20.04
-    name: Code Linting - Astyle
+    name: Code Linting
+    env:
+      LICENSE_TAG: BSD-3-Clause
     steps:
 
     - name: Install astyle
@@ -13,9 +15,14 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
 
     - name: Run Astyle
       run: ./astyle.sh
+
+    - name: Check license headers
+      run: ./utils/check_license/check-headers.sh . ${{ env.LICENSE_TAG }}
 
   building:
     runs-on: ${{ matrix.os }}
