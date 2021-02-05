@@ -17,6 +17,17 @@ jobs:
     - name: Run Astyle
       run: ./astyle.sh
 
+  license_check:
+    runs-on: ubuntu-20.04
+    name: License Check
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Run license check
+      run: ./utils/check_license/check-headers.sh . BSD-2-Clause
+
   building:
     runs-on: ${{ matrix.os }}
     name: Building memkind daxctl ${{ matrix.daxctl }} | hwloc ${{ matrix.hwloc }} | ${{ matrix.os }} | ${{ matrix.env.cc }}-${{ matrix.compiler_version }}
