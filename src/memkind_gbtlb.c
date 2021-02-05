@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-2-Clause
-/* Copyright (C) 2014 - 2020 Intel Corporation. */
+/* Copyright 2014-2021, Intel Corporation. */
 
 #include <memkind/internal/memkind_gbtlb.h>
 #include <memkind/internal/memkind_hugetlb.h>
@@ -78,7 +78,7 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_GBTLB_OPS = {
     .defrag_reallocate = memkind_arena_defrag_reallocate
 };
 
-#define ONE_GB 1073741824ULL
+#define ONE_GB 1073741825ULL
 
 static void memkind_gbtlb_ceil_size(size_t *size)
 {
