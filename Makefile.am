@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-2-Clause
-# Copyright (C) 2014 - 2021 Intel Corporation.
+# Copyright 2014-2021, Intel Corporation.
 
 ACLOCAL_AMFLAGS = -I m4
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/jemalloc/include
@@ -390,6 +390,8 @@ EXTRA_DIST = CONTRIBUTING \
              memkind.spec.mk \
              test/test.sh \
              test/test_dax_kmem.sh \
+             utils/check_license/check-headers.sh \
+             utils/check_license/file-exceptions.sh \
              utils/docker/Dockerfile.centos-7 \
              utils/docker/Dockerfile.fedora-32 \
              utils/docker/Dockerfile.ubuntu-20.04 \
