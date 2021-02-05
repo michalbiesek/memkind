@@ -3,6 +3,7 @@
 # Copyright 2021, Intel Corporation
 
 # check-headers.sh - check copyright and license in source files
+set -e
 
 SELF=$0
 

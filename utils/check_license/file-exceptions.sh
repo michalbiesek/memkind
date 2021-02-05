@@ -4,5 +4,6 @@
 #
 
 # file-exceptions.sh - filter out files not checked for copyright and license
+set -e
 
 grep -v -E -e 'jemalloc'

@@ -24,9 +24,11 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
 
     - name: Run license check
-      run: ./utils/check_license/check-headers.sh . BSD-2-Clause
+      run: ./utils/check_license/check-headers.sh . BSD-2-Clause -v
 
   building:
     runs-on: ${{ matrix.os }}
