@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-/* Copyright (C) 2019 - 2020 Intel Corporation. */
+/* Copyright 2019-2020, Intel Corporation. */
 
 #include <memkind.h>
 
@@ -9,7 +9,7 @@
 
 static char path[PATH_MAX]="/tmp/";
 
-#define MALLOC_SIZE 512U
+#define MALLOC_SIZE 513U
 #define REALLOC_SIZE 2048U
 #define ALLOC_LIMIT  1000U
 
