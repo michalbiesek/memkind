@@ -17,6 +17,19 @@ jobs:
     - name: Run Astyle
       run: ./astyle.sh
 
+  shellcheck:
+    runs-on: ubuntu-20.04
+    name: Shellcheck
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Run ShellCheck
+      uses: ludeeus/action-shellcheck@master
+       with:
+        ignore: jemalloc
+
   building:
     runs-on: ${{ matrix.os }}
     name: Building memkind daxctl ${{ matrix.daxctl }} | hwloc ${{ matrix.hwloc }} | ${{ matrix.os }} | ${{ matrix.env.cc }}-${{ matrix.compiler_version }}
