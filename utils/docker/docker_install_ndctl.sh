@@ -24,14 +24,14 @@ if [[ $(cat /etc/os-release) = *"fedora"* ]]; then
   VERSION=$(./git-version)
   RPMDIR=$HOME/rpmbuild/
 
-  git archive --format=tar --prefix="ndctl-${VERSION}/" HEAD | gzip > "$RPMDIR/SOURCES/ndctl-${VERSION}.tar.gz"
+  git archive --format=tar --prefix="ndctl-${VERSION}/" HEAD | gzip > "${RPMDIR}/SOURCES/ndctl-${VERSION}.tar.gz"
 
   ./autogen.sh
   ./configure --prefix=/usr --sysconfdir=/etc --libdir=/usr/lib64 --disable-docs
   make -j "$(nproc)"
   ./rpmbuild.sh
   RPM_ARCH=$(uname -m)
-  sudo rpm -i $RPMDIR/RPMS/$RPM_ARCH/*.rpm
+  sudo rpm -i "$RPMDIR"/RPMS/"$RPM_ARCH"/*.rpm
 
 else
   ./autogen.sh

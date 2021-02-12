@@ -349,7 +349,7 @@ for i in ${!PYTEST_FILES[*]}; do
     emit
     emit "### Processing pytest file '$PTEST_BINARY_PATH' ###"
     IFS=$'\n'
-    for LINE in $(py.test $PTEST_BINARY_PATH --collect-only); do
+    for LINE in $(py.test "$PTEST_BINARY_PATH" --collect-only); do
         if [[ $LINE == *"<Class "* ]]; then
             TEST_SUITE=$(sed "s/^.*'\(.*\)'.*$/\1/" <<< $LINE)
         elif [[ $LINE == *"<Function "* ]]; then

@@ -15,7 +15,7 @@ if [ ! -f VERSION ]; then
         sha=$(git describe --long | awk -F- '{print $(NF)}')
         release=$(git describe --long | awk -F- '{print $(NF-1)}')
         version=$(git describe --long | sed -e "s|\(.*\)-$release-$sha|\1|" -e "s|-|+|g" -e "s|^v||")
-        if [ ${release} != "0" ]; then
+        if [ "${release}" != "0" ]; then
             echo "WARNING: No annotated tag referring to this commit was found, setting version to development build " 2>&1
             version=${version}+dev${release}+${sha}
         else

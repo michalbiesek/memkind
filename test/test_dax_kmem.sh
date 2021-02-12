@@ -1,6 +1,6 @@
 #!/bin/bash
 # SPDX-License-Identifier: BSD-2-Clause
-# Copyright (C) 2019 - 2020 Intel Corporation.
+# Copyright (C) 2019 - 2021 Intel Corporation.
 
 basedir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROGNAME=`basename $0`
@@ -48,10 +48,10 @@ function normalize_path {
         usage
         exit 1
     fi
-    if [[ $PATH != /* ]]; then
+    if [[ "$PATH" != /* ]]; then
         PATH=`pwd`/$PATH
     fi
-    echo $PATH
+    echo "$PATH"
 }
 
 function show_skipped_tests()
@@ -77,7 +77,7 @@ function show_skipped_tests()
     for i in ${!PYTEST_FILES[*]}; do
         PTEST_BINARY_PATH=$TEST_PATH${PYTEST_FILES[$i]}
         IFS=$'\n'
-        for LINE in $(py.test $PTEST_BINARY_PATH --collect-only); do
+        for LINE in $(py.test "$PTEST_BINARY_PATH" --collect-only); do
             if [[ $LINE == *"<Class "* ]]; then
                 TEST_SUITE=$(sed "s/^.*'\(.*\)'.*$/\1/" <<< $LINE)
             elif [[ $LINE == *"<Function "* ]]; then
@@ -224,8 +224,8 @@ done
 TEST_PATH=`normalize_path "$TEST_PATH"`
 
 # Clear any remnants of previous execution(s)
-rm -rf $CSV
-rm -rf $LOG_FILE
+rm -rf "$CSV"
+rm -rf "$LOG_FILE"
 
 # Run tests written in gtest
 for i in ${!GTEST_BINARIES[*]}; do
