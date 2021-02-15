@@ -2,6 +2,7 @@
 #define JEMALLOC_INTERNAL_BACKGROUND_THREAD_EXTERNS_H
 
 extern bool opt_background_thread;
+extern ssize_t opt_background_thread_hpa_interval_max_ms;
 extern size_t opt_max_background_threads;
 extern malloc_mutex_t background_thread_lock;
 extern atomic_b_t background_thread_enabled_state;
@@ -13,7 +14,7 @@ bool background_thread_create(tsd_t *tsd, unsigned arena_ind);
 bool background_threads_enable(tsd_t *tsd);
 bool background_threads_disable(tsd_t *tsd);
 void background_thread_interval_check(tsdn_t *tsdn, arena_t *arena,
-    arena_decay_t *decay, size_t npages_new);
+    decay_t *decay, size_t npages_new);
 void background_thread_prefork0(tsdn_t *tsdn);
 void background_thread_prefork1(tsdn_t *tsdn);
 void background_thread_postfork_parent(tsdn_t *tsdn);
@@ -27,6 +28,6 @@ extern int pthread_create_wrapper(pthread_t *__restrict, const pthread_attr_t *,
     void *(*)(void *), void *__restrict);
 #endif
 bool background_thread_boot0(void);
-bool background_thread_boot1(tsdn_t *tsdn);
+bool background_thread_boot1(tsdn_t *tsdn, base_t *base);
 
 #endif /* JEMALLOC_INTERNAL_BACKGROUND_THREAD_EXTERNS_H */
