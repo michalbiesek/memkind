@@ -257,12 +257,8 @@ size_classes(
 
 void
 sc_data_init(sc_data_t *sc_data) {
-	assert(!sc_data->initialized);
-
-	int lg_max_lookup = 12;
-
 	size_classes(sc_data, LG_SIZEOF_PTR, LG_QUANTUM, SC_LG_TINY_MIN,
-	    lg_max_lookup, LG_PAGE, 2);
+	    SC_LG_MAX_LOOKUP, LG_PAGE, SC_LG_NGROUP);
 
 	sc_data->initialized = true;
 }
