@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "memkind_arena.h": "c",
+        "condition_variable": "c",
+        "forward_list": "c",
+        "*.tcc": "c",
+        "fstream": "c",
+        "mutex": "c",
+        "ostream": "c"
+    }
+}
