@@ -5,11 +5,26 @@
 
 #include <memkind/internal/memkind_arena.h>
 
+struct memtier_registry {
+    // struct memtier_tier *partition_map[MEMKIND_MAX_KIND];
+    int num_tier;
+    pthread_mutex_t lock;
+};
+
+
+// translate kind to assigned memtier
+static struct memtier_registry memtier_registry_g = {
+    // {NULL},
+    0,
+    PTHREAD_MUTEX_INITIALIZER,
+};
+
 MEMKIND_EXPORT struct memtier_tier *memtier_tier_new(memkind_t kind)
 {
     struct memtier_tier *tier = jemk_malloc(sizeof(struct memtier_tier));
     if(tier)
         tier->kind = kind;
+        (void)(memtier_registry_g);
     return tier;
 }
 
