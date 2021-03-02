@@ -557,6 +557,7 @@ unit_tests_dax_kmem: checkprogs
 	test/test_dax_kmem.sh
 
 unit_tests_tiering: tiering/libmemtier.la
+	test/memkind_memtier_test
 	pytest -s test/tiering_tests.py
 
 code-style-check:
