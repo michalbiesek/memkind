@@ -17,30 +17,37 @@ private:
 
 class MemkindMemtierBuildertest: public ::testing::Test
 {
+private:
+    struct memtier_tier *m_tier_default;
+    struct memtier_tier *m_tier_regular;
+
 protected:
-    struct memtier_tier *m_tier;
-    struct memtier_builder *m_builder;
     struct memtier_kind *m_tier_kind;
 
     void SetUp()
     {
-        m_tier = memtier_tier_new(MEMKIND_DEFAULT);
-        m_builder = memtier_builder();
-        ASSERT_NE(nullptr, m_tier);
-        ASSERT_NE(nullptr, m_builder);
+        m_tier_default = memtier_tier_new(MEMKIND_DEFAULT);
+        m_tier_regular = memtier_tier_new(MEMKIND_REGULAR);
+        struct memtier_builder * builder = memtier_builder();
+        ASSERT_NE(nullptr, m_tier_default);
+        ASSERT_NE(nullptr, builder);
 
-        int res = memtier_builder_add_tier(m_builder, m_tier, 1);
+        int res = memtier_builder_add_tier(builder, m_tier_default, 1);
         ASSERT_EQ(0, res);
-        res = memtier_builder_set_policy(m_builder, MEMTIER_DUMMY_VALUE);
+        res = memtier_builder_add_tier(builder, m_tier_regular, 1000);
         ASSERT_EQ(0, res);
-        res = memtier_builder_construct_kind(m_builder, &m_tier_kind);
+        res = memtier_builder_set_policy(builder, MEMTIER_DUMMY_VALUE);
+        ASSERT_EQ(0, res);
+        res = memtier_builder_construct_kind(builder, &m_tier_kind);
         ASSERT_EQ(0, res);
     }
 
     void TearDown()
     {
         memtier_delete_kind(m_tier_kind);
-        memtier_tier_delete(m_tier);
+        memtier_tier_delete(m_tier_default);
+        memtier_tier_delete(m_tier_regular);
+
     }
 };
 
