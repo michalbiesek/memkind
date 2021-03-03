@@ -55,6 +55,26 @@ functionality is considered as stable API (STANDARD API).
 .sp
 .br
 .SH "DESCRIPTION"
+.PP
+.B "HEAP MANAGEMENT:"
+.br
+The functions described in this section define a heap manager with an
+interface modeled on the ISO C standard API's, except that the user
+must specify the
+.IR "tiering kind"
+or
+.IR "tier"
+of memory with the first argument to each function.
+.I "tier"
+is containter for memory kind responsible for tracking total size of allocated memory, used by specified
+.IR "tier" .
+See section
+.BR KINDS
+of
+.BR memkind (3)
+for more details about memory kind.
+.I "tiering kind"
+
 .SH "COPYRIGHT"
 Copyright (C) 2021 Intel Corporation. All rights reserved.
 .SH "SEE ALSO"
