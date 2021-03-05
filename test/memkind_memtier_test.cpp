@@ -123,8 +123,21 @@ TEST_F(MemkindMemtierTest, test_tier_builder_set_policy_failure)
 
 TEST_F(MemkindMemtierTest, test_tier_free_nullptr)
 {
-    for (int i = 0; i < 512; i++) {
+    for (int i = 0; i < 512; ++i) {
         memtier_free(nullptr);
+    }
+}
+
+TEST_F(MemkindMemtierTest, test_tier_builder_dynamic_kind)
+{
+    struct memkind *pmem_kind = NULL;
+    for (int i = 0; i < 4096; ++i) {
+        int res = memkind_create_pmem("/tmp/", 0, &pmem_kind);
+        ASSERT_EQ(0, res);
+        struct memtier_tier *pmem_tier = memtier_tier_new(pmem_kind);
+        memtier_tier_delete(pmem_tier);
+        res = memkind_destroy_kind(pmem_kind);
+        ASSERT_EQ(0, res);
     }
 }
 
