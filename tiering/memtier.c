@@ -101,8 +101,8 @@ static int create_tiered_kind_from_env(char *env_var_string)
 {
     char *kind_name = NULL;
     char *pmem_path = NULL;
-    char *pmem_size = NULL;
-    unsigned ratio_value = -1;
+    size_t pmem_size;
+    unsigned ratio_value;
     struct memtier_builder *builder = NULL;
 
     int ret = ctl_load_config(env_var_string, &kind_name, &pmem_path,
@@ -113,7 +113,7 @@ static int create_tiered_kind_from_env(char *env_var_string)
 
     log_debug("kind_name: %s", kind_name);
     log_debug("pmem_path: %s", pmem_path);
-    log_debug("pmem_size: %s", pmem_size);
+    log_debug("pmem_size: %zu", pmem_size);
     log_debug("ratio_value: %u", ratio_value);
 
     // TODO add "DRAM" -> MEMKIND_DEFAULT etc. mapping logic
