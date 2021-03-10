@@ -274,6 +274,12 @@ class Test_tiering_config_env(Helper):
         assert output[0] == self.log_error_prefix + \
             "Unsupported ratio: -1", "Wrong message"
 
+    def test_negative_missing_mem_tiering_confg(self):
+        output = self.get_ld_preload_cmd_output("", validate_retcode=False)
+
+        assert output[0] == self.log_error_prefix + \
+            "Missing MEMKIND_MEM_TIERING_CONFIG env var."
+
     @pytest.mark.parametrize("config_str", ["", ",", ",,,"])
     def test_negative_config_str_invalid(self, config_str):
         output = self.get_ld_preload_cmd_output(
