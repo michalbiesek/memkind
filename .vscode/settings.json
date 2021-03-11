@@ -1,0 +1,5 @@
+{
+    "files.associations": {
+        "memtier_log.h": "c"
+    }
+}

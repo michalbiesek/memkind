@@ -5,7 +5,6 @@
 
       "memory": 2048,
       "disk_size": "30G",
-      "accelerator": "kvm",
       "vm_name": "ubuntu-1804.img",
       "iso_url": "http://cdimage.ubuntu.com/ubuntu/releases/18.04/release/ubuntu-18.04.5-server-amd64.iso",
       "iso_checksum": "file:http://cdimage.ubuntu.com/ubuntu/releases/18.04/release/SHA256SUMS",
@@ -38,7 +37,7 @@
 
       "ssh_username": "{{ user `ssh_username` }}",
       "ssh_password": "{{ user `ssh_password` }}",
-      "ssh_timeout": "10m",
+      "ssh_timeout": "30m",
 
       "headless": true,
       "ssh_pty": true

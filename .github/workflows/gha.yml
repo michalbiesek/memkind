@@ -5,7 +5,7 @@ jobs:
 
   linting:
     runs-on: ubuntu-20.04
-    name: Code Linting - clang-format
+    name: Code Linting
     steps:
 
     - name: Install basic dependencies
@@ -16,24 +16,17 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Run code-style check
+    - name: Code Linting - Codespell
+      uses: codespell-project/actions-codespell@master
+      with:
+        skip: ./jemalloc,./test/gtest_fused/gtest,./.github/workflows/gha.yml
+        ignore_words_list: "ue"
+
+    - name: Run code-style - clang-format
       run: |
         ./autogen.sh
         ./configure
         make code-style-check
-
-  codespell:
-    runs-on: ubuntu-20.04
-    name: Code Linting - Codespell
-    steps:
-
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - uses: codespell-project/actions-codespell@master
-      with:
-        skip: ./jemalloc,./test/gtest_fused/gtest,./.github/workflows/gha.yml
-        ignore_words_list: "ue"
 
   docker-build:
     runs-on: ${{ matrix.os }}
@@ -64,6 +57,31 @@ jobs:
           else
             sudo --preserve-env=MEMKIND_HOST_WORKDIR,ENABLE_HWLOC "${{ env.DOCKER_RUN_SCRIPT }}" "${{ env.DOCKER_IMAGE_FULL_PATH }}"
           fi
+
+  packer-build:
+    runs-on: ${{ matrix.os }}
+    name: Packer build Ubuntu 18.04
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+    steps:
+
+      - name: Install basic dependencies
+        run: sudo apt install qemu-kvm qemu libvirt-daemon-system
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Use latest Packer
+        uses: hashicorp-contrib/setup-packer@v1
+        with:
+          packer-version: 1.7.0
+      - name: Build image from template
+        run: |
+            cd utils/qemu
+            sudo PACKER_LOG=1 packer build ubuntu-packer.json
 
   building:
     runs-on: ${{ matrix.os }}
