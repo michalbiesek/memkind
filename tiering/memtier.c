@@ -17,7 +17,6 @@
 #define MEMTIER_UNLIKELY(x) __builtin_expect((x), 0)
 
 static int initialized;
-static int destructed;
 
 // TODO create structure to keep kind + multiple tiers
 static struct memtier_kind *current_kind;
@@ -27,11 +26,10 @@ MEMTIER_EXPORT void *malloc(size_t size)
 {
     void *ret = NULL;
 
-    if (MEMTIER_LIKELY(initialized)) {
+    if (MEMTIER_LIKELY(initialized))
         ret = memtier_kind_malloc(current_kind, size);
-    } else if (destructed == 0) {
+    else
         ret = memkind_malloc(MEMKIND_DEFAULT, size);
-    }
 
     // TODO after implementation of decorators memtier decorators this
     // logging call will be obsolete
@@ -43,11 +41,10 @@ MEMTIER_EXPORT void *calloc(size_t num, size_t size)
 {
     void *ret = NULL;
 
-    if (MEMTIER_LIKELY(initialized)) {
+    if (MEMTIER_LIKELY(initialized))
         ret = memtier_kind_calloc(current_kind, num, size);
-    } else if (destructed == 0) {
+    else
         ret = memkind_calloc(MEMKIND_DEFAULT, num, size);
-    }
 
     log_debug("calloc(%zu, %zu) = %p", num, size, ret);
     return ret;
@@ -57,11 +54,10 @@ MEMTIER_EXPORT void *realloc(void *ptr, size_t size)
 {
     void *ret = NULL;
 
-    if (MEMTIER_LIKELY(initialized)) {
+    if (MEMTIER_LIKELY(initialized))
         ret = memtier_kind_realloc(current_kind, ptr, size);
-    } else if (destructed == 0) {
+    else
         ret = memkind_realloc(MEMKIND_DEFAULT, ptr, size);
-    }
 
     log_debug("realloc(%p, %zu) = %p", ptr, size, ret);
     return ret;
@@ -72,13 +68,12 @@ MEMTIER_EXPORT int posix_memalign(void **memptr, size_t alignment, size_t size)
 {
     int ret = 0;
 
-    if (MEMTIER_LIKELY(initialized)) {
+    if (MEMTIER_LIKELY(initialized))
         ret = memtier_kind_posix_memalign(current_kind, memptr, alignment,
                                           size);
-    } else if (destructed == 0) {
+    else
         ret = memkind_posix_memalign(MEMKIND_DEFAULT, memptr, alignment,
                                      size);
-    }
 
     log_debug("posix_memalign(%p, %zu, %zu) = %d",
               memptr, alignment, size, ret);
@@ -90,11 +85,10 @@ MEMTIER_EXPORT void free(void *ptr)
 {
     log_debug("free(%p)", ptr);
 
-    if (MEMTIER_LIKELY(initialized)) {
+    if (MEMTIER_LIKELY(initialized))
         memtier_free(ptr);
-    } else if (destructed == 0) {
+    else
         memkind_free(MEMKIND_DEFAULT, ptr);
-    }
 }
 
 static int create_tiered_kind_from_env(char *env_var_string)
@@ -186,6 +180,5 @@ static MEMTIER_FINI void memtier_fini(void)
         memtier_delete_kind(current_kind);
     }
 
-    destructed = 1;
     initialized = 0;
 }
