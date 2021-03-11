@@ -35,6 +35,23 @@ jobs:
         skip: ./jemalloc,./test/gtest_fused/gtest,./.github/workflows/gha.yml
         ignore_words_list: "ue"
 
+  rpm_build_check:
+    runs-on: ubuntu-20.04
+    name: Test RPM build
+    env:
+        DOCKER_PREFIX: /utils/docker/
+        DOCKER_IMAGE_NAME:  ${{ DOCKER_PREFIX }}Dockerfile.fedora-32
+        DOCKER_USER: memkinduser
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Setup permissions for Docker User
+      run: sudo chown --recursive  ${{ DOCKER_USER }}
+
   building:
     runs-on: ${{ matrix.os }}
     name: Building memkind daxctl ${{ matrix.daxctl }} | hwloc ${{ matrix.hwloc }} | ${{ matrix.os }} | ${{ matrix.env.cc }}-${{ matrix.compiler_version }}
