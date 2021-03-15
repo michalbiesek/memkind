@@ -122,6 +122,12 @@ static int create_tiered_kind_from_env(char *env_var_string)
         return -1;
     }
 
+    // initialize all memory kinds since libnuma/libhwloc API could call malloc
+    ret = memkind_check_available(MEMKIND_DEFAULT);
+    if (ret != 0) {
+        goto tier_delete;
+    };
+
     builder = memtier_builder_new();
     if (!builder) {
         ret = -1;
