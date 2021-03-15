@@ -118,12 +118,13 @@ struct memtier_tier_cfg {
 
 struct memtier_builder {
     unsigned size;                // Number of memory tiers
-    unsigned policy;              // #TODO handle the logic here
+    unsigned policy;              // Tiering policy
     struct memtier_tier_cfg *cfg; // Memory Tier configuration
 };
 
 struct memtier_kind {
-    struct memtier_builder *builder; // #TODO handle the logic here
+    struct memtier_builder *builder; // Tiering kind configuration
+    unsigned tier_id; // Id of current tier to allocate TODO REMOVE THIS!!!
 };
 
 void memkind_init(memkind_t kind, bool check_numa);

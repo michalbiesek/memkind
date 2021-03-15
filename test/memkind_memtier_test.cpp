@@ -37,7 +37,7 @@ protected:
         ASSERT_EQ(0, res);
         res = memtier_builder_add_tier(builder, m_tier_regular, 1000);
         ASSERT_EQ(0, res);
-        res = memtier_builder_set_policy(builder, MEMTIER_DUMMY_VALUE);
+        res = memtier_builder_set_policy(builder, MEMTIER_POLICY_CIRCULAR);
         ASSERT_EQ(0, res);
         res = memtier_builder_construct_kind(builder, &m_tier_kind);
         ASSERT_EQ(0, res);
@@ -158,10 +158,10 @@ TEST_F(MemkindMemtierBuilderTest, test_tier_builder_allocation_test_success)
     memtier_free(ptr);
     ptr = memtier_kind_calloc(m_tier_kind, size, size);
     ASSERT_NE(nullptr, ptr);
-    ASSERT_EQ(MEMKIND_DEFAULT, memkind_detect_kind(ptr));
+    ASSERT_EQ(MEMKIND_REGULAR, memkind_detect_kind(ptr));
     void *new_ptr = memtier_kind_realloc(m_tier_kind, ptr, size);
     ASSERT_NE(nullptr, new_ptr);
-    ASSERT_EQ(MEMKIND_DEFAULT, memkind_detect_kind(ptr));
+    ASSERT_EQ(MEMKIND_REGULAR, memkind_detect_kind(ptr));
     memtier_free(new_ptr);
     int err = memtier_kind_posix_memalign(m_tier_kind, &ptr, 64, 32);
     ASSERT_EQ(0, err);
