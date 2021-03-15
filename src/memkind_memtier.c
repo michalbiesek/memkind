@@ -111,6 +111,10 @@ memtier_builder_construct_kind(struct memtier_builder *builder,
                                struct memtier_kind **kind)
 {
     unsigned i;
+    if (builder->size == 0) {
+        return -1;
+    }
+
     *kind = jemk_malloc(sizeof(*kind));
     if (!*kind) {
         log_err("malloc() failed.");
