@@ -16,20 +16,17 @@
 #define MEMTIER_LIKELY(x)   __builtin_expect((x), 1)
 #define MEMTIER_UNLIKELY(x) __builtin_expect((x), 0)
 
-static int initialized;
-static int destructed;
-
 // TODO create structure to keep kind + multiple tiers
 static struct memtier_kind *current_kind;
 static struct memtier_tier *current_tier;
 
 MEMTIER_EXPORT void *malloc(size_t size)
 {
-    void *ret = NULL;
+    void *ret;
 
-    if (MEMTIER_LIKELY(initialized)) {
+    if (current_kind) {
         ret = memtier_kind_malloc(current_kind, size);
-    } else if (destructed == 0) {
+    } else {
         ret = memkind_malloc(MEMKIND_DEFAULT, size);
     }
 
@@ -41,11 +38,11 @@ MEMTIER_EXPORT void *malloc(size_t size)
 
 MEMTIER_EXPORT void *calloc(size_t num, size_t size)
 {
-    void *ret = NULL;
+    void *ret;
 
-    if (MEMTIER_LIKELY(initialized)) {
+    if (current_kind) {
         ret = memtier_kind_calloc(current_kind, num, size);
-    } else if (destructed == 0) {
+    } else {
         ret = memkind_calloc(MEMKIND_DEFAULT, num, size);
     }
 
@@ -55,11 +52,11 @@ MEMTIER_EXPORT void *calloc(size_t num, size_t size)
 
 MEMTIER_EXPORT void *realloc(void *ptr, size_t size)
 {
-    void *ret = NULL;
+    void *ret;
 
-    if (MEMTIER_LIKELY(initialized)) {
+    if (current_kind) {
         ret = memtier_kind_realloc(current_kind, ptr, size);
-    } else if (destructed == 0) {
+    } else {
         ret = memkind_realloc(MEMKIND_DEFAULT, ptr, size);
     }
 
@@ -70,12 +67,12 @@ MEMTIER_EXPORT void *realloc(void *ptr, size_t size)
 // clang-format off
 MEMTIER_EXPORT int posix_memalign(void **memptr, size_t alignment, size_t size)
 {
-    int ret = 0;
+    int ret;
 
-    if (MEMTIER_LIKELY(initialized)) {
+    if (current_kind) {
         ret = memtier_kind_posix_memalign(current_kind, memptr, alignment,
                                           size);
-    } else if (destructed == 0) {
+    } else {
         ret = memkind_posix_memalign(MEMKIND_DEFAULT, memptr, alignment,
                                      size);
     }
@@ -90,9 +87,9 @@ MEMTIER_EXPORT void free(void *ptr)
 {
     log_debug("free(%p)", ptr);
 
-    if (MEMTIER_LIKELY(initialized)) {
+    if (current_kind) {
         memtier_free(ptr);
-    } else if (destructed == 0) {
+    } else {
         memkind_free(MEMKIND_DEFAULT, ptr);
     }
 }
@@ -171,7 +168,6 @@ static MEMTIER_INIT void memtier_init(void)
             log_err("Couldn't load MEMKIND_MEM_TIERING_CONFIG env var");
             abort();
         } else {
-            initialized = 1;
         }
     }
 }
@@ -185,7 +181,5 @@ static MEMTIER_FINI void memtier_fini(void)
         memtier_tier_delete(current_tier);
         memtier_delete_kind(current_kind);
     }
-
-    destructed = 1;
-    initialized = 0;
+    current_kind = NULL;
 }
