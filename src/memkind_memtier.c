@@ -21,7 +21,7 @@ static struct memtier_registry memtier_registry_g = {
 };
 
 // TODO REMOVE THIS !!!!
-static int tier_id;
+// static int tier_id;
 
 MEMKIND_EXPORT struct memtier_tier *memtier_tier_new(memkind_t kind)
 {
@@ -106,7 +106,9 @@ MEMKIND_EXPORT int memtier_builder_set_policy(struct memtier_builder *builder,
 static inline memkind_t get_memtier_kind(struct memtier_kind *tier_kind)
 {
     if (tier_kind->builder->policy == MEMTIER_POLICY_CIRCULAR) {
-        unsigned temp_id = (tier_id++) % tier_kind->builder->size;
+        unsigned temp_id = (tier_kind->id);
+        tier_kind->id +=1;
+        tier_kind->id %= tier_kind->builder->size;
         return tier_kind->builder->cfg[temp_id].tier->kind;
     }
     // not reached
@@ -148,7 +150,7 @@ memtier_builder_construct_kind(struct memtier_builder *builder,
         (*kind)->builder->cfg[i].tier = builder->cfg[i].tier;
         (*kind)->builder->cfg[i].tier_ratio = builder->cfg[i].tier_ratio;
     }
-    tier_id = 0;
+    (*kind)->id = 0;
     return 0;
 
 free_builder:

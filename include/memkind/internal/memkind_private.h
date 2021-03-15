@@ -123,6 +123,7 @@ struct memtier_builder {
 };
 
 struct memtier_kind {
+    unsigned id;
     struct memtier_builder *builder; // Tiering kind configuration
 };
 

@@ -10,7 +10,7 @@
 #include <pthread.h>
 
 #define MEMTIER_EXPORT __attribute__((visibility("default")))
-#define MEMTIER_INIT   __attribute__((constructor))
+#define MEMTIER_INIT   __attribute__((constructor(101)))
 #define MEMTIER_FINI   __attribute__((destructor))
 
 #define MEMTIER_LIKELY(x)   __builtin_expect((x), 1)
