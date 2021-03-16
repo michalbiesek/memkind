@@ -159,6 +159,7 @@ static pthread_once_t init_once = PTHREAD_ONCE_INIT;
 
 static MEMTIER_INIT void memtier_init(void)
 {
+    destructed = 0;
     pthread_once(&init_once, log_init_once);
     log_info("Memkind memtier lib loaded!");
 
