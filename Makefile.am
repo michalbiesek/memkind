@@ -62,6 +62,7 @@ noinst_HEADERS =  include/memkind/internal/heap_manager.h \
                   include/memkind/internal/tbb_mem_pool_policy.h \
                   include/memkind/internal/tbb_wrapper.h \
                   include/memkind/internal/vec.h \
+                  tiering/memtier_log.h \
                   # end
 
 EXTRA_DIST = CONTRIBUTING \
