@@ -2,6 +2,7 @@
 /* Copyright (C) 2021 Intel Corporation. */
 
 #include <memkind_memtier.h>
+#include <thread>
 
 #include "common.h"
 
@@ -268,38 +269,6 @@ TEST_F(MemkindMemtierKindTest, test_tier_check_size_calloc_kind)
     ASSERT_EQ(0U, memtier_tier_allocated_size(m_tier_regular));
 }
 
-TEST_F(MemkindMemtierKindTest, test_tier_check_size_calloc_kind)
-{
-    unsigned i;
-    const size_t size_default = 1024;
-    const size_t num = 10;
-    const size_t size_regular = 4096;
-    const size_t alloc_no = 512;
-    size_t counter = 0;
-    std::vector<void *> kind_vec;
-
-    for (i = 0; i < alloc_no; ++i) {
-        void *ptr = memtier_kind_realloc(m_tier_kind, num, size_default);
-        ASSERT_NE(ptr, nullptr);
-        kind_vec.push_back(ptr);
-        counter += memtier_usable_size(ptr);
-
-        ptr = memtier_kind_calloc(m_tier_kind, num, size_regular);
-        ASSERT_NE(ptr, nullptr);
-        kind_vec.push_back(ptr);
-        counter += memtier_usable_size(ptr);
-    }
-
-    size_t sum = memtier_tier_allocated_size(m_tier_default) + memtier_tier_allocated_size(m_tier_regular);
-    ASSERT_EQ(sum, counter);
-
-    for (auto const &ptr : kind_vec) {
-        memtier_free(ptr);
-    }
-    ASSERT_EQ(0U, memtier_tier_allocated_size(m_tier_default));
-    ASSERT_EQ(0U, memtier_tier_allocated_size(m_tier_regular));
-}
-
 TEST_F(MemkindMemtierKindTest, test_tier_check_size_malloc)
 {
     unsigned i;
@@ -338,5 +307,36 @@ TEST_F(MemkindMemtierKindTest, test_tier_check_size_malloc)
     ASSERT_EQ(0U, memtier_tier_allocated_size(m_tier_regular));
 }
 
+TEST_F(MemkindMemtierKindTest, test_thread_check)
+{
+    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    const size_t num_threads = 1000;
+    const size_t iteration_count = 5000;
+    const size_t alloc_size = 16;
+    const size_t max_size = alloc_size * num_threads * iteration_count;
+    std::vector<std::thread> thds;
+    std::vector<void *> alloc_vec;
+    alloc_vec.reserve(num_threads * iteration_count);
+
+    for (size_t i = 0; i < num_threads; ++i) {
+        thds.push_back(std::thread([&]() {
+            for (size_t j = 0; j < iteration_count; ++j) {
+                void *ptr = memtier_kind_malloc(m_tier_kind, alloc_size);
+                pthread_mutex_lock(&mutex);
+                alloc_vec.push_back(ptr);
+                pthread_mutex_unlock(&mutex);
+            }
+        }));
+    }
+    for (size_t i = 0; i < num_threads; ++i) {
+        thds[i].join();
+    }
+    size_t sum = memtier_tier_allocated_size(m_tier_default) + memtier_tier_allocated_size(m_tier_regular);
+    ASSERT_EQ(max_size, sum);
+
+    for (auto const &ptr : alloc_vec) {
+        memtier_free(ptr);
+    }
+}
 //realloc 3 variants
 //posix_memalign
