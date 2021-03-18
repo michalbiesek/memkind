@@ -15,14 +15,12 @@ private:
     {}
 };
 
-class MemkindMemtierBuilderTest: public ::testing::Test
+class MemkindMemtierKindTest: public ::testing::Test
 {
-private:
-    struct memtier_tier *m_tier_default;
-    struct memtier_tier *m_tier_regular;
-
 protected:
     struct memtier_kind *m_tier_kind;
+    struct memtier_tier *m_tier_default;
+    struct memtier_tier *m_tier_regular;
 
     void SetUp()
     {
@@ -149,7 +147,7 @@ TEST_F(MemkindMemtierTest, test_tier_free_nullptr)
     }
 }
 
-TEST_F(MemkindMemtierBuilderTest, test_tier_builder_allocation_test_success)
+TEST_F(MemkindMemtierKindTest, test_tier_builder_allocation_test_success)
 {
     const size_t size = 512;
     void *ptr = memtier_kind_malloc(m_tier_kind, size);
@@ -168,3 +166,177 @@ TEST_F(MemkindMemtierBuilderTest, test_tier_builder_allocation_test_success)
     ASSERT_EQ(MEMKIND_DEFAULT, memkind_detect_kind(ptr));
     memtier_free(ptr);
 }
+
+TEST_F(MemkindMemtierKindTest, test_tier_check_size_empty_tier)
+{
+    ASSERT_EQ(0U, memtier_tier_allocated_size(m_tier_default));
+    ASSERT_EQ(0U, memtier_tier_allocated_size(m_tier_regular));
+}
+
+TEST_F(MemkindMemtierKindTest, test_tier_check_size_nullptr)
+{
+    void *ptr = memtier_kind_malloc(m_tier_kind, 512);
+    ASSERT_NE(ptr, nullptr);
+    size_t ptr_usable_size = memtier_usable_size(ptr);
+    size_t tier_alloc = memtier_tier_allocated_size(m_tier_default);
+    tier_alloc += memtier_tier_allocated_size(m_tier_regular);
+
+    ASSERT_EQ(ptr_usable_size, tier_alloc);
+    memtier_free(nullptr);
+    tier_alloc = memtier_tier_allocated_size(m_tier_default);
+    tier_alloc += memtier_tier_allocated_size(m_tier_regular);
+    ASSERT_EQ(ptr_usable_size, tier_alloc);
+
+    void *memkind_ptr = memkind_malloc(MEMKIND_DEFAULT, 1024);
+    ASSERT_NE(memkind_ptr, nullptr);
+    tier_alloc = memtier_tier_allocated_size(m_tier_default);
+    tier_alloc += memtier_tier_allocated_size(m_tier_regular);
+    ASSERT_EQ(ptr_usable_size, tier_alloc);
+
+    memkind_free(MEMKIND_DEFAULT, memkind_ptr);
+    tier_alloc = memtier_tier_allocated_size(m_tier_default);
+    tier_alloc += memtier_tier_allocated_size(m_tier_regular);
+    ASSERT_EQ(ptr_usable_size, tier_alloc);
+
+    memtier_free(ptr);
+    tier_alloc = memtier_tier_allocated_size(m_tier_default);
+    tier_alloc += memtier_tier_allocated_size(m_tier_regular);
+    ASSERT_EQ(0U, tier_alloc);
+}
+
+TEST_F(MemkindMemtierKindTest, test_tier_check_size_malloc_kind)
+{
+    unsigned i;
+    const size_t size_default = 1024;
+    const size_t size_regular = 4096;
+    const size_t alloc_no = 512;
+    size_t counter = 0;
+    std::vector<void *> kind_vec;
+
+    for (i = 0; i < alloc_no; ++i) {
+        void *ptr = memtier_kind_malloc(m_tier_kind, size_default);
+        ASSERT_NE(ptr, nullptr);
+        kind_vec.push_back(ptr);
+        counter += memtier_usable_size(ptr);
+
+        ptr = memtier_kind_malloc(m_tier_kind, size_regular);
+        ASSERT_NE(ptr, nullptr);
+        kind_vec.push_back(ptr);
+        counter += memtier_usable_size(ptr);
+    }
+
+    size_t sum = memtier_tier_allocated_size(m_tier_default) + memtier_tier_allocated_size(m_tier_regular);
+    ASSERT_EQ(sum, counter);
+
+    for (auto const &ptr : kind_vec) {
+        memtier_free(ptr);
+    }
+    ASSERT_EQ(0U, memtier_tier_allocated_size(m_tier_default));
+    ASSERT_EQ(0U, memtier_tier_allocated_size(m_tier_regular));
+}
+
+TEST_F(MemkindMemtierKindTest, test_tier_check_size_calloc_kind)
+{
+    unsigned i;
+    const size_t size_default = 1024;
+    const size_t num = 10;
+    const size_t size_regular = 4096;
+    const size_t alloc_no = 512;
+    size_t counter = 0;
+    std::vector<void *> kind_vec;
+
+    for (i = 0; i < alloc_no; ++i) {
+        void *ptr = memtier_kind_calloc(m_tier_kind, num, size_default);
+        ASSERT_NE(ptr, nullptr);
+        kind_vec.push_back(ptr);
+        counter += memtier_usable_size(ptr);
+
+        ptr = memtier_kind_calloc(m_tier_kind, num, size_regular);
+        ASSERT_NE(ptr, nullptr);
+        kind_vec.push_back(ptr);
+        counter += memtier_usable_size(ptr);
+    }
+
+    size_t sum = memtier_tier_allocated_size(m_tier_default) + memtier_tier_allocated_size(m_tier_regular);
+    ASSERT_EQ(sum, counter);
+
+    for (auto const &ptr : kind_vec) {
+        void *new_ptr = memtier_kind_realloc(m_tier_kind, ptr, 0);
+        ASSERT_EQ(new_ptr, nullptr);
+    }
+    ASSERT_EQ(0U, memtier_tier_allocated_size(m_tier_default));
+    ASSERT_EQ(0U, memtier_tier_allocated_size(m_tier_regular));
+}
+
+TEST_F(MemkindMemtierKindTest, test_tier_check_size_calloc_kind)
+{
+    unsigned i;
+    const size_t size_default = 1024;
+    const size_t num = 10;
+    const size_t size_regular = 4096;
+    const size_t alloc_no = 512;
+    size_t counter = 0;
+    std::vector<void *> kind_vec;
+
+    for (i = 0; i < alloc_no; ++i) {
+        void *ptr = memtier_kind_realloc(m_tier_kind, num, size_default);
+        ASSERT_NE(ptr, nullptr);
+        kind_vec.push_back(ptr);
+        counter += memtier_usable_size(ptr);
+
+        ptr = memtier_kind_calloc(m_tier_kind, num, size_regular);
+        ASSERT_NE(ptr, nullptr);
+        kind_vec.push_back(ptr);
+        counter += memtier_usable_size(ptr);
+    }
+
+    size_t sum = memtier_tier_allocated_size(m_tier_default) + memtier_tier_allocated_size(m_tier_regular);
+    ASSERT_EQ(sum, counter);
+
+    for (auto const &ptr : kind_vec) {
+        memtier_free(ptr);
+    }
+    ASSERT_EQ(0U, memtier_tier_allocated_size(m_tier_default));
+    ASSERT_EQ(0U, memtier_tier_allocated_size(m_tier_regular));
+}
+
+TEST_F(MemkindMemtierKindTest, test_tier_check_size_malloc)
+{
+    unsigned i;
+    const size_t size_default = 1024;
+    const size_t size_regular = 4096;
+    const size_t alloc_no = 512;
+    size_t def_counter = 0;
+    size_t reg_counter = 0;
+    std::vector<void *> def_vec;
+    std::vector<void *> reg_vec;
+
+    for (i = 0; i < alloc_no; ++i) {
+        void *ptr = memtier_tier_malloc(m_tier_default, size_default);
+        ASSERT_NE(ptr, nullptr);
+        def_vec.push_back(ptr);
+        def_counter += memtier_usable_size(ptr);
+
+        ptr = memtier_tier_malloc(m_tier_regular, size_regular);
+        ASSERT_NE(ptr, nullptr);
+        reg_vec.push_back(ptr);
+        reg_counter += memtier_usable_size(ptr);
+    }
+
+    ASSERT_EQ(def_counter, memtier_tier_allocated_size(m_tier_default));
+    ASSERT_EQ(reg_counter, memtier_tier_allocated_size(m_tier_regular));
+
+    for (auto const &ptr : def_vec) {
+        void *new_ptr = memtier_tier_realloc(m_tier_default, ptr, 0);
+        ASSERT_EQ(new_ptr, nullptr);
+    }
+    for (auto const &ptr : reg_vec) {
+        void *new_ptr = memtier_tier_realloc(m_tier_regular, ptr, 0);
+        ASSERT_EQ(new_ptr, nullptr);
+    }
+    ASSERT_EQ(0U, memtier_tier_allocated_size(m_tier_default));
+    ASSERT_EQ(0U, memtier_tier_allocated_size(m_tier_regular));
+}
+
+//realloc 3 variants
+//posix_memalign
