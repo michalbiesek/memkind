@@ -557,7 +557,6 @@ unit_tests_dax_kmem: checkprogs
 	test/test_dax_kmem.sh
 
 unit_tests_tiering: tiering/libmemtier.la checkprogs
-	test/memkind_memtier_test
 	PMEM_PATH=$(PMEM_PATH) @pytest@ -rs test/tiering_tests.py
 
 code-style-check:

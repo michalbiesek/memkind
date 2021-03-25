@@ -283,8 +283,11 @@ static memkind_t ctl_get_kind(const ctl_tier_cfg *tier)
         kind = MEMKIND_DEFAULT;
         log_debug("kind_name: memkind_default");
     } else if (strcmp(tier->kind_name, "FS_DAX") == 0) {
+        // kind = MEMKIND_REGULAR;
         memkind_create_pmem(tier->pmem_path, tier->pmem_size, &kind);
         if (kind) {
+            void * ptr = memkind_malloc(kind, 512);
+            memkind_free(kind, ptr);
             ctl_add_pmem_to_fs_dax_reg(kind);
         }
         log_debug("kind_name: FS-DAX");

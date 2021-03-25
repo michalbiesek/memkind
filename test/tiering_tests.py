@@ -302,12 +302,13 @@ class Test_tiering_config_env(Helper):
             "Failed to parse pmem size: " + pmem_size, "Wrong message"
 
     def test_FSDAX_check_only_fs_dax(self):
-        pmem_path = os.environ.get('PMEM_PATH')
-        if not self.check_fs_dax_support():
-            pytest.skip("Missing FS DAX placed on" + pmem_path)
+        # pmem_path = os.environ.get('PMEM_PATH', 'tmp')
+        pmem_path = "/tmp/"
+        # if not self.check_fs_dax_support():
+        #     pytest.skip("Missing FS DAX placed on" + pmem_path)
         self.get_ld_preload_cmd_output(
             "MEMKIND_MEM_TIERING_CONFIG=FS_DAX:" +
-            pmem_path + ":1G:1," + self.default_policy, log_level="2")
+            pmem_path + ":1G:1," + self.default_policy, log_level="1")
 
     def test_FSDAX_negative_ratio(self):
         output = self.get_ld_preload_cmd_output(
