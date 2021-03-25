@@ -31,6 +31,8 @@ class Helper(object):
 
     def check_fs_dax_support(self):
         fs_dax_path = os.environ.get('PMEM_PATH', '/tmp')
+        if fs_dax_path[-1] == '/':
+            fs_dax_path = fs_dax_path[:-1]
         with open('/proc/mounts', 'r') as f:
             for line in f.readlines():
                 if 'dax' in line and fs_dax_path in line:
