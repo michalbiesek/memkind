@@ -161,18 +161,38 @@ parse_failure:
     return -1;
 }
 
-/*
- * ctl_parse_policy -- (internal) returns memtier_policy that matches value in
- * query buffer
- */
-static int ctl_parse_policy(char *qbuf, memtier_policy_t *policy)
+static const char *ctl_policy_to_str(memtier_policy_t policy)
 {
-    if (strcmp(qbuf, "POLICY_CIRCULAR") == 0) {
-        return *policy = MEMTIER_POLICY_CIRCULAR;
+    if (policy < MEMTIER_POLICY_CIRCULAR ||
+        policy >= MEMTIER_POLICY_MAX_VALUE) {
+        log_err("Unknown policy: %d", policy);
+        return NULL;
     }
 
-    log_err("Unknown policy: %s", qbuf);
-    return -1;
+    const char *policies[] = {"POLICY_CIRCULAR"};
+
+    return policies[policy];
+}
+
+/*
+ * ctl_parse_policy -- (internal) parse and add to builder
+ */
+static int ctl_parse_policy(char *qbuf, struct memtier_builder *builder)
+{
+    memtier_policy_t policy;
+    if (strcmp(qbuf, "POLICY_CIRCULAR") == 0) {
+        policy = MEMTIER_POLICY_CIRCULAR;
+    } else {
+        log_err("Unknown policy: %s", qbuf);
+        return -1;
+    }
+
+    log_debug("policy: %s", ctl_policy_to_str(policy));
+    if (memtier_builder_set_policy(builder, policy) != 0) {
+        return -1;
+    }
+
+    return 0;
 }
 
 static int ctl_parse_ratio(char **sptr, unsigned *dest)
@@ -254,24 +274,10 @@ static memkind_t ctl_get_kind(const ctl_tier_cfg *tier)
     return kind;
 }
 
-static const char *ctl_policy_to_str(memtier_policy_t policy)
-{
-    if (policy < MEMTIER_POLICY_CIRCULAR ||
-        policy >= MEMTIER_POLICY_MAX_VALUE) {
-        log_err("Unknown policy: %d", policy);
-        return NULL;
-    }
-
-    const char *policies[] = {"POLICY_CIRCULAR"};
-
-    return policies[policy];
-}
-
 struct memtier_kind *ctl_create_tier_kind_from_env(char *env_var_string)
 {
     struct memtier_kind *tier_kind;
     struct ctl_tier_cfg tier = {NULL, NULL, 0, 0};
-    memtier_policy_t policy = MEMTIER_POLICY_MAX_VALUE;
 
     int ret;
     char *sptr = NULL;
@@ -314,16 +320,11 @@ struct memtier_kind *ctl_create_tier_kind_from_env(char *env_var_string)
             }
             log_debug("ratio_value: %u", tier.ratio_value);
         } else {
-            ret = ctl_parse_policy(qbuf, &policy);
+            ret = ctl_parse_policy(qbuf, builder);
             if (ret != 0) {
                 log_err("Failed to parse query: %s", qbuf);
                 goto tiers_delete;
             }
-            ret = memtier_builder_set_policy(builder, policy);
-            if (ret != 0) {
-                goto tiers_delete;
-            }
-            log_debug("policy: %s", ctl_policy_to_str(policy));
         }
 
         qbuf = strtok_r(NULL, CTL_STRING_QUERY_SEPARATOR, &sptr);
