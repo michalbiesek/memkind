@@ -235,52 +235,6 @@ static int ctl_parse_query(char *qbuf, ctl_tier_cfg *tier)
     return 0;
 }
 
-/*
- * ctl_load_config -- splits an entire config into query strings
- */
-static int ctl_load_config(char *buf, ctl_tier_cfg *tier,
-                           memtier_policy_t *policy)
-{
-    int ret;
-    char *sptr = NULL;
-    char *qbuf = buf;
-
-    size_t query_count = 1;
-    while (*qbuf)
-        if (*qbuf++ == *CTL_STRING_QUERY_SEPARATOR)
-            ++query_count;
-
-    qbuf = strtok_r(buf, CTL_STRING_QUERY_SEPARATOR, &sptr);
-    if (qbuf == NULL) {
-        log_err("No valid query found in: %s", buf);
-        return -1;
-    }
-
-    if (query_count < 2) {
-        log_err("Too low number of queries in configuration string: %s", buf);
-        return -1;
-    }
-
-    // TODO: Allow multiple kinds to be created
-    while (query_count) {
-        if (query_count > 1) {
-            ret = ctl_parse_query(qbuf, tier);
-        } else {
-            ret = ctl_parse_policy(qbuf, policy);
-        }
-
-        if (ret != 0) {
-            log_err("Failed to parse query: %s", qbuf);
-            return -1;
-        }
-
-        qbuf = strtok_r(NULL, CTL_STRING_QUERY_SEPARATOR, &sptr);
-        query_count--;
-    }
-
-    return 0;
-}
-
 static memkind_t ctl_get_kind(const ctl_tier_cfg *tier)
 {
     memkind_t kind = NULL;
@@ -319,47 +273,75 @@ struct memtier_kind *ctl_create_tier_kind_from_env(char *env_var_string)
     struct ctl_tier_cfg tier = {NULL, NULL, 0, 0};
     memtier_policy_t policy = MEMTIER_POLICY_MAX_VALUE;
 
-    int ret = ctl_load_config(env_var_string, &tier, &policy);
-    if (ret != 0) {
+    int ret;
+    char *sptr = NULL;
+    char *qbuf = env_var_string;
+
+    size_t query_count = 1;
+    while (*qbuf)
+        if (*qbuf++ == *CTL_STRING_QUERY_SEPARATOR)
+            ++query_count;
+
+    qbuf = strtok_r(env_var_string, CTL_STRING_QUERY_SEPARATOR, &sptr);
+    if (qbuf == NULL) {
+        log_err("No valid query found in: %s", env_var_string);
         return NULL;
     }
 
-    memkind_t kind = ctl_get_kind(&tier);
-
-    log_debug("ratio_value: %u", tier.ratio_value);
-    log_debug("policy: %s", ctl_policy_to_str(policy));
-
-    current_tier = memtier_tier_new(kind);
+    if (query_count < 2) {
+        log_err("Too low number of queries in configuration string: %s", env_var_string);
+        return NULL;
+    }
 
     struct memtier_builder *builder = memtier_builder_new();
     if (!builder) {
-        goto tier_delete;
+        return NULL;
     }
 
-    ret = memtier_builder_add_tier(builder, current_tier, tier.ratio_value);
-    if (ret != 0) {
-        goto builder_delete;
-    }
+    // TODO: Allow multiple kinds to be created
+    while (query_count) {
+        if (query_count > 1) {
+            ret = ctl_parse_query(qbuf, &tier);
+            if (ret != 0) {
+                log_err("Failed to parse query: %s", qbuf);
+                goto tiers_delete;
+            }
+            memkind_t kind = ctl_get_kind(&tier);
+            current_tier = memtier_tier_new(kind);
+            ret = memtier_builder_add_tier(builder, current_tier, tier.ratio_value);
+            if (ret != 0) {
+                goto tiers_delete;
+            }
+            log_debug("ratio_value: %u", tier.ratio_value);
+        } else {
+            ret = ctl_parse_policy(qbuf, &policy);
+            if (ret != 0) {
+                log_err("Failed to parse query: %s", qbuf);
+                goto tiers_delete;
+            }
+            ret = memtier_builder_set_policy(builder, policy);
+            if (ret != 0) {
+                goto tiers_delete;
+            }
+            log_debug("policy: %s", ctl_policy_to_str(policy));
+        }
 
-    ret = memtier_builder_set_policy(builder, policy);
-    if (ret != 0) {
-        goto builder_delete;
+        qbuf = strtok_r(NULL, CTL_STRING_QUERY_SEPARATOR, &sptr);
+        query_count--;
     }
 
     ret = memtier_builder_construct_kind(builder, &tier_kind);
     if (ret != 0) {
-        goto builder_delete;
+        goto tiers_delete;
     }
     memtier_builder_delete(builder);
 
     return tier_kind;
 
-builder_delete:
-    memtier_builder_delete(builder);
-
-tier_delete:
+tiers_delete:
     memtier_tier_delete(current_tier);
     ctl_destroy_fs_dax_reg();
+    memtier_builder_delete(builder);
 
     return NULL;
 }
