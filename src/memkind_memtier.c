@@ -60,18 +60,18 @@ struct memtier_kind {
 static struct memtier_tier *
 memtier_policy_static_threshold_get_tier(struct memtier_kind *tier_kind)
 {
-    struct memtier_tier_cfg *cfg = tier_kind->cfg;
+    // struct memtier_tier_cfg *cfg = tier_kind->cfg;
 
-    int i;
-    int dest_tier = 0;
-    for (i = 1; i < tier_kind->size; ++i) {
-        if ((cfg[i].tier->alloc_size * cfg[i].tier_ratio) <
-            cfg[0].tier->alloc_size) {
-            dest_tier = i;
-        }
-    }
+    // int i;
+    // int dest_tier = 0;
+    // for (i = 1; i < tier_kind->size; ++i) {
+    //     if ((cfg[i].tier->alloc_size * cfg[i].tier_ratio) <
+    //         cfg[0].tier->alloc_size) {
+    //         dest_tier = i;
+    //     }
+    // }
 
-    return cfg[dest_tier].tier;
+    return tier_kind->cfg[0].tier;
 }
 
 // Provide translation from memkind_t to memtier_t
