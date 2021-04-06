@@ -556,7 +556,7 @@ unit_tests_hmat: checkprogs
 unit_tests_dax_kmem: checkprogs
 	test/test_dax_kmem.sh
 
-unit_tests_tiering: tiering/libmemtier.la checkprogs
+unit_tests_tiering: memtier/libmemtier.la checkprogs
 	test/memkind_memtier_test
 	PMEM_PATH=$(PMEM_PATH) @pytest@ -rs test/tiering_tests.py
 
@@ -580,5 +580,5 @@ include autohbw/Makefile.mk
 include test/Makefile.mk
 include examples/Makefile.mk
 include src/Makefile.mk
-include tiering/Makefile.mk
+include memtier/Makefile.mk
 include utils/memory_matrix/Makefile.mk

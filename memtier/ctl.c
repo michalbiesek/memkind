@@ -2,7 +2,7 @@
 /* Copyright (C) 2021 Intel Corporation. */
 
 #include <memkind_memtier.h>
-#include <tiering/memtier_log.h>
+#include <memtier/memtier_log.h>
 
 #include <errno.h>
 #include <limits.h>

@@ -12,7 +12,7 @@ MEMKIND_PMEM_MIN_SIZE = 1024 * 1024 * 16
 
 class Helper(object):
     # NOTE: this script should be called from the root of memkind repository
-    ld_preload_env = "LD_PRELOAD=tiering/.libs/libmemtier.so"
+    ld_preload_env = "LD_PRELOAD=memtier/.libs/libmemtier.so"
     # TODO create separate, parametrized binary that could be used for testing
     # instead of using ls here
     bin_path = "ls"

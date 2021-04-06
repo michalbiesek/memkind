@@ -4,8 +4,8 @@
 #include "../config.h"
 #include <memkind_memtier.h>
 
-#include <tiering/ctl.h>
-#include <tiering/memtier_log.h>
+#include <memtier/ctl.h>
+#include <memtier/memtier_log.h>
 
 #include <pthread.h>
 #include <string.h>
