@@ -201,7 +201,7 @@ MEMKIND_EXPORT void *memtier_kind_malloc(memkind_t kind, size_t size)
 {
     void *ptr = memkind_malloc(kind, size);
     memkind_atomic_increment(kind_alloc_size[kind->partition],
-                             jemk_malloc_usable_size(ptr));
+                             jemk_nallocx(size, 0));
     return ptr;
 }
 
