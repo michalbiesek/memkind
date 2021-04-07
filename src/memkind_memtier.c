@@ -250,7 +250,7 @@ MEMKIND_EXPORT void *memtier_malloc(struct memtier_memory *memory, size_t size)
 MEMKIND_EXPORT void *memtier_kind_malloc(memkind_t kind, size_t size)
 {
     void *ptr = memkind_malloc(kind, size);
-    increment_alloc_size(kind->partition, jemk_malloc_usable_size(ptr));
+    increment_alloc_size(kind->partition, jemk_nallocx(size, 0));
     return ptr;
 }
 
@@ -264,7 +264,7 @@ MEMKIND_EXPORT void *memtier_kind_calloc(memkind_t kind, size_t num,
                                          size_t size)
 {
     void *ptr = memkind_calloc(kind, num, size);
-    increment_alloc_size(kind->partition, jemk_malloc_usable_size(ptr));
+    increment_alloc_size(kind->partition, jemk_nallocx(size * num, 0));
     return ptr;
 }
 
@@ -288,13 +288,13 @@ MEMKIND_EXPORT void *memtier_kind_realloc(memkind_t kind, void *ptr,
         return NULL;
     } else if (ptr == NULL) {
         void *n_ptr = memkind_malloc(kind, size);
-        increment_alloc_size(kind->partition, jemk_malloc_usable_size(n_ptr));
+        increment_alloc_size(kind->partition, jemk_nallocx(size, 0));
         return n_ptr;
     } else {
         decrement_alloc_size(kind->partition, jemk_malloc_usable_size(ptr));
 
         void *n_ptr = memkind_realloc(kind, ptr, size);
-        increment_alloc_size(kind->partition, jemk_malloc_usable_size(n_ptr));
+        increment_alloc_size(kind->partition, jemk_nallocx(size, 0));
         return n_ptr;
     }
 }
@@ -311,7 +311,7 @@ MEMKIND_EXPORT int memtier_kind_posix_memalign(memkind_t kind, void **memptr,
                                                size_t alignment, size_t size)
 {
     int res = memkind_posix_memalign(kind, memptr, alignment, size);
-    increment_alloc_size(kind->partition, jemk_malloc_usable_size(*memptr));
+    increment_alloc_size(kind->partition, jemk_nallocx(size, MALLOCX_ALIGN(alignment)));
     return res;
 }
 
