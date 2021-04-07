@@ -200,8 +200,8 @@ MEMKIND_EXPORT void *memtier_malloc(struct memtier_memory *memory, size_t size)
 MEMKIND_EXPORT void *memtier_kind_malloc(memkind_t kind, size_t size)
 {
     void *ptr = memkind_malloc(kind, size);
-    memkind_atomic_increment(kind_alloc_size[kind->partition],
-                             jemk_nallocx(size, 0));
+    size_t usable_size = jemk_nallocx(size, 0);
+    memkind_atomic_increment(kind_alloc_size[kind->partition], usable_size);
     return ptr;
 }
 
@@ -235,8 +235,8 @@ MEMKIND_EXPORT void *memtier_kind_realloc(memkind_t kind, void *ptr,
                                           size_t size)
 {
     if (size == 0 && ptr != NULL) {
-        memkind_atomic_decrement(kind_alloc_size[kind->partition],
-                                 jemk_malloc_usable_size(ptr));
+        size_t usable_size = jemk_malloc_usable_size(ptr);
+        memkind_atomic_decrement(kind_alloc_size[kind->partition], usable_size);
         memkind_free(kind, ptr);
         return NULL;
     } else if (ptr == NULL) {
