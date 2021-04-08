@@ -51,39 +51,50 @@ struct memtier_memory {
     memtier_policy_t policy;      // Tiering policy
     struct memtier_tier_cfg *cfg; // Memory Tier configuration
 };
+#define NUM_THREADS 8
 
-static MEMKIND_ATOMIC size_t kind_alloc_size[MEMKIND_MAX_KIND];
+static MEMKIND_ATOMIC size_t kind_alloc_size[MEMKIND_MAX_KIND][NUM_THREADS];
+
+static inline int get_thread_counter(void)
+{
+    return ((uintptr_t)pthread_self() >> 12) % NUM_THREADS;
+}
 
 void memtier_reset_size(unsigned id)
 {
-    kind_alloc_size[id] = 0;
+    int i;
+    for(i=0; i <NUM_THREADS ;++i)
+        kind_alloc_size[id][i] = 0;
 }
 
 static void increment_size(unsigned id, void* ptr)
 {
-    memkind_atomic_increment(kind_alloc_size[id], jemk_malloc_usable_size(ptr));
+    size_t size = jemk_malloc_usable_size(ptr);
+    memkind_atomic_increment(kind_alloc_size[id][get_thread_counter()], size);
 }
 
 static void decrement_size(unsigned id, void* ptr)
 {
-    memkind_atomic_decrement(kind_alloc_size[id], jemk_malloc_usable_size(ptr));
+    size_t size = jemk_malloc_usable_size(ptr);
+    memkind_atomic_decrement(kind_alloc_size[id][get_thread_counter()], size);
 }
 
 static memkind_t
 memtier_policy_static_threshold_get_kind(struct memtier_memory *memory)
 {
-    struct memtier_tier_cfg *cfg = memory->cfg;
+    // struct memtier_tier_cfg *cfg = memory->cfg;
 
-    int i;
-    int dest_kind = 0;
-    for (i = 1; i < memory->size; ++i) {
-        if ((kind_alloc_size[cfg[i].kind->partition] * cfg[i].kind_ratio) <
-            kind_alloc_size[cfg[0].kind->partition]) {
-            dest_kind = i;
-        }
-    }
+    // int i;
+    // int dest_kind = 0;
+    // for (i = 1; i < memory->size; ++i) {
+    //     if ((kind_alloc_size[cfg[i].kind->partition] * cfg[i].kind_ratio) <
+    //         kind_alloc_size[cfg[0].kind->partition]) {
+    //         dest_kind = i;
+    //     }
+    // }
 
-    return cfg[dest_kind].kind;
+    // return cfg[dest_kind].kind;
+    return 0;
 }
 
 MEMKIND_EXPORT struct memtier_builder *memtier_builder_new(void)
@@ -285,12 +296,12 @@ MEMKIND_EXPORT void memtier_free(void *ptr)
     memkind_t kind = memkind_detect_kind(ptr);
     if (!kind)
         return;
-    memkind_atomic_decrement(kind_alloc_size[kind->partition],
-                             jemk_malloc_usable_size(ptr));
+    // memkind_atomic_decrement(kind_alloc_size[kind->partition],
+    //                          jemk_malloc_usable_size(ptr));
     memkind_free(kind, ptr);
 }
 
 MEMKIND_EXPORT size_t memtier_kind_allocated_size(memkind_t kind)
 {
-    return kind_alloc_size[kind->partition];
+    return kind_alloc_size[kind->partition][0];
 }
