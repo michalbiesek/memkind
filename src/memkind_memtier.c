@@ -16,11 +16,14 @@
 #define MEMKIND_ATOMIC
 #endif
 
+// clang-format off
 #if defined(MEMKIND_ATOMIC_C11_SUPPORT)
 #define memkind_atomic_increment(counter, val)                                 \
     atomic_fetch_add_explicit(&counter, val, memory_order_relaxed)
 #define memkind_atomic_decrement(counter, val)                                 \
     atomic_fetch_sub_explicit(&counter, val, memory_order_relaxed)
+#define memkind_atomic_set(counter, val)                                       \
+    atomic_store_explicit(&counter, val, memory_order_relaxed)
 #define memkind_atomic_get(src, dest)                                          \
     do {                                                                       \
         dest = atomic_load_explicit(&src, memory_order_relaxed);               \
@@ -30,6 +33,8 @@
     __atomic_add_fetch(&counter, val, __ATOMIC_RELAXED)
 #define memkind_atomic_decrement(counter, val)                                 \
     __atomic_sub_fetch(&counter, val, __ATOMIC_RELAXED)
+#define memkind_atomic_set(counter, val)                                       \
+    __atomic_store_n(&counter, val, __ATOMIC_RELAXED)
 #define memkind_atomic_get(src, dest)                                          \
     do {                                                                       \
         dest = __atomic_load_n(&src, __ATOMIC_RELAXED);                        \
@@ -39,6 +44,10 @@
     __sync_add_and_fetch(&counter, val)
 #define memkind_atomic_decrement(counter, val)                                 \
     __sync_sub_and_fetch(&counter, val)
+#define memkind_atomic_set(counter, val)                                       \
+    do {                                                                       \
+        while (!__sync_bool_compare_and_swap(&counter, counter, val));         \
+    } while (0)
 #define memkind_atomic_get(src, dest)                                          \
     do {                                                                       \
         dest = __sync_sub_and_fetch(&src, 0)                                   \
@@ -46,6 +55,7 @@
 #else
 #error "Missing atomic implementation."
 #endif
+// clang-format on
 
 struct memtier_tier_cfg {
     memkind_t kind;   // Memory kind
@@ -64,11 +74,39 @@ struct memtier_memory {
     struct memtier_tier_cfg *cfg; // Memory Tier configuration
 };
 
-static MEMKIND_ATOMIC size_t kind_alloc_size[MEMKIND_MAX_KIND];
+#define HASH_TAB_SIZE (128)
+#define HASH_MOD      (HASH_TAB_SIZE - 1)
+
+static MEMKIND_ATOMIC size_t kind_alloc_size[MEMKIND_MAX_KIND][HASH_TAB_SIZE];
 
 void memtier_reset_size(unsigned id)
 {
-    kind_alloc_size[id] = 0;
+    unsigned i;
+    for (i = 0; i < HASH_TAB_SIZE; ++i) {
+        memkind_atomic_set(kind_alloc_size[id][i], 0);
+    }
+}
+
+static inline uint64_t hash64(uint64_t x)
+{
+    x += 0x9e3779b97f4a7c15;
+    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9;
+    x = (x ^ (x >> 27)) * 0x94d049bb133111eb;
+    return x ^ (x >> 31);
+}
+
+static inline void increment_size(unsigned id, void *ptr)
+{
+    unsigned t_id = hash64((uint64_t)pthread_self()) & HASH_MOD;
+    memkind_atomic_increment(kind_alloc_size[id][t_id],
+                             jemk_malloc_usable_size(ptr));
+}
+
+static inline void decrement_size(unsigned id, void *ptr)
+{
+    unsigned t_id = hash64((uint64_t)pthread_self()) & HASH_MOD;
+    memkind_atomic_decrement(kind_alloc_size[id][t_id],
+                             jemk_malloc_usable_size(ptr));
 }
 
 static memkind_t
@@ -213,8 +251,7 @@ MEMKIND_EXPORT void *memtier_malloc(struct memtier_memory *memory, size_t size)
 MEMKIND_EXPORT void *memtier_kind_malloc(memkind_t kind, size_t size)
 {
     void *ptr = memkind_malloc(kind, size);
-    memkind_atomic_increment(kind_alloc_size[kind->partition],
-                             jemk_malloc_usable_size(ptr));
+    increment_size(kind->partition, ptr);
     return ptr;
 }
 
@@ -228,8 +265,7 @@ MEMKIND_EXPORT void *memtier_kind_calloc(memkind_t kind, size_t num,
                                          size_t size)
 {
     void *ptr = memkind_calloc(kind, num, size);
-    memkind_atomic_increment(kind_alloc_size[kind->partition],
-                             jemk_malloc_usable_size(ptr));
+    increment_size(kind->partition, ptr);
     return ptr;
 }
 
@@ -248,21 +284,18 @@ MEMKIND_EXPORT void *memtier_kind_realloc(memkind_t kind, void *ptr,
                                           size_t size)
 {
     if (size == 0 && ptr != NULL) {
-        memkind_atomic_decrement(kind_alloc_size[kind->partition],
-                                 jemk_malloc_usable_size(ptr));
+        decrement_size(kind->partition, ptr);
         memkind_free(kind, ptr);
         return NULL;
     } else if (ptr == NULL) {
         void *n_ptr = memkind_malloc(kind, size);
-        memkind_atomic_increment(kind_alloc_size[kind->partition],
-                                 jemk_malloc_usable_size(n_ptr));
+        increment_size(kind->partition, n_ptr);
         return n_ptr;
     } else {
-        memkind_atomic_decrement(kind_alloc_size[kind->partition],
-                                 jemk_malloc_usable_size(ptr));
+        decrement_size(kind->partition, ptr);
+
         void *n_ptr = memkind_realloc(kind, ptr, size);
-        memkind_atomic_increment(kind_alloc_size[kind->partition],
-                                 jemk_malloc_usable_size(n_ptr));
+        increment_size(kind->partition, n_ptr);
         return n_ptr;
     }
 }
@@ -279,8 +312,7 @@ MEMKIND_EXPORT int memtier_kind_posix_memalign(memkind_t kind, void **memptr,
                                                size_t alignment, size_t size)
 {
     int res = memkind_posix_memalign(kind, memptr, alignment, size);
-    memkind_atomic_increment(kind_alloc_size[kind->partition],
-                             jemk_malloc_usable_size(*memptr));
+    increment_size(kind->partition, *memptr);
     return res;
 }
 
@@ -294,14 +326,19 @@ MEMKIND_EXPORT void memtier_free(void *ptr)
     memkind_t kind = memkind_detect_kind(ptr);
     if (!kind)
         return;
-    memkind_atomic_decrement(kind_alloc_size[kind->partition],
-                             jemk_malloc_usable_size(ptr));
+    decrement_size(kind->partition, ptr);
     memkind_free(kind, ptr);
 }
 
 MEMKIND_EXPORT size_t memtier_kind_allocated_size(memkind_t kind)
 {
+    size_t size_all = 0;
     size_t size;
-    memkind_atomic_get(kind_alloc_size[kind->partition], size);
-    return size;
+    int i;
+
+    for (i = 0; i < HASH_TAB_SIZE; ++i) {
+        memkind_atomic_get(kind_alloc_size[kind->partition][i], size);
+        size_all += size;
+    }
+    return size_all;
 }

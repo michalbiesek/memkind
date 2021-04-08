@@ -88,7 +88,6 @@ int memtier_bench_thread(size_t ntimes, size_t nworks)
 
 static memtier_memory *create_mem(void)
 {
-    int res;
     static memtier_memory *memtier_mem;
     struct memtier_builder *m_builder = memtier_builder_new();
     if (memtier_builder_add_tier(m_builder, MEMKIND_DEFAULT, 1))
