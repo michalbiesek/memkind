@@ -24,6 +24,8 @@
     atomic_fetch_sub_explicit(&counter, val, memory_order_relaxed)
 #define memkind_atomic_set(counter, val)                                       \
     atomic_store_explicit(&counter, val, memory_order_relaxed)
+#define memkind_atomic_exchange(src, val)                                      \
+    atomic_exchange_explicit(&src, val, memory_order_relaxed)
 #define memkind_atomic_get(src, dest)                                          \
     do {                                                                       \
         dest = atomic_load_explicit(&src, memory_order_relaxed);               \
@@ -35,6 +37,8 @@
     __atomic_sub_fetch(&counter, val, __ATOMIC_RELAXED)
 #define memkind_atomic_set(counter, val)                                       \
     __atomic_store_n(&counter, val, __ATOMIC_RELAXED)
+#define memkind_atomic_exchange(src, val)                                      \
+    __atomic_exchange_n(&src, val, __ATOMIC_RELAXED)
 #define memkind_atomic_get(src, dest)                                          \
     do {                                                                       \
         dest = __atomic_load_n(&src, __ATOMIC_RELAXED);                        \
@@ -52,6 +56,7 @@
     do {                                                                       \
         dest = __sync_sub_and_fetch(&src, 0)                                   \
     } while (0)
+#define memkind_atomic_exchange(src, val)
 #else
 #error "Missing atomic implementation."
 #endif
@@ -75,15 +80,18 @@ struct memtier_memory {
 };
 
 #define THREAD_BUCKETS (256U)
+#define FLUSH_THRESHOLD (1024)
 
-static MEMKIND_ATOMIC size_t kind_alloc_size[MEMKIND_MAX_KIND][THREAD_BUCKETS];
+static MEMKIND_ATOMIC long long t_alloc_size[MEMKIND_MAX_KIND][THREAD_BUCKETS];
+static MEMKIND_ATOMIC size_t g_alloc_size[MEMKIND_MAX_KIND];
 
 void memtier_reset_size(unsigned kind_id)
 {
     unsigned b;
     for (b = 0; b < THREAD_BUCKETS; ++b) {
-        memkind_atomic_set(kind_alloc_size[kind_id][b], 0);
+        memkind_atomic_set(t_alloc_size[kind_id][b], 0);
     }
+    memkind_atomic_set(g_alloc_size[kind_id], 0);
 }
 
 // SplitMix64 hash
@@ -98,14 +106,26 @@ static inline unsigned t_hash_64(void)
 
 static inline void increment_alloc_size(unsigned kind_id, size_t size)
 {
+    long long total_size;
     unsigned b_id = t_hash_64();
-    memkind_atomic_increment(kind_alloc_size[kind_id][b_id], size);
+    memkind_atomic_increment(t_alloc_size[kind_id][b_id], size);
+    memkind_atomic_get(t_alloc_size[kind_id][b_id], total_size);
+    if ((total_size >= FLUSH_THRESHOLD) || (total_size <= -FLUSH_THRESHOLD)) {
+        long long update_size = memkind_atomic_exchange(t_alloc_size[kind_id][b_id], 0);
+        memkind_atomic_increment(g_alloc_size[kind_id], update_size);
+    }
 }
 
 static inline void decrement_alloc_size(unsigned kind_id, size_t size)
 {
+    long long total_size;
     unsigned b_id = t_hash_64();
-    memkind_atomic_decrement(kind_alloc_size[kind_id][b_id], size);
+    memkind_atomic_decrement(t_alloc_size[kind_id][b_id], size);
+    memkind_atomic_get(t_alloc_size[kind_id][b_id], total_size);
+    if ((total_size >= FLUSH_THRESHOLD) || (total_size <= -FLUSH_THRESHOLD)) {
+        long long update_size = memkind_atomic_exchange(t_alloc_size[kind_id][b_id], 0);
+        memkind_atomic_increment(g_alloc_size[kind_id], update_size);
+    }
 }
 
 static memkind_t
@@ -117,8 +137,12 @@ memtier_policy_static_threshold_get_kind(struct memtier_memory *memory)
     int dest_kind = 0;
 
     for (i = 1; i < memory->size; ++i) {
-        if ((memtier_kind_allocated_size(cfg[i].kind) * cfg[i].kind_ratio) <
-            memtier_kind_allocated_size(cfg[0].kind)) {
+    size_t size;
+    size_t size_0;
+    memkind_atomic_get(g_alloc_size[cfg[0].kind->partition], size_0);
+    memkind_atomic_get(g_alloc_size[cfg[i].kind->partition], size);
+        if ((size * cfg[i].kind_ratio) <
+            size_0) {
             dest_kind = i;
         }
     }
@@ -332,12 +356,12 @@ MEMKIND_EXPORT void memtier_free(void *ptr)
 MEMKIND_EXPORT size_t memtier_kind_allocated_size(memkind_t kind)
 {
     size_t size_all = 0;
-    size_t size;
     unsigned b;
 
     for (b = 0; b < THREAD_BUCKETS; ++b) {
-        memkind_atomic_get(kind_alloc_size[kind->partition][b], size);
-        size_all += size;
+        long long update_size = memkind_atomic_exchange(t_alloc_size[kind->partition][b], 0);
+        memkind_atomic_increment(g_alloc_size[kind->partition], update_size);
     }
+    memkind_atomic_get(g_alloc_size[kind->partition], size_all);
     return size_all;
 }
