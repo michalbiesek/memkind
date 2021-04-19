@@ -75,8 +75,12 @@ struct memtier_memory {
 };
 
 #define THREAD_BUCKETS (256U)
+#define REFRESH_COUNT (100)
 
 static MEMKIND_ATOMIC size_t kind_alloc_size[MEMKIND_MAX_KIND][THREAD_BUCKETS];
+static size_t g_kind_alloc_size[MEMKIND_MAX_KIND];
+static size_t refresh_counter;
+
 
 void memtier_reset_size(unsigned kind_id)
 {
@@ -84,6 +88,7 @@ void memtier_reset_size(unsigned kind_id)
     for (b = 0; b < THREAD_BUCKETS; ++b) {
         memkind_atomic_set(kind_alloc_size[kind_id][b], 0);
     }
+    g_kind_alloc_size[kind_id] = 0;
 }
 
 // SplitMix64 hash
@@ -108,6 +113,16 @@ static inline void decrement_alloc_size(unsigned kind_id, size_t size)
     memkind_atomic_decrement(kind_alloc_size[kind_id][b_id], size);
 }
 
+static size_t local_get_kind_allocated_size(memkind_t kind)
+{
+    refresh_counter +=1;
+    if(refresh_counter % REFRESH_COUNT == 0) {
+        return memtier_kind_allocated_size(kind);
+    } else {
+        return g_kind_alloc_size[kind->partition];
+    }
+}
+
 static memkind_t
 memtier_policy_static_threshold_get_kind(struct memtier_memory *memory)
 {
@@ -117,8 +132,8 @@ memtier_policy_static_threshold_get_kind(struct memtier_memory *memory)
     int dest_kind = 0;
 
     for (i = 1; i < memory->size; ++i) {
-        if ((memtier_kind_allocated_size(cfg[i].kind) * cfg[i].kind_ratio) <
-            memtier_kind_allocated_size(cfg[0].kind)) {
+        if ((local_get_kind_allocated_size(cfg[i].kind) * cfg[i].kind_ratio) <
+            local_get_kind_allocated_size(cfg[0].kind)) {
             dest_kind = i;
         }
     }
@@ -339,5 +354,7 @@ MEMKIND_EXPORT size_t memtier_kind_allocated_size(memkind_t kind)
         memkind_atomic_get(kind_alloc_size[kind->partition][b], size);
         size_all += size;
     }
-    return size_all;
+    g_kind_alloc_size[kind->partition] = size_all;
+    refresh_counter = 0;
+    return g_kind_alloc_size[kind->partition];
 }
