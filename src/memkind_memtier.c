@@ -136,10 +136,11 @@ memtier_policy_static_threshold_get_kind(struct memtier_memory *memory)
     int i;
     int dest_kind = 0;
 
-    for (i = 1; i < memory->size; ++i) {
-    size_t size;
     size_t size_0;
     memkind_atomic_get(g_alloc_size[cfg[0].kind->partition], size_0);
+    for (i = 1; i < memory->size; ++i) {
+    size_t size;
+
     memkind_atomic_get(g_alloc_size[cfg[i].kind->partition], size);
         if ((size * cfg[i].kind_ratio) <
             size_0) {
