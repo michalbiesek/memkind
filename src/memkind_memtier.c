@@ -360,7 +360,6 @@ MEMKIND_EXPORT size_t memtier_kind_allocated_size(memkind_t kind)
                                        0);
         size_all += size;
     }
-    memkind_atomic_increment(g_alloc_size[kind->partition], size_all);
-    memkind_atomic_get(g_alloc_size[kind->partition], size_ret);
-    return size_ret;
+    size_ret = memkind_atomic_increment(g_alloc_size[kind->partition], size_all);
+    return (size_ret + size_all);
 }
