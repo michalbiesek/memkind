@@ -83,7 +83,9 @@ struct memtier_memory {
 #define FLUSH_THRESHOLD (51200)
 
 static MEMKIND_ATOMIC long long t_alloc_size[MEMKIND_MAX_KIND][THREAD_BUCKETS];
-static MEMKIND_ATOMIC size_t g_alloc_size[MEMKIND_MAX_KIND];
+static MEMKIND_ATOMIC size_t g_alloc_size_write[MEMKIND_MAX_KIND];
+static size_t g_alloc_size_read[MEMKIND_MAX_KIND];
+
 
 void memtier_reset_size(unsigned kind_id)
 {
@@ -91,7 +93,8 @@ void memtier_reset_size(unsigned kind_id)
     for (bucket_id = 0; bucket_id < THREAD_BUCKETS; ++bucket_id) {
         memkind_atomic_set(t_alloc_size[kind_id][bucket_id], 0);
     }
-    memkind_atomic_set(g_alloc_size[kind_id], 0);
+    memkind_atomic_set(g_alloc_size_write[kind_id], 0);
+    g_alloc_size_read[kind_id] = 0;
 }
 
 // SplitMix64 hash
@@ -110,7 +113,7 @@ static inline void increment_alloc_size(unsigned kind_id, size_t size)
     if (memkind_atomic_increment(t_alloc_size[kind_id][bucket_id], size) >
         FLUSH_THRESHOLD) {
         size_t size_f = memkind_atomic_exchange(t_alloc_size[kind_id][bucket_id], 0);
-        memkind_atomic_increment(g_alloc_size[kind_id], size_f);
+        g_alloc_size_read[kind_id] = memkind_atomic_increment(g_alloc_size_write[kind_id], size_f);
     }
 }
 
@@ -120,7 +123,7 @@ static inline void decrement_alloc_size(unsigned kind_id, size_t size)
     if (memkind_atomic_decrement(t_alloc_size[kind_id][bucket_id], size) <
         -FLUSH_THRESHOLD) {
         long long size_f = memkind_atomic_exchange(t_alloc_size[kind_id][bucket_id], 0);
-        memkind_atomic_increment(g_alloc_size[kind_id], size_f);
+        g_alloc_size_read[kind_id] = memkind_atomic_increment(g_alloc_size_write[kind_id], size_f);
     }
 }
 
@@ -129,15 +132,11 @@ memtier_policy_static_threshold_get_kind(struct memtier_memory *memory)
 {
     struct memtier_tier_cfg *cfg = memory->cfg;
 
-    size_t size_0;
-    size_t size;
     int i;
     int dest_kind = 0;
 
     for (i = 1; i < memory->size; ++i) {
-        memkind_atomic_get(g_alloc_size[cfg[0].kind->partition], size_0);
-        memkind_atomic_get(g_alloc_size[cfg[i].kind->partition], size);
-        if ((size * cfg[i].kind_ratio) <size_0) {
+        if ((g_alloc_size_read[cfg[i].kind->partition] * cfg[i].kind_ratio) < g_alloc_size_read[cfg[0].kind->partition]) {
             dest_kind = i;
         }
     }
@@ -360,6 +359,6 @@ MEMKIND_EXPORT size_t memtier_kind_allocated_size(memkind_t kind)
                                        0);
         size_all += size;
     }
-    size_ret = memkind_atomic_increment(g_alloc_size[kind->partition], size_all);
+    size_ret = memkind_atomic_increment(g_alloc_size_write[kind->partition], size_all);
     return (size_ret + size_all);
 }
