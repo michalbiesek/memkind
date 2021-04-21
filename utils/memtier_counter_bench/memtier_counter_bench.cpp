@@ -64,12 +64,12 @@ class memkind_bench_alloc: public counter_bench_alloc
 protected:
     void *bench_alloc(size_t size) const final
     {
-        return memkind_malloc(MEMKIND_DEFAULT, size);
+        return memkind_malloc(MEMKIND_REGULAR, size);
     }
 
     void bench_free(void *ptr) const final
     {
-        memkind_free(MEMKIND_DEFAULT, ptr);
+        memkind_free(MEMKIND_REGULAR, ptr);
     }
 };
 
@@ -78,12 +78,12 @@ class memtier_kind_bench_alloc: public counter_bench_alloc
 protected:
     void *bench_alloc(size_t size) const final
     {
-        return memtier_kind_malloc(MEMKIND_DEFAULT, size);
+        return memtier_kind_malloc(MEMKIND_REGULAR, size);
     }
 
     void bench_free(void *ptr) const final
     {
-        memtier_kind_realloc(MEMKIND_DEFAULT, ptr, 0);
+        memtier_kind_realloc(MEMKIND_REGULAR, ptr, 0);
     }
 };
 
@@ -93,7 +93,7 @@ public:
     memtier_bench_alloc()
     {
         m_tier_builder = memtier_builder_new();
-        memtier_builder_add_tier(m_tier_builder, MEMKIND_DEFAULT, 1);
+        memtier_builder_add_tier(m_tier_builder, MEMKIND_REGULAR, 1);
         memtier_builder_set_policy(m_tier_builder,
                                    MEMTIER_POLICY_STATIC_THRESHOLD);
         m_tier_memory =
@@ -128,8 +128,8 @@ public:
     memtier_multiple_bench_alloc()
     {
         m_tier_builder = memtier_builder_new();
-        memtier_builder_add_tier(m_tier_builder, MEMKIND_DEFAULT, 1);
         memtier_builder_add_tier(m_tier_builder, MEMKIND_REGULAR, 1);
+        memtier_builder_add_tier(m_tier_builder, MEMKIND_DEFAULT, 1);
         memtier_builder_set_policy(m_tier_builder,
                                    MEMTIER_POLICY_STATIC_THRESHOLD);
         m_tier_memory =
