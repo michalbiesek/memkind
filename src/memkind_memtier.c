@@ -97,8 +97,8 @@ struct memtier_threshold_cfg {
 
 struct memtier_builder {
     unsigned size;                // Number of memory kinds
-    memtier_policy_t policy;      // Tiering policy
     struct memtier_tier_cfg *cfg; // Memory Tier configuration
+    struct memtier_memory *(*create_memory)(struct memtier_builder *builder);
 };
 
 struct memtier_memory {
@@ -256,6 +256,116 @@ memtier_policy_dynamic_threshold_update_config(struct memtier_memory *memory)
     memory->thres_check_cnt = THRESHOLD_CHECK_CNT;
 }
 
+static inline struct memtier_memory *memtier_init(size_t tier_size,
+                                                  bool threhold_init)
+{
+    struct memtier_memory *memory = jemk_malloc(sizeof(struct memtier_memory));
+    if (!memory) {
+        log_err("malloc() failed.");
+        return NULL;
+    }
+
+    memory->cfg = jemk_calloc(tier_size, sizeof(struct memtier_tier_cfg));
+    if (!memory->cfg) {
+        log_err("calloc() failed.");
+        jemk_free(memory);
+        return NULL;
+    }
+    if (threhold_init) {
+        memory->thres =
+            jemk_calloc(tier_size - 1, sizeof(struct memtier_threshold_cfg));
+        if (!memory->thres) {
+            log_err("calloc() failed.");
+            jemk_free(memory->cfg);
+            jemk_free(memory);
+            return NULL;
+        }
+        memory->get_kind = memtier_policy_dynamic_threshold_get_kind;
+        memory->update_cfg = memtier_policy_dynamic_threshold_update_config;
+        memory->thres_check_cnt = THRESHOLD_CHECK_CNT;
+    } else {
+        memory->thres = NULL;
+        // TODO remove this as single tier is not neeeded 2 tiers should be mandatory
+        if (tier_size == 1)
+            memory->get_kind = memtier_single_get_kind;
+        else {
+            memory->get_kind = memtier_policy_static_threshold_get_kind;
+        }
+        memory->update_cfg = memtier_policy_static_threshold_update_config;
+    }
+    memory->size = tier_size;
+
+    return memory;
+}
+
+static struct memtier_memory *
+memtier_builder_static_create(struct memtier_builder *builder)
+{
+    int i;
+    struct memtier_memory *memory = memtier_init(builder->size, false);
+    if (!memory) {
+        log_err("memtier_init failed.");
+        return NULL;
+    }
+
+    for (i = 1; i < builder->size; ++i) {
+        memory->cfg[i].kind = builder->cfg[i].kind;
+        memory->cfg[i].kind_ratio =
+            builder->cfg[0].kind_ratio / builder->cfg[i].kind_ratio;
+    }
+    memory->cfg[0].kind = builder->cfg[0].kind;
+    memory->cfg[0].kind_ratio = 1.0;
+
+    return memory;
+}
+
+static struct memtier_memory *
+memtier_builder_dynamic_create(struct memtier_builder *builder)
+{
+    int i;
+    if (builder->size < 2) {
+        log_err("There should be at least 2 tiers added to builder "
+                "to use POLICY_DYNAMIC_THRESHOLD");
+        return NULL;
+    }
+    struct memtier_memory *memory = memtier_init(builder->size, true);
+    if (!memory) {
+        log_err("memtier_init failed.");
+        return NULL;
+    }
+
+    // TODO: move comment below to validation code when we implement CTL
+    // API and allow user to change default values
+
+    // set default threshold values
+    // NOTE: thresholds between tiers should follow these rules:
+    // * if there are N tiers, N-1 thresholds has to be defined
+    // * values of thresholds are in ascending order - each Nth threshold
+    //   value has to be lower than (N+1)th value
+    // * each threshold value has to be greater than min and lower than max
+    //   value defined for this thresholds
+    // * min/max ranges of adjacent threshold should not overlap - max
+    //   value of Nth threshold has to be lower than min value of (N+1)th
+    //   threshold
+    for (i = 0; i < THRESHOLD_NUM(builder); ++i) {
+        memory->thres[i].val = (i + 1) * THRESHOLD_DEF_INIT_STEP;
+        memory->thres[i].min = ((float)i + 0.5f) * THRESHOLD_DEF_INIT_STEP;
+        memory->thres[i].max = ((float)i + 1.5f) * THRESHOLD_DEF_INIT_STEP - 1;
+        memory->thres[i].norm_ratio =
+            builder->cfg[i + 1].kind_ratio / builder->cfg[i].kind_ratio;
+    }
+
+    for (i = 1; i < builder->size; ++i) {
+        memory->cfg[i].kind = builder->cfg[i].kind;
+        memory->cfg[i].kind_ratio =
+            builder->cfg[0].kind_ratio / builder->cfg[i].kind_ratio;
+    }
+    memory->cfg[0].kind = builder->cfg[0].kind;
+    memory->cfg[0].kind_ratio = 1.0;
+
+    return memory;
+}
+
 // clang-format off
 MEMKIND_EXPORT struct memtier_builder *memtier_builder_new(memtier_policy_t policy)
 {
@@ -263,8 +373,10 @@ MEMKIND_EXPORT struct memtier_builder *memtier_builder_new(memtier_policy_t poli
     if (b) {
         switch (policy) {
             case MEMTIER_POLICY_STATIC_THRESHOLD:
+                b->create_memory = memtier_builder_static_create;
+                return b;
             case MEMTIER_POLICY_DYNAMIC_THRESHOLD:
-                b->policy = policy;
+                b->create_memory = memtier_builder_dynamic_create;
                 return b;
             default:
                 log_err("Unrecognized memory policy %u", policy);
@@ -316,94 +428,12 @@ MEMKIND_EXPORT int memtier_builder_add_tier(struct memtier_builder *builder,
 MEMKIND_EXPORT struct memtier_memory *
 memtier_builder_construct_memtier_memory(struct memtier_builder *builder)
 {
-    unsigned i;
-    struct memtier_memory *memory;
-
     if (builder->size == 0) {
         log_err("No tier in builder.");
         return NULL;
     }
 
-    memory = jemk_malloc(sizeof(struct memtier_memory));
-    if (!memory) {
-        log_err("malloc() failed.");
-        return NULL;
-    }
-
-    // perform deep copy but store normalized (to kind[0]) ratio instead of
-    // original
-    memory->cfg = jemk_calloc(builder->size, sizeof(struct memtier_tier_cfg));
-    if (!memory->cfg) {
-        log_err("calloc() failed.");
-        goto failure_calloc;
-    }
-
-    if (builder->policy == MEMTIER_POLICY_DYNAMIC_THRESHOLD) {
-        if (builder->size < 2) {
-            log_err("There should be at least 2 tiers added to builder "
-                    "to use POLICY_DYNAMIC_THRESHOLD");
-            goto failure_cfg;
-        }
-
-        memory->thres = jemk_calloc(THRESHOLD_NUM(builder),
-                                    sizeof(struct memtier_threshold_cfg));
-        if (!memory->thres) {
-            log_err("calloc() failed.");
-            goto failure_cfg;
-        }
-
-        // TODO: move comment below to validation code when we implement CTL
-        // API and allow user to change default values
-
-        // set default threshold values
-        // NOTE: thresholds between tiers should follow these rules:
-        // * if there are N tiers, N-1 thresholds has to be defined
-        // * values of thresholds are in ascending order - each Nth threshold
-        //   value has to be lower than (N+1)th value
-        // * each threshold value has to be greater than min and lower than max
-        //   value defined for this thresholds
-        // * min/max ranges of adjacent threshold should not overlap - max
-        //   value of Nth threshold has to be lower than min value of (N+1)th
-        //   threshold
-        for (i = 0; i < THRESHOLD_NUM(builder); ++i) {
-            memory->thres[i].val = (i + 1) * THRESHOLD_DEF_INIT_STEP;
-            memory->thres[i].min = ((float)i + 0.5f) * THRESHOLD_DEF_INIT_STEP;
-            memory->thres[i].max =
-                ((float)i + 1.5f) * THRESHOLD_DEF_INIT_STEP - 1;
-            memory->thres[i].norm_ratio =
-                builder->cfg[i + 1].kind_ratio / builder->cfg[i].kind_ratio;
-        }
-        memory->get_kind = memtier_policy_dynamic_threshold_get_kind;
-        memory->update_cfg = memtier_policy_dynamic_threshold_update_config;
-        memory->thres_check_cnt = THRESHOLD_CHECK_CNT;
-    } else {
-        memory->thres = NULL;
-        if (builder->size == 1)
-            memory->get_kind = memtier_single_get_kind;
-        else {
-            memory->get_kind = memtier_policy_static_threshold_get_kind;
-        }
-        memory->update_cfg = memtier_policy_static_threshold_update_config;
-    }
-
-    for (i = 1; i < builder->size; ++i) {
-        memory->cfg[i].kind = builder->cfg[i].kind;
-        memory->cfg[i].kind_ratio =
-            builder->cfg[0].kind_ratio / builder->cfg[i].kind_ratio;
-    }
-    memory->cfg[0].kind = builder->cfg[0].kind;
-    memory->cfg[0].kind_ratio = 1.0;
-
-    memory->size = builder->size;
-    return memory;
-
-failure_cfg:
-    jemk_free(memory->cfg);
-
-failure_calloc:
-    jemk_free(memory);
-
-    return NULL;
+    return builder->create_memory(builder);
 }
 
 MEMKIND_EXPORT void memtier_delete_memtier_memory(struct memtier_memory *memory)
