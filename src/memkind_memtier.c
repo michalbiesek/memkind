@@ -97,17 +97,18 @@ struct memtier_threshold_cfg {
 };
 
 struct memtier_builder {
-    memtier_policy_t policy;      // Tiering policy
     unsigned cfg_size;            // Number of Memory Tier configurations
-    struct memtier_tier_cfg *cfg; // Memory Tier configurations
-    unsigned thres_size;          // Number of Memory threshold configurations
-    struct memtier_threshold_cfg *thres; // Thresholds configuration for
-                                         // DYNAMIC_THRESHOLD policy
+    struct memtier_tier_cfg *cfg; // Memory Tier configuration
+    // Dynamic Threshold configuration
+    struct memtier_threshold_cfg *thres; // Thresholds configuration
     unsigned check_cnt; // Number of memory management operations that has to be
                         // made between ratio checks
     float trigger;      // Difference between ratios to update threshold
     float degree;       // % of threshold change in case of update
     size_t step;        // Step (in bytes) between thresholds
+    bool (*add_tier_ops)(struct memtier_builder *builder);
+    struct memtier_memory *(*create_memory_ops)(
+        struct memtier_builder *builder);
 };
 
 struct memtier_memory {
@@ -270,17 +271,151 @@ memtier_policy_dynamic_threshold_update_config(struct memtier_memory *memory)
     memory->thres_check_cnt = memory->thres_init_check_cnt;
 }
 
+static inline struct memtier_memory *memtier_memory_init(size_t tier_size,
+                                                  bool threshold_var)
+{
+    if (tier_size == 0) {
+        log_err("No tier in builder.");
+        return NULL;
+    }
+
+    struct memtier_memory *memory = jemk_malloc(sizeof(struct memtier_memory));
+    if (!memory) {
+        log_err("malloc() failed.");
+        return NULL;
+    }
+
+    memory->cfg = jemk_calloc(tier_size, sizeof(struct memtier_tier_cfg));
+    if (!memory->cfg) {
+        log_err("calloc() failed.");
+        jemk_free(memory);
+        return NULL;
+    }
+    if (threshold_var) {
+        memory->thres = jemk_calloc(tier_size - 1, sizeof(struct memtier_threshold_cfg));
+        if (!memory->thres) {
+            log_err("calloc() failed.");
+            jemk_free(memory->cfg);
+            jemk_free(memory);
+            return NULL;
+        }
+        memory->get_kind = memtier_policy_dynamic_threshold_get_kind;
+        memory->update_cfg = memtier_policy_dynamic_threshold_update_config;
+        memory->thres_check_cnt = THRESHOLD_CHECK_CNT;
+    } else {
+        memory->thres = NULL;
+        if (tier_size == 1)
+            memory->get_kind = memtier_single_get_kind;
+        else {
+            memory->get_kind = memtier_policy_static_threshold_get_kind;
+        }
+        memory->update_cfg = memtier_policy_static_threshold_update_config;
+    }
+    memory->cfg_size = tier_size;
+
+    return memory;
+}
+
+static struct memtier_memory *
+memtier_builder_static_create(struct memtier_builder *builder)
+{
+    int i;
+    struct memtier_memory *memory = memtier_memory_init(builder->cfg_size, false);
+    if (!memory) {
+        log_err("memtier_memory_init failed.");
+        return NULL;
+    }
+
+    for (i = 1; i < memory->cfg_size; ++i) {
+        memory->cfg[i].kind = builder->cfg[i].kind;
+        memory->cfg[i].kind_ratio =
+            builder->cfg[0].kind_ratio / builder->cfg[i].kind_ratio;
+    }
+    memory->cfg[0].kind = builder->cfg[0].kind;
+    memory->cfg[0].kind_ratio = 1.0;
+
+    return memory;
+}
+
+static struct memtier_memory *
+memtier_builder_dynamic_create(struct memtier_builder *builder)
+{
+    int i;
+    if (builder->cfg_size < 2) {
+        log_err("There should be at least 2 tiers added to builder "
+                "to use POLICY_DYNAMIC_THRESHOLD");
+        return NULL;
+    }
+    struct memtier_memory *memory = memtier_memory_init(builder->cfg_size, true);
+    if (!memory) {
+        log_err("memtier_memory_init failed.");
+        return NULL;
+    }
+
+    memory->thres_init_check_cnt = builder->check_cnt;
+    memory->thres_check_cnt = builder->check_cnt;
+    memory->thres_trigger = builder->trigger;
+    memory->thres_degree = builder->degree;
+
+    for (i = 0; i < THRESHOLD_NUM(builder); ++i) {
+        memory->thres[i].val = builder->thres[i].val;
+        memory->thres[i].min = builder->thres[i].min;
+        memory->thres[i].max = builder->thres[i].max;
+    }
+
+    for (i = 0; i < THRESHOLD_NUM(builder); ++i) {
+        memory->thres[i].norm_ratio =
+            builder->cfg[i + 1].kind_ratio / builder->cfg[i].kind_ratio;
+    }
+
+    for (i = 1; i < memory->cfg_size; ++i) {
+        memory->cfg[i].kind = builder->cfg[i].kind;
+        memory->cfg[i].kind_ratio =
+            builder->cfg[0].kind_ratio / builder->cfg[i].kind_ratio;
+    }
+    memory->cfg[0].kind = builder->cfg[0].kind;
+    memory->cfg[0].kind_ratio = 1.0;
+
+    return memory;
+}
+
 // clang-format off
+static bool memtier_builder_dynamic_add_tier(struct memtier_builder *builder)
+{
+    unsigned thres_max_id = builder->cfg_size;
+    struct memtier_threshold_cfg *thres = jemk_realloc(builder->thres, sizeof(*thres) * (builder->cfg_size + 1));
+    if (!thres) {
+        log_err("realloc() failed.");
+        return false;
+    }
+
+    builder->thres = thres;
+    if (thres_max_id == 0) {
+        builder->thres[thres_max_id].val = THRESHOLD_STEP;
+        builder->thres[thres_max_id].min = (float)THRESHOLD_STEP * 0.5;
+        builder->thres[thres_max_id].max = (float)THRESHOLD_STEP * 1.5 - 1;
+    } else {
+        builder->thres[thres_max_id].val = builder->thres[thres_max_id - 1].max + THRESHOLD_STEP * 0.5;
+        builder->thres[thres_max_id].min = builder->thres[thres_max_id - 1].max + 1;
+        builder->thres[thres_max_id].max = builder->thres[thres_max_id].val + THRESHOLD_STEP * 0.5 - 1;
+    }
+    return true;
+}
+
 MEMKIND_EXPORT struct memtier_builder *memtier_builder_new(memtier_policy_t policy)
 {
     struct memtier_builder *b = jemk_calloc(1, sizeof(struct memtier_builder));
     if (b) {
         switch (policy) {
             case MEMTIER_POLICY_STATIC_THRESHOLD:
-                b->policy = policy;
+                b->create_memory_ops = memtier_builder_static_create;
+                b->add_tier_ops = NULL;
+                b->thres = NULL;
                 return b;
             case MEMTIER_POLICY_DYNAMIC_THRESHOLD:
-                b->policy = policy;
+                b->create_memory_ops = memtier_builder_dynamic_create;
+                b->add_tier_ops = memtier_builder_dynamic_add_tier;
+                b->thres = NULL;
                 b->check_cnt = THRESHOLD_CHECK_CNT;
                 b->trigger = THRESHOLD_TRIGGER;
                 b->degree = THRESHOLD_DEGREE;
@@ -302,28 +437,39 @@ MEMKIND_EXPORT void memtier_builder_delete(struct memtier_builder *builder)
     jemk_free(builder);
 }
 
-MEMKIND_EXPORT int memtier_builder_add_tier(struct memtier_builder *builder,
-                                            memkind_t kind, unsigned kind_ratio)
+static bool validate_adding_tier(struct memtier_builder *builder,
+                                 memkind_t kind)
 {
     int i;
-
     if (!kind) {
         log_err("Kind is empty.");
-        return -1;
+        return false;
     }
-
     for (i = 0; i < builder->cfg_size; ++i) {
         if (kind == builder->cfg[i].kind) {
             log_err("Kind is already in builder.");
-            return -1;
+            return false;
         }
     }
+    return true;
+}
 
+MEMKIND_EXPORT int memtier_builder_add_tier(struct memtier_builder *builder,
+                                            memkind_t kind, unsigned kind_ratio)
+{
+    if (!validate_adding_tier(builder, kind)) {
+        return -1;
+    }
     struct memtier_tier_cfg *cfg =
         jemk_realloc(builder->cfg, sizeof(*cfg) * (builder->cfg_size + 1));
 
     if (!cfg) {
         log_err("realloc() failed.");
+        return -1;
+    }
+
+    if (builder->add_tier_ops && (!builder->add_tier_ops(builder))) {
+        log_err("add_tier_ops() failed.");
         return -1;
     }
 
@@ -334,203 +480,10 @@ MEMKIND_EXPORT int memtier_builder_add_tier(struct memtier_builder *builder,
     return 0;
 }
 
-static int memtier_builder_create_threshold(struct memtier_builder *builder,
-                                            unsigned id)
-{
-    if (builder->thres_size > id) {
-        // nothing to do
-        return 0;
-    }
-
-    struct memtier_threshold_cfg *thres =
-        jemk_realloc(builder->thres, sizeof(*thres) * (id + 1));
-
-    if (!thres) {
-        log_err("realloc() failed.");
-        return -1;
-    }
-
-    int old_size = builder->thres_size;
-    builder->thres_size = id + 1;
-    builder->thres = thres;
-    int i;
-    for (i = old_size; i < builder->thres_size; ++i) {
-        if (i == 0) {
-            builder->thres[i].val = builder->step;
-            builder->thres[i].min = (float)builder->step * 0.5;
-            builder->thres[i].max = (float)builder->step * 1.5 - 1;
-        } else {
-            builder->thres[i].val =
-                builder->thres[i - i].max + (float)builder->step * 0.5;
-            builder->thres[i].min = builder->thres[i - 1].max + 1;
-            builder->thres[i].max =
-                builder->thres[i].val + (float)builder->step * 0.5 - 1;
-        }
-        // NOTE: don't set norm_ratio here - it will be calculated during
-        // memtier memory construction
-    }
-
-    return 0;
-}
-static int memtier_policy_dynamic_threshold_construct_memtier_memory(
-    struct memtier_builder *builder, struct memtier_memory *memory)
-{
-    int i;
-
-    if (builder->cfg_size < 2) {
-        log_err("There should be at least 2 tiers added to builder "
-                "to use POLICY_DYNAMIC_THRESHOLD");
-        return -1;
-    }
-
-    memory->thres = jemk_calloc(THRESHOLD_NUM(builder),
-                                sizeof(struct memtier_threshold_cfg));
-    if (!memory->thres) {
-        log_err("calloc() failed.");
-        return -1;
-    }
-
-    memory->thres_init_check_cnt = builder->check_cnt;
-    memory->thres_check_cnt = builder->check_cnt;
-    memory->thres_trigger = builder->trigger;
-    memory->thres_degree = builder->degree;
-
-    for (i = 0; i < builder->thres_size; ++i) {
-        memory->thres[i].val = builder->thres[i].val;
-        memory->thres[i].min = builder->thres[i].min;
-        memory->thres[i].max = builder->thres[i].max;
-    }
-
-    // if there are less configured thresholds than tiers, add them now
-    if (THRESHOLD_NUM(builder) > builder->thres_size) {
-        int old_size = builder->thres_size;
-        int last_id = THRESHOLD_NUM(builder) - 1;
-        int ret = memtier_builder_create_threshold(builder, last_id);
-        if (ret != 0) {
-            goto failure;
-        }
-
-        for (i = old_size; i < builder->thres_size; ++i) {
-            memory->thres[i].val = builder->thres[i].val;
-            memory->thres[i].min = builder->thres[i].min;
-            memory->thres[i].max = builder->thres[i].max;
-        }
-    }
-
-    for (i = 0; i < builder->thres_size; ++i) {
-        memory->thres[i].norm_ratio =
-            builder->cfg[i + 1].kind_ratio / builder->cfg[i].kind_ratio;
-    }
-
-    // Validate threshold configuration:
-    // * check if values of thresholds are in ascending order - each Nth
-    //   threshold value has to be lower than (N+1)th value
-    // * each threshold value has to be greater than min and lower than max
-    //   value defined for this thresholds
-    // * min/max ranges of adjacent threshold should not overlap - max
-    //   value of Nth threshold has to be lower than min value of (N+1)th
-    //   threshold
-    // * threshold trigger and change values has to be positive values
-    for (i = 0; i < builder->thres_size; ++i) {
-        if (memory->thres[i].min > memory->thres[i].val) {
-            log_err("Minimum value of threshold %d "
-                    "is too high (min = %zu, val = %zu)",
-                    i, memory->thres[i].min, memory->thres[i].val);
-            goto failure;
-        } else if (memory->thres[i].val > memory->thres[i].max) {
-            log_err("Maximum value of threshold %d "
-                    "is too low (val = %zu, max = %zu)",
-                    i, memory->thres[i].val, memory->thres[i].max);
-            goto failure;
-        }
-
-        if ((i > 0) && (memory->thres[i - 1].max > memory->thres[i].min)) {
-            log_err("Maximum value of threshold %d "
-                    "should be less than minimum value of threshold %d",
-                    i - 1, i);
-            goto failure;
-        }
-    }
-
-    if (memory->thres_degree < 0) {
-        log_err("Threshold change value has to be >= 0");
-        goto failure;
-    }
-
-    if (memory->thres_trigger < 0) {
-        log_err("Threshold trigger value has to be >= 0");
-        goto failure;
-    }
-
-    return 0;
-
-failure:
-    jemk_free(memory->thres);
-    return -1;
-}
-
 MEMKIND_EXPORT struct memtier_memory *
 memtier_builder_construct_memtier_memory(struct memtier_builder *builder)
 {
-    unsigned i;
-    struct memtier_memory *memory;
-
-    if (builder->cfg_size == 0) {
-        log_err("No tier in builder.");
-        return NULL;
-    }
-
-    memory = jemk_malloc(sizeof(struct memtier_memory));
-    if (!memory) {
-        log_err("malloc() failed.");
-        return NULL;
-    }
-
-    // perform deep copy but store normalized (to kind[0]) ratio instead of
-    // original
-    memory->cfg =
-        jemk_calloc(builder->cfg_size, sizeof(struct memtier_tier_cfg));
-    if (!memory->cfg) {
-        log_err("calloc() failed.");
-        goto failure_calloc;
-    }
-
-    if (builder->policy == MEMTIER_POLICY_DYNAMIC_THRESHOLD) {
-        int ret = memtier_policy_dynamic_threshold_construct_memtier_memory(
-            builder, memory);
-        if (ret != 0) {
-            goto failure_cfg;
-        }
-        memory->get_kind = memtier_policy_dynamic_threshold_get_kind;
-        memory->update_cfg = memtier_policy_dynamic_threshold_update_config;
-    } else {
-        memory->thres = NULL;
-        if (builder->cfg_size == 1)
-            memory->get_kind = memtier_single_get_kind;
-        else {
-            memory->get_kind = memtier_policy_static_threshold_get_kind;
-        }
-        memory->update_cfg = memtier_policy_static_threshold_update_config;
-    }
-
-    for (i = 1; i < builder->cfg_size; ++i) {
-        memory->cfg[i].kind = builder->cfg[i].kind;
-        memory->cfg[i].kind_ratio =
-            builder->cfg[0].kind_ratio / builder->cfg[i].kind_ratio;
-    }
-    memory->cfg[0].kind = builder->cfg[0].kind;
-    memory->cfg[0].kind_ratio = 1.0;
-
-    memory->cfg_size = builder->cfg_size;
-    return memory;
-
-failure_cfg:
-    jemk_free(memory->cfg);
-
-failure_calloc:
-    jemk_free(memory);
-
-    return NULL;
+    return builder->create_memory_ops(builder);
 }
 
 MEMKIND_EXPORT void memtier_delete_memtier_memory(struct memtier_memory *memory)
@@ -561,15 +514,8 @@ MEMKIND_EXPORT int memtier_ctl_set(struct memtier_builder *builder,
 
             int th_id = -1;
             ret = sscanf(query, "[%d]%n", &th_id, &chr_read);
-            if (th_id >= 0) {
+            if (th_id >= 0 && th_id < THRESHOLD_NUM(builder)) {
                 query += chr_read;
-
-                // make sure that threshold configuration of th_id exist
-                int ret = memtier_builder_create_threshold(builder, th_id);
-                if (ret != 0) {
-                    return -1;
-                }
-
                 struct memtier_threshold_cfg *thres = &builder->thres[th_id];
 
                 ret = sscanf(query, ".%s", name_substr);
