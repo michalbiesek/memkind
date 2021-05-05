@@ -109,6 +109,7 @@ struct memtier_builder {
     size_t step;        // Step (in bytes) between thresholds
     // Builder operations
     struct memtier_memory *(*create_mem)(struct memtier_builder *builder);
+    int (*ctl_set)(struct memtier_builder *builder, const char *name, const void *val);
 };
 
 struct memtier_memory {
@@ -501,10 +502,12 @@ memtier_builder_new(memtier_policy_t policy)
         switch (policy) {
             case MEMTIER_POLICY_STATIC_THRESHOLD:
                 b->create_mem = builder_static_create_memory;
+                b->ctl_set = NULL;
                 b->thres = NULL;
                 return b;
             case MEMTIER_POLICY_DYNAMIC_THRESHOLD:
                 b->create_mem = builder_dynamic_create_memory;
+                b->ctl_set = NULL;
                 b->thres = NULL;
                 b->check_cnt = THRESHOLD_CHECK_CNT;
                 b->trigger = THRESHOLD_TRIGGER;
@@ -578,6 +581,7 @@ MEMKIND_EXPORT void memtier_delete_memtier_memory(struct memtier_memory *memory)
 MEMKIND_EXPORT int memtier_ctl_set(struct memtier_builder *builder,
                                    const char *name, const void *val)
 {
+    return builder->ctl_set(builder, name, val);
     const char *query = name;
     char name_substr[256] = {0};
     int chr_read = 0;
