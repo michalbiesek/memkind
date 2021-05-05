@@ -569,11 +569,13 @@ memtier_builder_new(memtier_policy_t policy)
             case MEMTIER_POLICY_STATIC_THRESHOLD:
                 b->create_mem = builder_static_create_memory;
                 b->ctl_set = builder_static_ctl_set;
+                b->cfg = NULL;
                 b->thres = NULL;
                 return b;
             case MEMTIER_POLICY_DYNAMIC_THRESHOLD:
                 b->create_mem = builder_dynamic_create_memory;
                 b->ctl_set = builder_dynamic_ctl_set;
+                b->cfg = NULL;
                 b->thres = NULL;
                 b->check_cnt = THRESHOLD_CHECK_CNT;
                 b->trigger = THRESHOLD_TRIGGER;
