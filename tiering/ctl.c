@@ -359,6 +359,27 @@ struct memtier_memory *ctl_create_tier_memory_from_env(char *env_var_string)
         }
     }
 
+    if (policy == MEMTIER_POLICY_DYNAMIC_THRESHOLD) {
+        size_t val = 64;
+        ret = memtier_ctl_set(builder, "policy.dynamic_threshold.thresholds[0].val", &val);
+        if (ret != 0) {
+            log_err("Failed to set threshold val");
+            goto destroy_builder;
+        }
+        val = 24;
+        ret = memtier_ctl_set(builder, "policy.dynamic_threshold.thresholds[0].min", &val);
+        if (ret != 0) {
+            log_err("Failed to set threshold min");
+            goto destroy_builder;
+        }
+        val = 10000;
+        ret = memtier_ctl_set(builder, "policy.dynamic_threshold.thresholds[0].max", &val);
+        if (ret != 0) {
+            log_err("Failed to set threshold max");
+            goto destroy_builder;
+        }
+    }
+
     tier_memory = memtier_builder_construct_memtier_memory(builder);
     if (!tier_memory) {
         goto destroy_builder;
