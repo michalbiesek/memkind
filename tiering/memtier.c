@@ -144,31 +144,37 @@ static MEMTIER_FINI void memtier_fini(void)
 
 MEMTIER_EXPORT void *mt_malloc(size_t size)
 {
+    log_debug("mt_malloc");
     return malloc(size);
 }
 
 MEMTIER_EXPORT void *mt_calloc(size_t num, size_t size)
 {
+    log_debug("mt_calloc");
     return calloc(num, size);
 }
 
 MEMTIER_EXPORT void *mt_realloc(void *ptr, size_t size)
 {
+    log_debug("mt_realloc");
     return realloc(ptr, size);
 }
 
 MEMTIER_EXPORT void mt_free(void *ptr)
 {
+    log_debug("mt_free");
     free(ptr);
 }
 
 MEMTIER_EXPORT int mt_posix_memalign(void **memptr, size_t alignment,
                                      size_t size)
 {
+    log_debug("mt_posix_memalign");
     return posix_memalign(memptr, alignment, size);
 }
 
 MEMTIER_EXPORT size_t mt_malloc_usable_size(void *ptr)
 {
+    log_debug("mt_malloc_usable_size");
     return malloc_usable_size(ptr);
 }
