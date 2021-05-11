@@ -11,8 +11,8 @@
 #include <string.h>
 
 #define MEMTIER_EXPORT __attribute__((visibility("default")))
-#define MEMTIER_INIT   __attribute__((constructor))
-#define MEMTIER_FINI   __attribute__((destructor))
+#define MEMTIER_INIT   __attribute__((constructor(1001)))
+#define MEMTIER_FINI   __attribute__((destructor(1002)))
 
 #define MEMTIER_LIKELY(x)   __builtin_expect(!!(x), 1)
 #define MEMTIER_UNLIKELY(x) __builtin_expect(!!(x), 0)
