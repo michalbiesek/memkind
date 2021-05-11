@@ -38,13 +38,13 @@ MEMTIER_EXPORT void *malloc(size_t size)
 
     if (MEMTIER_LIKELY(current_memory)) {
         ret = memtier_malloc(current_memory, size);
+        log_debug("malloc(%zu) = %p", size, ret);
     } else if (destructed == 0) {
         ret = memkind_malloc(MEMKIND_DEFAULT, size);
     }
 
     // TODO after implementation of decorators memtier decorators this
     // logging call will be obsolete
-    log_debug("malloc(%zu) = %p", size, ret);
     return ret;
 }
 
@@ -54,11 +54,11 @@ MEMTIER_EXPORT void *calloc(size_t num, size_t size)
 
     if (MEMTIER_LIKELY(current_memory)) {
         ret = memtier_calloc(current_memory, num, size);
+        log_debug("calloc(%zu, %zu) = %p", num, size, ret);
     } else if (destructed == 0) {
         ret = memkind_calloc(MEMKIND_DEFAULT, num, size);
     }
 
-    log_debug("calloc(%zu, %zu) = %p", num, size, ret);
     return ret;
 }
 
@@ -68,11 +68,11 @@ MEMTIER_EXPORT void *realloc(void *ptr, size_t size)
 
     if (MEMTIER_LIKELY(current_memory)) {
         ret = memtier_realloc(current_memory, ptr, size);
+        log_debug("realloc(%p, %zu) = %p", ptr, size, ret);
     } else if (destructed == 0) {
         ret = memkind_realloc(MEMKIND_DEFAULT, ptr, size);
     }
 
-    log_debug("realloc(%p, %zu) = %p", ptr, size, ret);
     return ret;
 }
 
@@ -84,22 +84,21 @@ MEMTIER_EXPORT int posix_memalign(void **memptr, size_t alignment, size_t size)
     if (MEMTIER_LIKELY(current_memory)) {
         ret = memtier_posix_memalign(current_memory, memptr, alignment,
                                           size);
+        log_debug("posix_memalign(%p, %zu, %zu) = %d",
+                memptr, alignment, size, ret);
     } else if (destructed == 0) {
         ret = memkind_posix_memalign(MEMKIND_DEFAULT, memptr, alignment,
                                      size);
     }
 
-    log_debug("posix_memalign(%p, %zu, %zu) = %d",
-              memptr, alignment, size, ret);
     return ret;
 }
 // clang-format on
 
 MEMTIER_EXPORT void free(void *ptr)
 {
-    log_debug("free(%p)", ptr);
-
     if (MEMTIER_LIKELY(current_memory)) {
+        log_debug("free(%p)", ptr);
         memtier_realloc(current_memory, ptr, 0);
     } else if (destructed == 0) {
         memkind_free(MEMKIND_DEFAULT, ptr);
