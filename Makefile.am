@@ -531,9 +531,9 @@ static_lib: libmemkind.la
 	cp libmemkind.a .libs/
 	rm libmemkind.a
 
-JEMALLOC_CONFIG = --enable-autogen @min_lg_align_opt@ --without-export --with-version=5.2.1-0-gea6b3e973b477b8061e0076bb257dbd7f3faa756 \
+JEMALLOC_CONFIG = --enable-autogen  @min_lg_align_opt@ --without-export --with-version=5.2.1-0-gea6b3e973b477b8061e0076bb257dbd7f3faa756 \
 			@jemalloc_build_type_flags@  @memkind_initial_exec_tls@ --with-jemalloc-prefix=@memkind_prefix@ \
-			--with-malloc-conf="narenas:@auto_arenas@,lg_tcache_max:@tcache_max_size_class@" \
+			--enable-experimental-smallocx --with-malloc-conf="narenas:@auto_arenas@,lg_tcache_max:@tcache_max_size_class@" \
 			#end
 
 jemalloc_deps:

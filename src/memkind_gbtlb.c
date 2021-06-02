@@ -35,6 +35,11 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_HBW_GBTLB_OPS = {
     .finalize = memkind_arena_finalize,
     .get_stat = memkind_arena_get_kind_stat,
     .defrag_reallocate = memkind_arena_defrag_reallocate,
+    .malloc_with_size = memkind_arena_malloc_with_size,
+    .calloc_with_size = memkind_arena_calloc_with_size,
+    .posix_memalign_with_size = memkind_arena_posix_memalign_with_size,
+    .realloc_with_size = memkind_arena_realloc_with_size,
+    .free_with_size = memkind_arena_free_with_size,
 };
 
 MEMKIND_EXPORT struct memkind_ops MEMKIND_HBW_PREFERRED_GBTLB_OPS = {
@@ -57,6 +62,11 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_HBW_PREFERRED_GBTLB_OPS = {
     .finalize = memkind_arena_finalize,
     .get_stat = memkind_arena_get_kind_stat,
     .defrag_reallocate = memkind_arena_defrag_reallocate,
+    .malloc_with_size = memkind_arena_malloc_with_size,
+    .calloc_with_size = memkind_arena_calloc_with_size,
+    .posix_memalign_with_size = memkind_arena_posix_memalign_with_size,
+    .realloc_with_size = memkind_arena_realloc_with_size,
+    .free_with_size = memkind_arena_free_with_size,
 };
 
 MEMKIND_EXPORT struct memkind_ops MEMKIND_GBTLB_OPS = {
@@ -76,6 +86,11 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_GBTLB_OPS = {
     .finalize = memkind_arena_finalize,
     .get_stat = memkind_arena_get_kind_stat,
     .defrag_reallocate = memkind_arena_defrag_reallocate,
+    .malloc_with_size = memkind_arena_malloc_with_size,
+    .calloc_with_size = memkind_arena_calloc_with_size,
+    .posix_memalign_with_size = memkind_arena_posix_memalign_with_size,
+    .realloc_with_size = memkind_arena_realloc_with_size,
+    .free_with_size = memkind_arena_free_with_size,
 };
 
 #define ONE_GB 1073741824ULL

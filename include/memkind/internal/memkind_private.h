@@ -45,6 +45,8 @@ extern "C" {
 #define jemk_arenalookupx       JE_SYMBOL(arenalookupx)
 #define jemk_check_reallocatex  JE_SYMBOL(check_reallocatex)
 #define jemk_malloc_stats_print JE_SYMBOL(malloc_stats_print)
+#define jemk_sdallocx           JE_SYMBOL(sdallocx)
+#define jemk_smallocx           JE_SYMBOL(smallocx)
 
 enum memkind_const_private
 {
@@ -74,6 +76,11 @@ struct memkind_ops {
     int (*update_memory_usage_policy)(struct memkind *kind, memkind_mem_usage_policy policy);
     int (*get_stat)(memkind_t kind, memkind_stat_type stat, size_t *value);
     void *(*defrag_reallocate)(struct memkind *kind, void *ptr);
+    void *(*malloc_with_size)(struct memkind *kind, size_t size, size_t *usable_size);
+    void *(*calloc_with_size)(struct memkind *kind, size_t num, size_t size, size_t *usable_size);
+    int (*posix_memalign_with_size)(struct memkind *kind, void **memptr, size_t alignment, size_t size, size_t *usable_size);
+    void *(*realloc_with_size)(struct memkind *kind, void *ptr, size_t size, size_t* usable_size);
+    void (*free_with_size)(struct memkind *kind, void *ptr, size_t usable_size);
 };
 // clang-format on
 

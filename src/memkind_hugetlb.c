@@ -37,6 +37,11 @@ MEMKIND_EXPORT struct memkind_ops MEMKIND_HUGETLB_OPS = {
     .finalize = memkind_arena_finalize,
     .get_stat = memkind_arena_get_kind_stat,
     .defrag_reallocate = memkind_arena_defrag_reallocate,
+    .malloc_with_size = memkind_arena_malloc_with_size,
+    .calloc_with_size = memkind_arena_calloc_with_size,
+    .posix_memalign_with_size = memkind_arena_posix_memalign_with_size,
+    .realloc_with_size = memkind_arena_realloc_with_size,
+    .free_with_size = memkind_arena_free_with_size,
 };
 
 static int get_nr_overcommit_hugepages_cached(size_t pagesize, size_t *out);

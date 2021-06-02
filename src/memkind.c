@@ -766,6 +766,13 @@ MEMKIND_EXPORT void *memkind_malloc(struct memkind *kind, size_t size)
     return result;
 }
 
+MEMKIND_EXPORT void *memkind_malloc_with_size(struct memkind *kind, size_t size, size_t *usable_size)
+{
+    pthread_once(&kind->init_once, kind->ops->init_once);
+
+    return kind->ops->malloc_with_size(kind, size, usable_size);
+}
+
 MEMKIND_EXPORT void *memkind_calloc(struct memkind *kind, size_t num,
                                     size_t size)
 {
@@ -790,6 +797,15 @@ MEMKIND_EXPORT void *memkind_calloc(struct memkind *kind, size_t num,
     return result;
 }
 
+MEMKIND_EXPORT void *memkind_calloc_with_size(struct memkind *kind, size_t num,
+                                    size_t size, size_t *usable_size)
+{
+    pthread_once(&kind->init_once, kind->ops->init_once);
+
+    return kind->ops->calloc_with_size(kind, num, size, usable_size);
+
+}
+
 MEMKIND_EXPORT int memkind_posix_memalign(struct memkind *kind, void **memptr,
                                           size_t alignment, size_t size)
 {
@@ -812,6 +828,15 @@ MEMKIND_EXPORT int memkind_posix_memalign(struct memkind *kind, void **memptr,
 #endif
 
     return err;
+}
+
+MEMKIND_EXPORT int memkind_posix_memalign_with_size(struct memkind *kind, void **memptr,
+                                          size_t alignment, size_t size, size_t *usable_size)
+{
+    pthread_once(&kind->init_once, kind->ops->init_once);
+
+    return kind->ops->posix_memalign_with_size(kind, memptr, alignment, size, usable_size);
+
 }
 
 MEMKIND_EXPORT void *memkind_realloc(struct memkind *kind, void *ptr,
@@ -841,6 +866,13 @@ MEMKIND_EXPORT void *memkind_realloc(struct memkind *kind, void *ptr,
     return result;
 }
 
+MEMKIND_EXPORT void *memkind_realloc_with_size(struct memkind *kind, void *ptr,
+                                     size_t size, size_t * usable_size)
+{
+    pthread_once(&kind->init_once, kind->ops->init_once);
+    return kind->ops->realloc_with_size(kind, ptr, size, usable_size);
+}
+
 MEMKIND_EXPORT void memkind_free(struct memkind *kind, void *ptr)
 {
 #ifdef MEMKIND_DECORATION_ENABLED
@@ -860,6 +892,12 @@ MEMKIND_EXPORT void memkind_free(struct memkind *kind, void *ptr)
         memkind_free_post(kind, ptr);
     }
 #endif
+}
+
+MEMKIND_EXPORT void memkind_free_with_size(struct memkind *kind, void *ptr, size_t usable_size)
+{
+    pthread_once(&kind->init_once, kind->ops->init_once);
+    kind->ops->free_with_size(kind, ptr, usable_size);
 }
 
 MEMKIND_EXPORT struct memkind_config *memkind_config_new(void)

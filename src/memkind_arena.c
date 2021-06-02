@@ -469,6 +469,20 @@ MEMKIND_EXPORT void *memkind_arena_malloc(struct memkind *kind, size_t size)
     return result;
 }
 
+MEMKIND_EXPORT void *memkind_arena_malloc_with_size(struct memkind *kind, size_t size)
+{
+    void *result = NULL;
+    unsigned arena;
+
+    int err = kind->ops->get_arena(kind, &arena, size);
+    if (MEMKIND_LIKELY(!err)) {
+        result = jemk_mallocx_check(size,
+                                    MALLOCX_ARENA(arena) |
+                                        get_tcache_flag(kind->partition, size));
+    }
+    return result;
+}
+
 static void *memkind_arena_malloc_no_tcache(struct memkind *kind, size_t size)
 {
     void *result = NULL;
@@ -491,6 +505,15 @@ MEMKIND_EXPORT void memkind_arena_free(struct memkind *kind, void *ptr)
         jemk_free(ptr);
     } else if (ptr != NULL) {
         jemk_dallocx(ptr, get_tcache_flag(kind->partition, 0));
+    }
+}
+
+MEMKIND_EXPORT void memkind_arena_free_with_size(struct memkind *kind, void *ptr, size_t usize)
+{
+    if (kind == MEMKIND_DEFAULT) {
+        jemk_free(ptr);
+    } else if (ptr != NULL) {
+        jemk_sdallocx(ptr, usize, get_tcache_flag(kind->partition, 0));
     }
 }
 
@@ -717,6 +740,23 @@ static void *jemk_mallocx_check(size_t size, int flags)
         result = jemk_mallocx(size, flags);
     }
     return result;
+}
+
+typedef struct {
+	void *ptr;
+	size_t size;
+} smallocx_return_t;
+
+static void *jemk_smallocx_check(size_t size, int flags)
+{
+
+    if (MEMKIND_LIKELY(size)) {
+        void *ptr = jemk_smallocx(size, flags);
+        if (MEMKIND_UNLIKELY(!ptr))
+            errno = ENOMEM;
+        return ptr;
+    }
+    return NULL;
 }
 
 static void *jemk_rallocx_check(void *ptr, size_t size, int flags)
