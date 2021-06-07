@@ -9,8 +9,6 @@
 # -memkind utils/docker directory
 #
 
-set -e
-
 UTILS_DOCKER_PATH=$1
 
 HWLOC_LIBRARY_VERSION=v2.3
@@ -44,6 +42,7 @@ else
     # go to hwloc directory, build and install library
     cd "$HWLOC_LOCAL_DIR"
     ./configure --prefix=/usr
+    cat config.log
     make -j "$(nproc)"
     sudo make -j "$(nproc)" install
 fi
