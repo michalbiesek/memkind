@@ -20,6 +20,7 @@ AC_PROG_CXX
 AC_PROG_CC
 AC_OPENMP
 AC_CHECK_LIB(numa, numa_available, [], [AC_MSG_ERROR([libnuma is required dependency])])
+AC_SEARCH_LIBS([ceilf], [m])
 AX_PTHREAD([LIBS="$PTHREAD_LIBS $LIBS" CFLAGS="$CFLAGS $PTHREAD_CFLAGS" CC="$PTHREAD_CC"],
            [AC_MSG_ERROR([pthreads are required dependency])])
 
