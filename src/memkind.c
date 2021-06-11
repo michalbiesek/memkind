@@ -54,7 +54,7 @@
 #define m_detect_kind(ptr)                      memkind_arena_detect_kind(ptr)
 #define m_free(ptr)                             memkind_arena_free_with_kind_detect(ptr)
 #define m_realloc(ptr, size)                    memkind_arena_realloc_with_kind_detect(ptr, size)
-#define m_usable_size(ptr)                      memkind_default_malloc_usable_size(NULL, ptr)
+#define m_usable_size(ptr)                      jemk_malloc_usable_size(ptr)
 #define m_defrag_reallocate(ptr)                memkind_arena_defrag_reallocate_with_kind_detect(ptr)
 #define m_get_global_stat(stat, value)          memkind_arena_get_global_stat(stat, value)
 #define m_update_cached_stats                   memkind_arena_update_cached_stats
@@ -728,11 +728,7 @@ MEMKIND_EXPORT int memkind_check_available(struct memkind *kind)
 MEMKIND_EXPORT size_t memkind_malloc_usable_size(struct memkind *kind,
                                                  void *ptr)
 {
-    if (!kind) {
-        return m_usable_size(ptr);
-    } else {
-        return kind->ops->malloc_usable_size(kind, ptr);
-    }
+    return m_usable_size(ptr);
 }
 
 MEMKIND_EXPORT void *memkind_malloc(struct memkind *kind, size_t size)
