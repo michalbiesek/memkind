@@ -26,6 +26,11 @@ void log_err(const char *format, ...) PRINTF_FORMAT;
  */
 void log_fatal(const char *format, ...) PRINTF_FORMAT;
 
+void memtier_log_init_once(void);
+void memtier_log_info(const char *format, ...);
+void memtier_log_err(const char *format, ...);
+void memtier_log_debug(const char *format, ...);
+
 #ifdef __cplusplus
 }
 #endif

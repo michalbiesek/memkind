@@ -689,7 +689,7 @@ MEMKIND_EXPORT void *memtier_kind_malloc(memkind_t kind, size_t size)
     void *ptr = memkind_malloc(kind, size);
     increment_alloc_size(kind->partition, jemk_malloc_usable_size(ptr));
 #ifdef MEMTIER_DECORATION_ENABLED
-    log_info("kind: %s, malloc:(%zu) = %p", kind->name, size, ptr);
+    memtier_log_info("kind: %s, malloc:(%zu) = %p", kind->name, size, ptr);
 #endif
     return ptr;
 }
@@ -709,7 +709,8 @@ MEMKIND_EXPORT void *memtier_kind_calloc(memkind_t kind, size_t num,
     void *ptr = memkind_calloc(kind, num, size);
     increment_alloc_size(kind->partition, jemk_malloc_usable_size(ptr));
 #ifdef MEMTIER_DECORATION_ENABLED
-    log_info("kind: %s, calloc:(%zu, %zu) = %p", kind->name, num, size, ptr);
+    memtier_log_info("kind: %s, calloc:(%zu, %zu) = %p", kind->name, num, size,
+                     ptr);
 #endif
     return ptr;
 }
@@ -738,7 +739,7 @@ MEMKIND_EXPORT void *memtier_kind_realloc(memkind_t kind, void *ptr,
     if (size == 0 && ptr != NULL) {
         decrement_alloc_size(kind->partition, jemk_malloc_usable_size(ptr));
 #ifdef MEMTIER_DECORATION_ENABLED
-    log_info("kind: %s, free:(%p)", kind->name, ptr);
+        memtier_log_info("kind: %s, free:(%p)", kind->name, ptr);
 #endif
         memkind_free(kind, ptr);
         return NULL;
@@ -749,7 +750,8 @@ MEMKIND_EXPORT void *memtier_kind_realloc(memkind_t kind, void *ptr,
 
         void *n_ptr = memkind_realloc(kind, ptr, size);
 #ifdef MEMTIER_DECORATION_ENABLED
-    log_info("kind: %s, realloc(%p, %zu) = %p", kind->name, ptr, size, n_ptr);
+        memtier_log_info("kind: %s, realloc(%p, %zu) = %p", kind->name, ptr,
+                         size, n_ptr);
 #endif
         increment_alloc_size(kind->partition, jemk_malloc_usable_size(n_ptr));
         return n_ptr;
@@ -773,7 +775,8 @@ MEMKIND_EXPORT int memtier_kind_posix_memalign(memkind_t kind, void **memptr,
     int res = memkind_posix_memalign(kind, memptr, alignment, size);
     increment_alloc_size(kind->partition, jemk_malloc_usable_size(*memptr));
 #ifdef MEMTIER_DECORATION_ENABLED
-    log_info("kind: %s, posix_memalign(%p, %zu, %zu) = %d", kind->name, memptr, alignment, size, res);
+    memtier_log_info("kind: %s, posix_memalign(%p, %zu, %zu) = %d", kind->name,
+                     memptr, alignment, size, res);
 #endif
     return res;
 }
@@ -782,7 +785,7 @@ MEMKIND_EXPORT size_t memtier_usable_size(void *ptr)
 {
 #ifdef MEMTIER_DECORATION_ENABLED
     memkind_t kind = memkind_detect_kind(ptr);
-    log_info("kind: %s, malloc_usable_size(%p)", kind->name, ptr);
+    memtier_log_info("kind: %s, malloc_usable_size(%p)", kind->name, ptr);
 #endif
     return jemk_malloc_usable_size(ptr);
 }
@@ -795,7 +798,7 @@ MEMKIND_EXPORT void memtier_kind_free(memkind_t kind, void *ptr)
             return;
     }
 #ifdef MEMTIER_DECORATION_ENABLED
-    log_info("kind: %s, free:(%p)", kind->name, ptr);
+    memtier_log_info("kind: %s, free:(%p)", kind->name, ptr);
 #endif
     decrement_alloc_size(kind->partition, jemk_malloc_usable_size(ptr));
     memkind_free(kind, ptr);

@@ -2,10 +2,10 @@
 /* Copyright (C) 2021 Intel Corporation. */
 
 #include "../config.h"
+#include <memkind/internal/memkind_log.h>
 #include <memkind/internal/memkind_memtier.h>
 
 #include <tiering/ctl.h>
-#include <tiering/memtier_log.h>
 
 #include <pthread.h>
 #include <string.h>
@@ -94,8 +94,8 @@ static pthread_once_t init_once = PTHREAD_ONCE_INIT;
 
 static MEMTIER_INIT void memtier_init(void)
 {
-    pthread_once(&init_once, log_init_once);
-    log_info("Memkind memtier lib loaded!");
+    pthread_once(&init_once, memtier_log_init_once);
+    memtier_log_info("Memkind memtier lib loaded!");
 
     char *env_var = utils_get_env("MEMKIND_MEM_TIERS");
     if (env_var) {
@@ -103,16 +103,16 @@ static MEMTIER_INIT void memtier_init(void)
         if (current_memory) {
             return;
         }
-        log_err("Error with parsing MEMKIND_MEM_TIERS");
+        memtier_log_err("Error with parsing MEMKIND_MEM_TIERS");
     } else {
-        log_err("Missing MEMKIND_MEM_TIERS env var");
+        memtier_log_err("Missing MEMKIND_MEM_TIERS env var");
     }
     abort();
 }
 
 static MEMTIER_FINI void memtier_fini(void)
 {
-    log_info("Unloading memkind memtier lib!");
+    memtier_log_info("Unloading memkind memtier lib!");
 
     ctl_destroy_tier_memory(current_memory);
     current_memory = NULL;

@@ -8,6 +8,7 @@ extern "C" {
 
 struct memtier_memory *ctl_create_tier_memory_from_env(char *env_var_string);
 void ctl_destroy_tier_memory(struct memtier_memory *kind);
+char *utils_get_env(const char *name);
 
 #ifdef __cplusplus
 }

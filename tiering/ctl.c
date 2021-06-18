@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /* Copyright (C) 2021 Intel Corporation. */
+#include "../config.h"
 
+#include <memkind/internal/memkind_log.h>
 #include <memkind/internal/memkind_memtier.h>
-#include <tiering/memtier_log.h>
 
 #include <errno.h>
 #include <limits.h>
 #include <regex.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -138,7 +140,7 @@ static int ctl_parse_size(char **sptr, size_t *sizep)
                 if (SIZE_MAX / suffixes[i].mag >= *sizep) {
                     *sizep *= suffixes[i].mag;
                 } else {
-                    log_err("Provided size is too big: %s", size);
+                    memtier_log_err("Provided size is too big: %s", size);
                     goto parse_failure;
                 }
                 return 0;
@@ -147,7 +149,7 @@ static int ctl_parse_size(char **sptr, size_t *sizep)
     }
 
 parse_failure:
-    log_err("Failed to parse size: %s", size_str);
+    memtier_log_err("Failed to parse size: %s", size_str);
     return -1;
 }
 
@@ -162,7 +164,7 @@ static int ctl_parse_policy(char *qbuf, memtier_policy_t *policy)
     } else if (strcmp(qbuf, "DYNAMIC_THRESHOLD") == 0) {
         *policy = MEMTIER_POLICY_DYNAMIC_THRESHOLD;
     } else {
-        log_err("Unknown policy: %s", qbuf);
+        memtier_log_err("Unknown policy: %s", qbuf);
         return -1;
     }
 
@@ -173,13 +175,13 @@ static int ctl_parse_ratio(char **sptr, unsigned *dest)
 {
     const char *ratio_str = strtok_r(NULL, CTL_VALUE_SEPARATOR, sptr);
     if (ratio_str == NULL) {
-        log_err("Ratio not provided");
+        memtier_log_err("Ratio not provided");
         return -1;
     }
 
     int ret = ctl_parse_u(ratio_str, dest);
     if (ret != 0 || *dest == 0) {
-        log_err("Unsupported ratio: %s", ratio_str);
+        memtier_log_err("Unsupported ratio: %s", ratio_str);
         return -1;
     }
 
@@ -208,7 +210,7 @@ static int ctl_parse_tier_query(char *qbuf, memkind_t *kind, unsigned *ratio)
     while (param_str != NULL) {
         if (!strcmp(param_str, "KIND")) {
             if (kind_set) {
-                log_err("KIND param already defined");
+                memtier_log_err("KIND param already defined");
                 return -1;
             }
             char *kind_name = strtok_r(NULL, CTL_PARAM_SEPARATOR, &sptr);
@@ -218,7 +220,7 @@ static int ctl_parse_tier_query(char *qbuf, memkind_t *kind, unsigned *ratio)
                 *kind = MEMKIND_DAX_KMEM;
                 void *ptr = memkind_malloc(*kind, 32);
                 if (!ptr) {
-                    log_err("Allocation to DAX KMEM nodes failed!");
+                    memtier_log_err("Allocation to DAX KMEM nodes failed!");
                     return -1;
                 }
                 memkind_free(*kind, ptr);
@@ -227,27 +229,27 @@ static int ctl_parse_tier_query(char *qbuf, memkind_t *kind, unsigned *ratio)
                 // initialization
                 is_fsdax = 1;
             } else {
-                log_err("Unsupported kind: %s", kind_name);
+                memtier_log_err("Unsupported kind: %s", kind_name);
                 return -1;
             }
             kind_set = 1;
         } else if (!strcmp(param_str, "PATH")) {
             if (fsdax_path_set) {
-                log_err("PATH param already defined");
+                memtier_log_err("PATH param already defined");
                 return -1;
             }
             fsdax_path = strtok_r(NULL, CTL_PARAM_SEPARATOR, &sptr);
             fsdax_path_set = 1;
         } else if (!strcmp(param_str, "PMEM_SIZE_LIMIT")) {
             if (fsdax_size_set) {
-                log_err("PMEM_SIZE_LIMIT param already defined");
+                memtier_log_err("PMEM_SIZE_LIMIT param already defined");
                 return -1;
             }
             fsdax_size_str = strtok_r(NULL, CTL_PARAM_SEPARATOR, &sptr);
             fsdax_size_set = 1;
         } else if (!strcmp(param_str, "RATIO")) {
             if (ratio_set) {
-                log_err("RATIO param already defined");
+                memtier_log_err("RATIO param already defined");
                 return -1;
             }
             ratio_str = strtok_r(NULL, CTL_PARAM_SEPARATOR, &sptr);
@@ -257,7 +259,7 @@ static int ctl_parse_tier_query(char *qbuf, memkind_t *kind, unsigned *ratio)
             }
             ratio_set = 1;
         } else {
-            log_err("Invalid parameter: %s", param_str);
+            memtier_log_err("Invalid parameter: %s", param_str);
             return -1;
         }
 
@@ -265,22 +267,22 @@ static int ctl_parse_tier_query(char *qbuf, memkind_t *kind, unsigned *ratio)
     }
 
     if (!kind) {
-        log_err("KIND param not found");
+        memtier_log_err("KIND param not found");
         return -1;
     } else if (!ratio_str) {
-        log_err("RATIO param not found");
+        memtier_log_err("RATIO param not found");
         return -1;
     }
 
     if (is_fsdax) {
         if (!fsdax_path_set) {
-            log_err("PATH param (required for FS_DAX) not found");
+            memtier_log_err("PATH param (required for FS_DAX) not found");
             return -1;
         }
 
         ret = memkind_check_dax_path(fsdax_path);
         if (ret)
-            log_info("%s don't point to DAX device", fsdax_path);
+            memtier_log_info("%s don't point to DAX device", fsdax_path);
 
         size_t fsdax_max_size = 0;
         if (fsdax_size_set) {
@@ -296,13 +298,13 @@ static int ctl_parse_tier_query(char *qbuf, memkind_t *kind, unsigned *ratio)
         }
     } else {
         if (fsdax_path_set) {
-            log_err("PATH param can be defined only for FS_DAX kind");
+            memtier_log_err("PATH param can be defined only for FS_DAX kind");
             return -1;
         }
 
         if (fsdax_size_set) {
-            log_err("PMEM_SIZE_LIMIT param can be defined only "
-                    "for FS_DAX kind");
+            memtier_log_err("PMEM_SIZE_LIMIT param can be defined only "
+                            "for FS_DAX kind");
             return -1;
         }
     }
@@ -333,7 +335,7 @@ static int ctl_set_thr_cfg(char **sptr, unsigned ctl_id, int th_id,
     }
 
     if (*ctl_opts & (1U << ctl_id)) {
-        log_err("%s defined twice", ctl_cmd[ctl_id][1]);
+        memtier_log_err("%s defined twice", ctl_cmd[ctl_id][1]);
         return -1;
     }
 
@@ -341,7 +343,7 @@ static int ctl_set_thr_cfg(char **sptr, unsigned ctl_id, int th_id,
 
     int ret = ctl_parse_size(&val_str, &val);
     if (ret != 0) {
-        log_err("Failed to parse value: %s", val_str);
+        memtier_log_err("Failed to parse value: %s", val_str);
         return -1;
     }
 
@@ -362,7 +364,7 @@ static int ctl_parse_threshold_query(char *qbuf, int threshold_id,
 
     char *param_str = strtok_r(qbuf, CTL_VALUE_SEPARATOR, &sptr);
     if (param_str == NULL) {
-        log_err("No valid parameters defined");
+        memtier_log_err("No valid parameters defined");
         return -1;
     }
 
@@ -383,7 +385,7 @@ static int ctl_parse_threshold_query(char *qbuf, int threshold_id,
             if (ret != 0)
                 return -1;
         } else {
-            log_err("Invalid parameter: %s", param_str);
+            memtier_log_err("Invalid parameter: %s", param_str);
             return -1;
         }
 
@@ -391,6 +393,15 @@ static int ctl_parse_threshold_query(char *qbuf, int threshold_id,
     }
 
     return 0;
+}
+
+char *utils_get_env(const char *name)
+{
+#ifdef MEMKIND_HAVE_SECURE_GETENV
+    return secure_getenv(name);
+#else
+    return getenv(name);
+#endif
 }
 
 struct memtier_memory *ctl_create_tier_memory_from_env(char *env_var_string)
@@ -421,13 +432,13 @@ struct memtier_memory *ctl_create_tier_memory_from_env(char *env_var_string)
 
     qbuf = strtok_r(env_var_local, CTL_STRING_QUERY_SEPARATOR, &sptr);
     if (qbuf == NULL) {
-        log_err("No valid query found in: %s", env_var_local);
+        memtier_log_err("No valid query found in: %s", env_var_local);
         return NULL;
     }
 
     if (query_count < 2) {
-        log_err("Too low number of queries in configuration string: %s",
-                env_var_local);
+        memtier_log_err("Too low number of queries in configuration string: %s",
+                        env_var_local);
         return NULL;
     }
 
@@ -437,7 +448,7 @@ struct memtier_memory *ctl_create_tier_memory_from_env(char *env_var_string)
 
         ret = ctl_parse_tier_query(qbuf, &kind, &ratio);
         if (ret != 0) {
-            log_err("Failed to parse query: %s", qbuf);
+            memtier_log_err("Failed to parse query: %s", qbuf);
             goto cleanup_after_failure;
         }
 
@@ -453,13 +464,13 @@ struct memtier_memory *ctl_create_tier_memory_from_env(char *env_var_string)
             goto cleanup_after_failure;
         }
     } else {
-        log_err("Missing POLICY parameter in the query: %s", qbuf);
+        memtier_log_err("Missing POLICY parameter in the query: %s", qbuf);
         goto cleanup_after_failure;
     }
 
     struct memtier_builder *builder = memtier_builder_new(policy);
     if (!builder) {
-        log_err("Failed to parse policy: %s", qbuf);
+        memtier_log_err("Failed to parse policy: %s", qbuf);
         goto cleanup_after_failure;
     }
 
@@ -467,7 +478,7 @@ struct memtier_memory *ctl_create_tier_memory_from_env(char *env_var_string)
         ret = memtier_builder_add_tier(builder, temp_cfg[i].kind,
                                        temp_cfg[i].ratio);
         if (ret != 0) {
-            log_err("Failed to add tier%s", qbuf);
+            memtier_log_err("Failed to add tier%s", qbuf);
             goto destroy_builder;
         }
     }
@@ -481,8 +492,9 @@ struct memtier_memory *ctl_create_tier_memory_from_env(char *env_var_string)
                 MAX_ENV_STRING - 1);
 
         if (policy != MEMTIER_POLICY_DYNAMIC_THRESHOLD) {
-            log_err("MEMKIND_MEM_THRESHOLDS env var could be used only with "
-                    "DYNAMIC_THRESHOLD policy");
+            memtier_log_err(
+                "MEMKIND_MEM_THRESHOLDS env var could be used only with "
+                "DYNAMIC_THRESHOLD policy");
             goto destroy_builder;
         }
 
@@ -493,14 +505,15 @@ struct memtier_memory *ctl_create_tier_memory_from_env(char *env_var_string)
                 ++thresholds_count;
 
         if (thresholds_count >= tier_count) {
-            log_err("Too many thresholds defined");
+            memtier_log_err("Too many thresholds defined");
             goto destroy_builder;
         }
 
         qbuf =
             strtok_r(thresholds_var_local, CTL_STRING_QUERY_SEPARATOR, &sptr);
         if (qbuf == NULL) {
-            log_err("No valid thresholds found in: %s", thresholds_var_local);
+            memtier_log_err("No valid thresholds found in: %s",
+                            thresholds_var_local);
             goto destroy_builder;
         }
 
@@ -508,7 +521,7 @@ struct memtier_memory *ctl_create_tier_memory_from_env(char *env_var_string)
 
             ret = ctl_parse_threshold_query(qbuf, i, builder);
             if (ret != 0) {
-                log_err("Failed to parse threshold: %s", qbuf);
+                memtier_log_err("Failed to parse threshold: %s", qbuf);
                 goto destroy_builder;
             }
 
