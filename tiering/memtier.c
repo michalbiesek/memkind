@@ -9,6 +9,7 @@
 
 #include <pthread.h>
 #include <string.h>
+#include <sys/mman.h>
 
 #define MEMTIER_EXPORT __attribute__((visibility("default")))
 #define MEMTIER_INIT   __attribute__((constructor))
@@ -79,7 +80,7 @@ MEMTIER_EXPORT void memtier_kind_usable_size_post(void **ptr, size_t size)
 }
 #endif
 
-static int destructed;
+static int *destructed;
 
 static struct memtier_memory *current_memory;
 
@@ -87,7 +88,7 @@ MEMTIER_EXPORT void *malloc(size_t size)
 {
     if (MEMTIER_LIKELY(current_memory)) {
         return memtier_malloc(current_memory, size);
-    } else if (destructed == 0) {
+    } else if (*destructed == 0) {
         return memkind_malloc(MEMKIND_DEFAULT, size);
     }
     return NULL;
@@ -97,7 +98,7 @@ MEMTIER_EXPORT void *calloc(size_t num, size_t size)
 {
     if (MEMTIER_LIKELY(current_memory)) {
         return memtier_calloc(current_memory, num, size);
-    } else if (destructed == 0) {
+    } else if (*destructed == 0) {
         return memkind_calloc(MEMKIND_DEFAULT, num, size);
     }
     return NULL;
@@ -107,7 +108,7 @@ MEMTIER_EXPORT void *realloc(void *ptr, size_t size)
 {
     if (MEMTIER_LIKELY(current_memory)) {
         return memtier_realloc(current_memory, ptr, size);
-    } else if (destructed == 0) {
+    } else if (*destructed == 0) {
         return memkind_realloc(MEMKIND_DEFAULT, ptr, size);
     }
     return NULL;
@@ -119,7 +120,7 @@ MEMTIER_EXPORT int posix_memalign(void **memptr, size_t alignment, size_t size)
     if (MEMTIER_LIKELY(current_memory)) {
         return memtier_posix_memalign(current_memory, memptr, alignment,
                                           size);
-    } else if (destructed == 0) {
+    } else if (*destructed == 0) {
         return memkind_posix_memalign(MEMKIND_DEFAULT, memptr, alignment,
                                      size);
     }
@@ -131,7 +132,7 @@ MEMTIER_EXPORT void free(void *ptr)
 {
     if (MEMTIER_LIKELY(current_memory)) {
         memtier_realloc(current_memory, ptr, 0);
-    } else if (destructed == 0) {
+    } else if (*destructed == 0) {
         memkind_free(MEMKIND_DEFAULT, ptr);
     }
 }
@@ -147,7 +148,9 @@ static MEMTIER_INIT void memtier_init(void)
 {
     pthread_once(&init_once, log_init_once);
     log_info("Memkind memtier lib loaded!");
-
+    destructed = mmap(NULL, sizeof *destructed, PROT_READ | PROT_WRITE,
+                    MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    *destructed = 0;
     char *env_var = utils_get_env("MEMKIND_MEM_TIERS");
     if (env_var) {
         current_memory = ctl_create_tier_memory_from_env(env_var);
@@ -163,12 +166,13 @@ static MEMTIER_INIT void memtier_init(void)
 
 static MEMTIER_FINI void memtier_fini(void)
 {
-    log_info("Unloading memkind memtier lib!");
+    if (*destructed == 0) {
+        log_info("Unloading memkind memtier lib!");
 
-    ctl_destroy_tier_memory(current_memory);
-    current_memory = NULL;
-
-    destructed = 1;
+        ctl_destroy_tier_memory(current_memory);
+        current_memory = NULL;
+        *destructed = 1;
+    }
 }
 
 MEMTIER_EXPORT void *mt_malloc(size_t size)

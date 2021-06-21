@@ -697,6 +697,7 @@ __attribute__((destructor))
 static int
 memkind_finalize(void)
 {
+    log_fatal ("destructor called");
     struct memkind *kind;
     unsigned i;
     int err = MEMKIND_SUCCESS;
