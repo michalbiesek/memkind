@@ -32,45 +32,44 @@
 #include <memkind/internal/memkind_private.h>
 MEMTIER_EXPORT void memtier_kind_malloc_post(struct memkind *kind, size_t size, void **result)
 {
-    log_info("kind: %s, malloc:(%zu) = %p", kind->name, size, result);
+    log_info("kind: %s, malloc:(%zu) = %p", kind->name, size, *result);
 }
 
 MEMTIER_EXPORT void memtier_kind_calloc_post(memkind_t kind, size_t num, size_t size,
                               void **result)
 {
-    log_info("kind: %s, calloc:(%zu, %zu) = %p", kind->name, num, size,
-             result);
+    log_info("kind: %s, calloc:(%zu, %zu) = %p", kind->name, num, size, *result);
 }
 
 MEMTIER_EXPORT void memtier_kind_realloc_post(struct memkind *kind, void *ptr, size_t size,
                                void **result)
 {
-    log_info("kind: %s, realloc(%p, %zu) = %p", kind->name, ptr, size, result);
+    log_info("kind: %s, realloc(%p, %zu) = %p", kind->name, ptr, size, *result);
 }
 
 MEMTIER_EXPORT void memtier_kind_posix_memalign_post(memkind_t kind, void **memptr,
                                       size_t alignment, size_t size, int *err)
 {
-    log_info("kind: %s, posix_memalign(%p, %zu, %zu) = %d", kind->name, memptr,
+    log_info("kind: %s, posix_memalign(%p, %zu, %zu) = %d", kind->name, *memptr,
              alignment, size, err);
 }
 
-MEMTIER_EXPORT void memkind_free_pre(void **ptr)
+MEMTIER_EXPORT void memtier_kind_free_pre(void **ptr)
 {
-    struct memkind *kind = memkind_detect_kind(ptr);
+    struct memkind *kind = memkind_detect_kind(*ptr);
     if (kind)
-        log_info("kind: %s, free(%p)", kind->name, ptr);
+        log_info("kind: %s, free(%p)", kind->name, *ptr);
     else
-        log_info("free(%p)", ptr);
+        log_info("free(%p)", *ptr);
 }
 
-MEMTIER_EXPORT void memtier_kind_usable_size_pre(void **ptr)
+MEMTIER_EXPORT void memtier_kind_usable_size_post(void **ptr, size_t size)
 {
-    struct memkind *kind = memkind_detect_kind(ptr);
+    struct memkind *kind = memkind_detect_kind(*ptr);
     if (kind)
-        log_info("kind: %s, malloc_usable_size(%p)", kind->name, ptr);
+        log_info("kind: %s, malloc_usable_size(%p) = %zu", kind->name, *ptr, size);
     else
-        log_info("malloc_usable_size(%p)", ptr);
+        log_info("malloc_usable_size(%p) = %zu", *ptr, size);
 }
 #endif
 
