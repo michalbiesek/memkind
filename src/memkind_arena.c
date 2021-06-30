@@ -322,7 +322,7 @@ MEMKIND_EXPORT int memkind_arena_create_map(struct memkind *kind,
                                             extent_hooks_t *hooks)
 {
     int err;
-
+    const size_t retainGrowLimit = 2 * 1024 * 1024; // 2 MB
     pthread_once(&arena_config_once, arena_config_init);
     if(arena_init_status) {
         return arena_init_status;
@@ -357,8 +357,16 @@ MEMKIND_EXPORT int memkind_arena_create_map(struct memkind *kind,
         if(kind->arena_zero > arena_index) {
             kind->arena_zero = arena_index;
         }
-        //setup extent_hooks for newly created arena
         char cmd[64];
+
+        //retain grow limit
+        snprintf(cmd, sizeof(cmd), "arena.%u.retain_grow_limit", arena_index);
+        err = jemk_mallctl(cmd, NULL, NULL, (void *)&retainGrowLimit, sizeof(retainGrowLimit));
+        if(err) {
+            goto exit;
+        }
+
+        //setup extent_hooks for newly created arena
         snprintf(cmd, sizeof(cmd), "arena.%u.extent_hooks", arena_index);
         err = jemk_mallctl(cmd, NULL, NULL, (void *)&hooks, sizeof(extent_hooks_t *));
         if(err) {
