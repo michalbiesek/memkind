@@ -175,6 +175,12 @@ int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
                 }
                 break;
 
+            case MEM_ATTR_NONE:
+                for (i = 0; i < num_local_nodes; ++i) {
+                    hwloc_bitmap_set(attr_loc_mask, local_nodes[i]->os_index);
+                }
+                break;
+
             default:
                 log_err("Unknown memory attribute.");
                 ret = MEMKIND_ERROR_UNAVAILABLE;

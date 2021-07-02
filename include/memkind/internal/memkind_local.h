@@ -14,6 +14,7 @@ extern struct memkind_ops MEMKIND_LOWEST_LATENCY_LOCAL_OPS;
 extern struct memkind_ops MEMKIND_LOWEST_LATENCY_LOCAL_PREFERRED_OPS;
 extern struct memkind_ops MEMKIND_HIGHEST_BANDWIDTH_LOCAL_OPS;
 extern struct memkind_ops MEMKIND_HIGHEST_BANDWIDTH_LOCAL_PREFERRED_OPS;
+extern struct memkind_ops MEMKIND_BALANCED_LOCAL_OPS;
 
 #ifdef __cplusplus
 }

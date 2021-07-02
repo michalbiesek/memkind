@@ -3,83 +3,84 @@
 
 #include <memkind.h>
 
+#include <numa.h>
+#include <numaif.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-static char path[PATH_MAX]="/tmp/";
-
-static void print_err_message(int err)
-{
-    char error_message[MEMKIND_ERROR_MESSAGE_SIZE];
-    memkind_error_message(err, error_message, MEMKIND_ERROR_MESSAGE_SIZE);
-    fprintf(stderr, "%s\n", error_message);
-}
+#define MB ((size_t)1 << 20)
+#define GB ((size_t)1 << 30)
+#define PAGE_SIZE (4096)
+#define NODES_NO 4
 
 int main(int argc, char *argv[])
 {
-    const size_t size = 512;
-    struct memkind *pmem_kind = NULL;
-    int err = 0;
+    char *ptr_dax_kmem = NULL;
 
-    if (argc > 2) {
-        fprintf(stderr, "Usage: %s [pmem_kind_dir_path]\n", argv[0]);
+    ptr_dax_kmem = (char *)memkind_malloc(MEMKIND_DAX_KMEM_BALANCED, 8 * GB);
+    if (!ptr_dax_kmem) {
+        fprintf(stderr, "Unable allocate 512 bytes in balanced local memory NUMA node.\n");
         return 1;
-    } else if (argc == 2) {
-        if (realpath(argv[1], path) == NULL) {
-            fprintf(stderr, "Incorrect pmem_kind_dir_path %s\n", argv[1]);
-            return 1;
+    }
+    size_t counter[NODES_NO] = {0};
+    memset(ptr_dax_kmem, 0, 8*GB);
+    int i;
+    volatile char *cur_addr;
+    char *addr_end;
+    int target_node = -1;
+    int status = -1;
+
+    cur_addr = ptr_dax_kmem;
+    addr_end = (char *)cur_addr + 8*GB;
+
+    for (; cur_addr < addr_end; cur_addr += PAGE_SIZE) {
+        status = get_mempolicy(&target_node, NULL, 0, (void*)cur_addr, MPOL_F_NODE | MPOL_F_ADDR);
+        if (status) {
+            return -1;
+        }
+        counter[target_node]++;
+    }
+    for (i=0; i<NODES_NO; i ++) {
+        fprintf(stderr, "\nCounter id %d value %zu", i, counter[i]);
+    }
+
+    for (i=0; i<NODES_NO; i ++) {
+        counter[i]=0;
+    }
+
+    cur_addr = ptr_dax_kmem;
+    addr_end = (char *)cur_addr + 1*GB;
+    for (i=0; i<10000; i ++) {
+        for (; cur_addr < addr_end; cur_addr += PAGE_SIZE) {
+                *cur_addr = *cur_addr;
         }
     }
 
-    char *ptr_dax_kmem = NULL;
-    char *ptr_pmem = NULL;
-
-    fprintf(stdout,
-            "This example shows how to allocate to PMEM memory using file-backed memory (pmem kind) "
-            "and persistent memory NUMA node (MEMKIND_DAX_KMEM).\nPMEM kind directory: %s\n",
-            path);
-
-    int status = memkind_check_dax_path(path);
-    if (!status) {
-        fprintf(stdout, "PMEM kind %s is on DAX-enabled file system.\n", path);
-    } else {
-        fprintf(stdout, "PMEM kind %s is not on DAX-enabled file system.\n", path);
+    cur_addr = ptr_dax_kmem + 3*GB;
+    addr_end = (char *)cur_addr + 1*GB;
+    for (i=0; i<10000; i ++) {
+        for (; cur_addr < addr_end; cur_addr += PAGE_SIZE) {
+                *cur_addr = *cur_addr;
+        }
     }
 
-    err = memkind_create_pmem(path, 0, &pmem_kind);
-    if (err) {
-        print_err_message(err);
-        return 1;
+    cur_addr = ptr_dax_kmem;
+    addr_end = (char *)cur_addr + 8*GB;
+    for (; cur_addr < addr_end; cur_addr += PAGE_SIZE) {
+        status = get_mempolicy(&target_node, NULL, 0, (void*)cur_addr, MPOL_F_NODE | MPOL_F_ADDR);
+        if (status) {
+            return -1;
+        }
+        counter[target_node]++;
     }
 
-    ptr_dax_kmem = (char *)memkind_malloc(MEMKIND_DAX_KMEM, size);
-    if (!ptr_dax_kmem) {
-        fprintf(stderr, "Unable allocate 512 bytes in persistent memory NUMA node.\n");
-        return 1;
+    for (i=0; i<NODES_NO; i ++) {
+        fprintf(stderr, "\nCounter id %d value %zu", i, counter[i]);
     }
 
-    ptr_pmem = (char *)memkind_malloc(pmem_kind, size);
-    if (!ptr_pmem) {
-        fprintf(stderr, "Unable allocate 512 bytes in file-backed memory.\n");
-        return 1;
-    }
-
-    snprintf(ptr_dax_kmem, size,
-             "Hello world from persistent memory NUMA node - ptr_dax_kmem.\n");
-    snprintf(ptr_pmem, size, "Hello world from file-backed memory - ptr_pmem.\n");
-
-    fprintf(stdout, "%s", ptr_dax_kmem);
-    fprintf(stdout, "%s", ptr_pmem);
-
-    memkind_free(MEMKIND_DAX_KMEM, ptr_dax_kmem);
-    memkind_free(pmem_kind, ptr_pmem);
-
-    err = memkind_destroy_kind(pmem_kind);
-    if (err) {
-        print_err_message(err);
-        return 1;
-    }
+    memkind_free(MEMKIND_DAX_KMEM_BALANCED, ptr_dax_kmem);
 
     fprintf(stdout, "Memory was successfully allocated and released.\n");
 

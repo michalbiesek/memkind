@@ -12,7 +12,8 @@ extern "C" {
 typedef enum memory_attribute_t {
     MEM_ATTR_CAPACITY = 0,
     MEM_ATTR_BANDWIDTH = 1,
-    MEM_ATTR_LATENCY = 2
+    MEM_ATTR_LATENCY = 2,
+    MEM_ATTR_NONE = 3
 } memory_attribute_t;
 
 int get_per_cpu_local_nodes_mask(struct bitmask ***nodes_mask,
