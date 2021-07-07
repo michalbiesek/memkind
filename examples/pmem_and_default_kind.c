@@ -1,119 +1,84 @@
 // SPDX-License-Identifier: BSD-3-Clause
-/* Copyright (C) 2018 - 2020 Intel Corporation. */
+/* Copyright (C) 2019 - 2020 Intel Corporation. */
 
 #include <memkind.h>
 
+#include <numa.h>
+#include <numaif.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <sys/resource.h>
+#include <string.h>
 
-#define MB (1024 * 1024)
-#define HEAP_LIMIT_SIMULATE (1024 * MB)
+#define MB ((size_t)1 << 20)
+#define GB ((size_t)1 << 30)
+#define PAGE_SIZE (4096)
+#define NODES_NO 4
+#define ALLOC_SIZE (16 * GB)
+#define ITERATION 100000
+#define NO_PAGES (ALLOC_SIZE/PAGE_SIZE)
 
-static char path[PATH_MAX]="/tmp/";
+int get_node_id(void *addr){
+    int ret;
+    void * ptr_to_check = addr;
 
-static void print_err_message(int err)
-{
-    char error_message[MEMKIND_ERROR_MESSAGE_SIZE];
-    memkind_error_message(err, error_message, MEMKIND_ERROR_MESSAGE_SIZE);
-    fprintf(stderr, "%s\n", error_message);
+    int status[1];
+    status[0]=-1;
+    ret=move_pages(0, 1, &ptr_to_check, NULL, status, 0);
+    if (ret) {
+        exit(EXIT_FAILURE);
+    }
+    return status[0];
 }
 
 int main(int argc, char *argv[])
 {
-    const size_t size = 512;
-    struct memkind *pmem_kind = NULL;
-    int err = 0;
-    errno = 0;
-
-    if (argc > 2) {
-        fprintf(stderr, "Usage: %s [pmem_kind_dir_path]\n", argv[0]);
+    char *ptr_dax_kmem = (char *)memkind_malloc(MEMKIND_DAX_KMEM_BALANCED, ALLOC_SIZE);
+    if (!ptr_dax_kmem) {
+        fprintf(stderr, "Unable allocate 512 bytes in balanced local memory NUMA node.\n");
         return 1;
-    } else if (argc == 2) {
-        if (realpath(argv[1], path) == NULL) {
-            fprintf(stderr, "Incorrect pmem_kind_dir_path %s\n", argv[1]);
-            return 1;
+    }
+    size_t counter[NODES_NO] = {0};
+    memset(ptr_dax_kmem, 0, ALLOC_SIZE);
+    int i;
+    volatile char *cur_addr;
+    char *addr_end;
+
+    cur_addr = ptr_dax_kmem;
+    addr_end = (char *)cur_addr + ALLOC_SIZE;
+
+    for (; cur_addr < addr_end; cur_addr += PAGE_SIZE) {
+        int target_node = get_node_id((void*)cur_addr);
+        counter[target_node]++;
+    }
+
+    fprintf(stderr, "\n Total Pages in allocation %zu", NO_PAGES);
+    for (i=0; i<NODES_NO; i ++) {
+        fprintf(stderr, "\nCounter id %d value %zu", i, counter[i]);
+        counter[i]=0;
+    }
+
+    //touch every 4th page
+    cur_addr = ptr_dax_kmem;
+    addr_end = (char *)cur_addr + ALLOC_SIZE;
+    for (i=0; i<ITERATION; i ++) {
+        for (; cur_addr < addr_end; cur_addr += 4*PAGE_SIZE) {
+            *cur_addr = *cur_addr;
         }
     }
 
-    // Operation below limit the current size of heap
-    // to show different place of allocation
-    const struct rlimit heap_limit = { HEAP_LIMIT_SIMULATE, HEAP_LIMIT_SIMULATE };
-    err = setrlimit(RLIMIT_DATA, &heap_limit);
-    if (err) {
-        fprintf(stderr, "Unable to set heap limit.\n");
-        return 1;
+    cur_addr = ptr_dax_kmem;
+    addr_end = (char *)cur_addr + ALLOC_SIZE;
+    for (; cur_addr < addr_end; cur_addr += PAGE_SIZE) {
+        int target_node = get_node_id((void*)cur_addr);
+        counter[target_node]++;
     }
 
-    char *ptr_default = NULL;
-    char *ptr_default_not_possible = NULL;
-    char *ptr_pmem = NULL;
-
-    fprintf(stdout,
-            "This example shows how to allocate memory using standard memory (MEMKIND_DEFAULT) "
-            "and file-backed kind of memory (PMEM).\nPMEM kind directory: %s\n", path);
-
-    int status = memkind_check_dax_path(path);
-    if (!status) {
-        fprintf(stdout, "PMEM kind %s is on DAX-enabled file system.\n", path);
-    } else {
-        fprintf(stdout, "PMEM kind %s is not on DAX-enabled file system.\n", path);
+    for (i=0; i<NODES_NO; i ++) {
+        fprintf(stderr, "\nCounter id %d value %zu", i, counter[i]);
     }
 
-    err = memkind_create_pmem(path, 0, &pmem_kind);
-    if (err) {
-        print_err_message(err);
-        return 1;
-    }
-
-    ptr_default = (char *)memkind_malloc(MEMKIND_DEFAULT, size);
-    if (!ptr_default) {
-        fprintf(stderr, "Unable allocate 512 bytes in standard memory.\n");
-        return 1;
-    }
-
-    errno = 0;
-    ptr_default_not_possible = (char *)memkind_malloc(MEMKIND_DEFAULT,
-                                                      HEAP_LIMIT_SIMULATE);
-    if (ptr_default_not_possible) {
-        fprintf(stderr,
-                "Failure, this allocation should not be possible "
-                "(expected result was NULL), because of setlimit function.\n");
-        return 1;
-    }
-    if (errno != ENOMEM) {
-        fprintf(stderr,
-                "Failure, this allocation should set errno to ENOMEM value, because of setlimit function.\n");
-        return 1;
-    }
-
-    errno = 0;
-    ptr_pmem = (char *)memkind_malloc(pmem_kind, HEAP_LIMIT_SIMULATE);
-    if (!ptr_pmem) {
-        fprintf(stderr, "Unable allocate HEAP_LIMIT_SIMULATE in file-backed memory.\n");
-        return 1;
-    }
-    if (errno != 0) {
-        fprintf(stderr, "Failure, this allocation should not set errno value.\n");
-        return 1;
-    }
-
-    sprintf(ptr_default, "Hello world from standard memory - ptr_default.\n");
-    sprintf(ptr_pmem, "Hello world from file-backed memory - ptr_pmem.\n");
-
-    fprintf(stdout, "%s", ptr_default);
-    fprintf(stdout, "%s", ptr_pmem);
-
-    memkind_free(MEMKIND_DEFAULT, ptr_default);
-    memkind_free(pmem_kind, ptr_pmem);
-
-    err = memkind_destroy_kind(pmem_kind);
-    if (err) {
-        print_err_message(err);
-        return 1;
-    }
+    memkind_free(MEMKIND_DAX_KMEM_BALANCED, ptr_dax_kmem);
 
     fprintf(stdout, "Memory was successfully allocated and released.\n");
 
